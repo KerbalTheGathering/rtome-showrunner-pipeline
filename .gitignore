@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------------------
+# CREDENTIALS. Never commit these. season_paths.ENV_FILE points OUTSIDE the
+# repo by default for exactly this reason, and this is the second line of
+# defence.
+# ---------------------------------------------------------------------------
+.env
+*.key
+*_secret*
+
+# ---------------------------------------------------------------------------
+# GENERATED WORK. Every one of these is output or cache, and a season's worth
+# runs to tens of gigabytes -- ~16,000 PNG frames per rebuild, plus the clips,
+# the takes and the finished mp4s.
+#
+# DENY BY DEFAULT: any top-level directory starting with `_` is data, except
+# the one that is source. Same rule new_season.py copies by.
+# ---------------------------------------------------------------------------
+_work/
+_baked/
+_vo/
+_vo_wav/
+_vo_alt/
+_music/
+_verify/
+_audition/
+_probes_out/
+out/
+
+# Media, wherever it lands
+*.mp4
+*.mov
+*.mkv
+*.wav
+*.mp3
+*.flac
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# The clip-folder ownership stamp (see season_identity.claim_clips)
+.season
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# ---------------------------------------------------------------------------
+# Editors, tooling and OS
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+
+# Claude Code local state. Per-machine and per-process; shared project config
+# under .claude/ is deliberately NOT ignored.
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# devices.py --sheet and cards.py --sheet write their contact sheets here.
+/out/

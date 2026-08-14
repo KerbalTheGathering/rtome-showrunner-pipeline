@@ -1,0 +1,76 @@
+# Blocks merging until a contributor has signed the CLA.
+#
+# Signatures are stored in this repository at .github/signatures/cla.json --
+# not with a third-party service. The bot commits to that file on the branch
+# named below, so `contents: write` is required.
+#
+# BEFORE THIS WORKS: confirm `path-to-document` points at the real repo URL,
+# and see the note in CONTRIBUTING.md. The workflow is inert until the repo is
+# pushed to GitHub.
+#
+# HARDENING: `uses:` is pinned to a full commit SHA, not a tag. A tag is a
+# movable pointer -- its author can delete and recreate it against different
+# code, silently, and this workflow would run that code with the write token
+# below on its next run. That is how tj-actions/changed-files was compromised
+# in March 2025. A SHA is a content hash and cannot be repointed.
+#
+# To upgrade: read the diff, then replace the SHA and the trailing version
+# comment together. Never replace it with a bare tag.
+#   git ls-remote --tags https://github.com/contributor-assistant/github-action
+
+name: CLA
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, closed, synchronize]
+
+# pull_request_target runs with repository write access even for forked PRs.
+# It must NEVER check out or execute PR-authored code. This workflow does not.
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  cla:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CLA signature
+        if: >-
+          github.event_name == 'pull_request_target' ||
+          github.event.comment.body == 'recreate-cla' ||
+          github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA'
+        uses: contributor-assistant/github-action@ca4a40a7d1004f18d9960b404b97e5f30a505a08 # v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path-to-signatures: .github/signatures/cla.json
+          path-to-document: https://github.com/KerbalTheGathering/rtome-showrunner-pipeline/blob/main/CLA.md
+          branch: main
+
+          # The copyright holder does not sign an agreement with himself.
+          allowlist: KerbalTheGathering,dependabot[bot],*[bot]
+
+          custom-notsigned-prcomment: >-
+            Thanks for the pull request.
+
+            This project is dual-licensed, so before it can be merged you need
+            to sign the Contributor Licence Agreement. **You keep your
+            copyright** — this grants the right to include your work in
+            commercially licensed builds, and binds the maintainer to keep it
+            publicly available in return. See
+            [CLA.md](https://github.com/KerbalTheGathering/rtome-showrunner-pipeline/blob/main/CLA.md).
+
+            If you are contributing as part of your job, your employer must also
+            execute
+            [CLA-ENTITY.md](https://github.com/KerbalTheGathering/rtome-showrunner-pipeline/blob/main/CLA-ENTITY.md).
+
+            To sign, reply to this pull request with exactly:
+
+          custom-pr-sign-comment: I have read the CLA Document and I hereby sign the CLA
+
+          custom-allsigned-prcomment: >-
+            CLA signed by all contributors. Thank you.
