@@ -53,6 +53,7 @@ wrong, with the numbers.
 | `docs/08_case_study.md` | The season this came from: shape, stack and decisions |
 | `docs/09_scripts.md` | What every script in the tree is, and which to run when |
 | `docs/10_fork_report.md` | What a fork found taking this from `git clone` to a finished feature: seventeen faults, every one of them in machinery |
+| `docs/11_asset_library.md` | **Design note — none of it is built.** A cross-project prop/location/character library and an image→image edit step: what it needs, what it breaks, what would have to be measured first |
 
 ---
 

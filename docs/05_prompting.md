@@ -66,6 +66,10 @@ wide shot, four rolls running. If a prop has to be *that* prop, it has to be
 close enough to show why — and if it must be distant, describe a distant shape
 and move the identifying detail into a beat that can hold it.
 
+That is a workaround for not being able to put the right object in the frame.
+`docs/11_asset_library.md` is a design note on the fix — generate a hero prop
+once and edit it in — and on what that would cost. **None of it is built.**
+
 ### LoRAs
 
 - A style LoRA **may have no trigger word.** Check the tensors: a unet-only LoRA

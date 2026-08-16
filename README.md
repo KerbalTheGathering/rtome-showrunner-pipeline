@@ -141,6 +141,7 @@ _session_template/   copied to make a film folder. Never rendered
 | [`docs/08_case_study.md`](docs/08_case_study.md) | The season this came from, as a worked example |
 | [`docs/09_scripts.md`](docs/09_scripts.md) | What every script is |
 | [`docs/10_fork_report.md`](docs/10_fork_report.md) | What a fork found taking this from `git clone` to a finished feature, and what was built in response |
+| [`docs/11_asset_library.md`](docs/11_asset_library.md) | **A design note, not built.** Reusing a prop instead of re-rolling it: what a cross-project asset library and an edit step would need, and what they would cost |
 | [`learnings.md`](learnings.md) | What a **second** fork found, on a one-film season with no show layer. Two silent faults and one mode that could not finish |
 
 ## A note on model choices
