@@ -14,11 +14,27 @@ sizes its beat downstream and the beat sizes the clip, so a blanket re-render
 silently changes the edit. Candidates go to _vo_alt via --alt and get installed
 deliberately.
 
-THE RAW TAKES STAY UNTOUCHED. Every eleven_v3 take has a transient glued to its
-final few milliseconds -- 12 of 20 on one film, tails sitting at 0.06-0.10
-amplitude and the last 10 ms spiking to 0.29. Dropped on a timeline that is an
-audible click AND makes the line sound cut off. It is fixed at MIX time (trim
-~25 ms, fade ~10 ms in and ~50 ms out), not here.
+THE RAW TAKES STAY UNTOUCHED, and what happens to their tails is MEASURED at
+mix time rather than assumed here.
+
+This note used to read "EVERY eleven_v3 take has a transient glued to its final
+few milliseconds" and prescribe a flat ~25 ms trim. The observation was real --
+12 of 20 takes on one film, tails at 0.06-0.10 amplitude with the last 10 ms
+spiking to 0.29 -- but it is a thing SOME takes do, and stating it as a property
+of the vendor turned it into a rule nobody re-checked. A later fork profiled all
+34 of its takes at sample level against the actual signature (peak in the final
+10 ms over peak in the preceding 100 ms) and found it in ZERO of them: the flat
+trim would have discarded 850 ms of real speech across that film to solve a
+problem it did not have.
+
+So `assemble.vo_tail()` looks first and trims only where there is something to
+cut. What is wrong on the other takes is milder and needs a different fix: a
+file that ends while low-level energy is still present, butted against digital
+silence, CLICKS -- and the fix for a discontinuity is a fade, which removes no
+samples at all.
+
+If you are reading this because a line sounds cut off, measure that take before
+reaching for a bigger trim.
 """
 from __future__ import annotations
 

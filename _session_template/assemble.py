@@ -863,26 +863,47 @@ def vo_offsets(rows):
 
 # HOW MUCH OF A VO TAKE'S TAIL MAY BE DESTROYED, MEASURED PER TAKE.
 #
-# make_vo.py's note is right that every eleven_v3 take has a transient glued to
-# its last few milliseconds, and the fix has always been to trim ~25ms and fade
-# ~50ms at MIX time. That destroys the final 75ms of the take, which is exactly
-# right WHEN THE TAKE ENDS IN SILENCE -- the trim lands on the click and the
-# fade lands on nothing.
+# THE TRIM USED TO BE UNCONDITIONAL AND THE PROPERTY IT ASSUMED IS NOT A
+# PROPERTY OF THE VENDOR. make_vo.py stated it flatly -- "every eleven_v3 take
+# has a transient glued to its final milliseconds" -- and this function's whole
+# question was how much tail could be SPARED, never whether there was anything
+# there to cut. A fork profiled all 34 of its takes at sample level, against the
+# actual signature (peak in the final 10ms over peak in the preceding 100ms) and
+# found it in ZERO of them. Trimming 25ms from every take would have thrown away
+# 850ms of real speech across that film to solve a problem it did not have.
 #
-# IT IS WRONG WHEN THE SPEECH RUNS TO THE LAST SAMPLE, and some takes do. In
-# Session #3 both of the closing takes measured ZERO trailing silence, and the
-# film's last line -- the bird's "Say it again", 0.51s of speech in a 0.64s
-# file -- lost its final 75ms and came out clipped. A fixed trim assumes a
-# trailing pad that is not always there.
+# The observation the rule came from was real: 12 of 20 takes on one film, tails
+# sitting at 0.06-0.10 amplitude with the last 10ms spiking to 0.29. That is a
+# 3-5x ratio and it is worth cutting. It is a thing SOME takes do, and the fix
+# is to look rather than to assume.
 #
-# So the tail budget is measured instead of assumed: takes that end in silence
-# keep the old generous trim, and takes that end on a word give up only enough
-# to kill the transient.
+# AND THE FAULT THAT SURVIVES ON THE OTHER TAKES NEEDS A DIFFERENT TOOL. Several
+# takes end while low-level energy is still present, and a file that stops at
+# 0.09 butted against digital silence CLICKS. That is a discontinuity, not a
+# transient, and the fix for a discontinuity is a FADE -- which removes no
+# samples at all. Trimming was solving the wrong half of it.
+#
+# The trailing-silence measurement below is kept and still earns its place: it
+# is what stops a trim landing on speech. In Session #3 both closing takes
+# measured ZERO trailing silence, and the film's last line -- 0.51s of speech in
+# a 0.64s file -- lost its final 75ms and came out clipped.
+#
+#   transient, ends in silence   trim 25ms, fade 50ms    (the old behaviour)
+#   transient, ends on a word    trim 12ms, fade 20ms    (only enough)
+#   no transient                 trim  0,   fade 10ms    (the click, and nothing
+#                                                         else, is the problem)
 _TAIL: dict[str, tuple[float, float]] = {}
+_TAIL_WHY: dict[str, str] = {}
+
+# THE FINAL 10ms MUST BEAT THE PRECEDING 100ms BY THIS MUCH to count as a
+# transient. Speech decays into its own ending, so a last window LOUDER than the
+# hundred before it is anomalous by construction; 2.0 sits well under the 3-5x
+# the real ones measured and well over anything ordinary word-final energy does.
+_TRANSIENT_RATIO = 2.0
 
 
 def vo_tail(lid: str, d: float) -> tuple[float, float]:
-    """(trim, fade) seconds to apply to this take's end."""
+    """(trim, fade) seconds to apply to this take's end, measured not assumed."""
     if lid in _TAIL:
         return _TAIL[lid]
     raw = subprocess.run(
@@ -891,17 +912,29 @@ def vo_tail(lid: str, d: float) -> tuple[float, float]:
          "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],
         capture_output=True, check=True).stdout
     x = np.frombuffer(raw, "<i2").astype(np.float32) / 32768.0
-    win, out = 160, (0.025, 0.050)          # 10ms windows; the old behaviour
-    k = len(x) // win
-    if k:
-        rms = np.sqrt((x[:k * win].reshape(k, win) ** 2).mean(axis=1) + 1e-12)
-        live = np.nonzero(20 * np.log10(rms) > -45.0)[0]
-        if len(live):
-            silence = len(x) / 16000.0 - (live[-1] + 1) * win / 16000.0
-            if silence < 0.075:
-                # Nothing to spare: cut the transient and get out.
-                out = (0.012, 0.020)
-    _TAIL[lid] = out
+    sr, win = 16000, 160                                     # 10ms windows
+    out, why = (0.0, 0.010), "no transient"
+
+    # THE SIGNATURE, ON PEAKS RATHER THAN RMS. A 10ms spike barely moves the RMS
+    # of the window it is in, which is why the old silence-based test could not
+    # have seen one even if it had been looking.
+    tail = np.abs(x[-win:]) if len(x) >= win else np.abs(x)
+    before = np.abs(x[-11 * win:-win]) if len(x) >= 11 * win else np.abs(x[:-win])
+    spike = (len(tail) and len(before)
+             and tail.max() > _TRANSIENT_RATIO * max(before.max(), 1e-6))
+
+    if spike:
+        out, why = (0.025, 0.050), "transient"
+        k = len(x) // win
+        if k:
+            rms = np.sqrt((x[:k * win].reshape(k, win) ** 2).mean(axis=1) + 1e-12)
+            live = np.nonzero(20 * np.log10(rms) > -45.0)[0]
+            if len(live):
+                silence = len(x) / sr - (live[-1] + 1) * win / sr
+                if silence < 0.075:
+                    # Nothing to spare: cut the transient and get out.
+                    out, why = (0.012, 0.020), "transient, no pad"
+    _TAIL[lid], _TAIL_WHY[lid] = out, why
     return out
 
 
@@ -913,9 +946,11 @@ def mix(rows, total_s, dest):
     edit.py and cannot be anybody's stylistic choice. The bus that sums them,
     which IS a choice, is one name in identity.py out of ../mixes.py.
 
-    Every eleven_v3 take has a transient glued to its last few milliseconds --
-    an audible click on a timeline, and it makes the line sound cut off. Trimmed
-    and faded here so the raw takes stay archived untouched.
+    SOME eleven_v3 takes have a transient glued to their last few milliseconds
+    -- an audible click on a timeline, and it makes the line sound cut off.
+    Measured per take in vo_tail() and trimmed only where it is actually there;
+    everything else gets a 10ms fade, which removes no samples. The raw takes
+    stay archived untouched either way.
     """
     offs = vo_offsets(rows)
     cues = edit.cue_spans(rows)
@@ -937,6 +972,21 @@ def mix(rows, total_s, dest):
         # dip cannot drift from the take that caused it.
         spans.append((off, off + max(0.05, d - trim)))
     nvo = len(offs)
+
+    # WHAT THE TAIL MEASUREMENT ACTUALLY DECIDED, PRINTED BEFORE THE BAKE'S
+    # OUTPUT SCROLLS. docs/06_verification.md: make a check print what it
+    # measured, not just its verdict. This one replaced a rule that was applied
+    # to every take without looking, so the count of takes it now leaves alone
+    # is the whole point -- and a run where it suddenly trims everything, or
+    # nothing, is the first sign the threshold has stopped discriminating.
+    if offs:
+        tally: dict[str, int] = {}
+        for lid, _off in offs:
+            tally[_TAIL_WHY[lid]] = tally.get(_TAIL_WHY[lid], 0) + 1
+        cut = sum(vo_tail(lid, 0)[0] for lid, _ in offs)
+        print("  vo tails: " + ", ".join(f"{n} {why}"
+                                         for why, n in sorted(tally.items()))
+              + f"  ({cut * 1000:.0f} ms trimmed in total)")
 
     # ONE BRANCH PER CUE, FROM edit.CUES. This was two hand-written branches
     # named m0 and m1 with a single crossover between them, so a season with

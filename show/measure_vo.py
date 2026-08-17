@@ -12,10 +12,13 @@ be shipping a number I already know is wrong.
 WHAT IS MEASURED INSTEAD, all of it arithmetic on samples:
 
   speech / lead / tail   Where the words actually are inside the file. The mix
-                         destroys the last 75ms of every take to kill eleven_v3's
-                         trailing transient, so a take with NO trailing silence
-                         loses real speech -- that shipped once, on the last line
-                         of Session #3, and cost 15% of "Say it again".
+                         may destroy the last 75ms of a take to kill a trailing
+                         transient, so a take with NO trailing silence can lose
+                         real speech -- that shipped once, on the last line of
+                         Session #3, and cost 15% of "Say it again". It applies
+                         only to takes that MEASURE a transient now
+                         (assemble.tail_spike), so a tight take is a warning
+                         rather than a certainty.
   words per second       Pace. The one thing that separated the four audition
                          candidates, and the thing this part turns on.
 

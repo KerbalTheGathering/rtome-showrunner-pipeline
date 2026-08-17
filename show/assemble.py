@@ -392,16 +392,63 @@ def speech_db(lid: str) -> float:
 MATCH_FLOOR_DB = 8.0
 
 
-def vo_tail(trailing: float) -> tuple[float, float]:
+# THE FINAL 10ms MUST BEAT THE PRECEDING 100ms BY THIS MUCH to count as a
+# transient. See _session_template/assemble.py's vo_tail() for the profile this
+# came out of; the number is the same in both trees on purpose.
+_TRANSIENT_RATIO = 2.0
+_SPIKE: dict[str, bool] = {}
+
+
+def tail_spike(lid: str) -> bool:
+    """Does this take actually END on a transient? Peaks, not RMS.
+
+    A 10ms spike barely moves the RMS of the window holding it, so env()'s
+    silence measurement could not have seen one even if it had been looking --
+    and it was not looking, because nothing was: the trim was applied to every
+    take on the strength of make_vo.py's claim that eleven_v3 always produces
+    one. A fork profiled 34 takes at sample level and found it in zero of them.
+    """
+    if lid in _SPIKE:
+        return _SPIKE[lid]
+    wav = os.path.join(HERE, "_vo_wav", f"{lid}.wav")
+    if not os.path.exists(wav):
+        edit.speech(lid)                      # builds the wav as a side effect
+    with wave.open(wav) as w:
+        sr, n = w.getframerate(), w.getnframes()
+        pcm = struct.unpack(f"<{n}h", w.readframes(n))
+    win = int(sr * 0.010)
+    if n < 2 * win:
+        _SPIKE[lid] = False
+        return False
+    last = max(abs(v) for v in pcm[-win:])
+    before = max(abs(v) for v in pcm[max(0, n - 11 * win):n - win]) or 1
+    _SPIKE[lid] = last > _TRANSIENT_RATIO * before
+    return _SPIKE[lid]
+
+
+def vo_tail(trailing: float, spike: bool) -> tuple[float, float]:
     """(trim, fade) for a take's end, measured rather than assumed.
 
-    FOURTEEN OF THIS REEL'S NINETEEN TAKES END ON A WORD with no trailing
-    silence at all -- Dale Brinley simply stops. The season's fixed 25ms trim
-    plus 50ms fade would eat real speech on nearly every line here, which is the
-    defect that shipped once on Session #3's last line. Takes that end in
-    silence keep the generous version; takes that end on a word give up only
-    enough to kill eleven_v3's trailing transient.
+    TWO MEASUREMENTS, AND THE FIRST ONE IS WHETHER THERE IS ANYTHING TO CUT.
+    make_vo.py stated the trailing transient as a property of the vendor --
+    "every eleven_v3 take" -- and this function only ever asked how much tail
+    could be SPARED. A fork profiled all 34 of its takes against the actual
+    signature and found it in none, where trimming 25ms from each would have
+    discarded 850ms of real speech to solve a problem that was not there.
+
+    What IS wrong on those takes is milder and wants a different tool: a file
+    that stops while low-level energy is still present, butted against digital
+    silence, CLICKS. That is a discontinuity, and a fade fixes a discontinuity
+    without removing a single sample.
+
+    The trailing-silence half still earns its place. FOURTEEN OF THIS REEL'S
+    NINETEEN TAKES END ON A WORD with no trailing silence at all -- Dale Brinley
+    simply stops -- so a trim that is warranted still has to be small enough not
+    to land on speech, which is the defect that shipped once on Session #3's
+    last line.
     """
+    if not spike:
+        return (0.0, 0.010)
     return (0.025, 0.050) if trailing >= 0.075 else (0.012, 0.020)
 
 
@@ -650,7 +697,7 @@ def mix(sid: str, total_s: float, dest: str, vo_only: bool = False) -> None:
     target = max(min(lv), med - MATCH_FLOOR_DB)
     for n, (lid, off) in enumerate(takes):
         d, lead, trail = env(lid)
-        trim, fade = vo_tail(trail)
+        trim, fade = vo_tail(trail, tail_spike(lid))
         gain = min(0.0, target - lv[n])
         # LEADING SILENCE IS CUT, NOT PLACED AROUND. edit.py owns every pause in
         # this reel; a take that happens to arrive with 2.1s of air in front of
