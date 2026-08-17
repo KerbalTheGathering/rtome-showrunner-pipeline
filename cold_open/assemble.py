@@ -59,6 +59,10 @@ OUT = os.path.join(HERE, "out")
 MUSIC = os.path.join(HERE, "_music")
 CLIPS = os.path.join(season_paths.COMFY_OUTPUT, f"{shot.NAME}_clips")
 
+# THE SEASON'S OWN RENDER CANVASES, so a frame that came off the video model
+# can be told from a plate by its exact size. See framing.unsqueeze().
+CANVASES = season_paths.canvases(identity.season.W, identity.season.H)
+
 # THE SEASON'S RATE, DERIVED. `24` was typed in eleven files beside a
 # season_identity.FPS that already said so -- and feature.py asserts every
 # part matches, so a season at another rate would have been caught only
@@ -316,7 +320,15 @@ def _bake_one(i: int) -> int:
     # THE FIT AND THE LOOK ARE THE SEASON'S, NAMED. This was a bare `resize`,
     # which is `stretch` -- correct only for as long as the open is shot at
     # exactly the delivery aspect, and silently squashing the moment it is not.
-    im = framing.apply(FIT, im, c["w"], c["h"], FIT_OPTS)
+    #
+    # AND THE UN-SQUEEZE COMES BEFORE THE FIT. The video model squashes a plate
+    # into an off-aspect canvas rather than cropping it, and `crop` keeps the
+    # distortion while trimming the edges. Note what the old bare `resize` did
+    # here: mapping the whole canvas onto the whole frame un-squeezed by
+    # accident, so replacing it with a correct fit made this beat WORSE on a
+    # scope season until this line existed. See framing.unsqueeze().
+    im = framing.apply(FIT, framing.unsqueeze(im, c["w"], c["h"], CANVASES),
+                       c["w"], c["h"], FIT_OPTS)
     im = grades.apply(GRADE, im, GRADE_OPTS)
     if i >= c["title_from"]:
         t = (i - c["title_from"]) / max(1.0, TITLE_FADE * FPS)

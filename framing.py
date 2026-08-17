@@ -125,6 +125,43 @@ def anchor_xy(a) -> tuple[float, float]:
     return ANCHORS[a]
 
 
+def unsqueeze(im: Image.Image, w: int, h: int,
+              sources) -> Image.Image:
+    """Undo the squash a render canvas put on a picture. Call BEFORE any fit.
+
+    A VIDEO MODEL SQUASHES AN OFF-ASPECT PLATE; IT DOES NOT CROP IT. Measured
+    on eight shots across four style LoRAs -- clip frame zero against the source
+    plate resized three ways -- and squash fit 2-3x better than either crop,
+    unanimously. So a canvas whose ratio is not the delivery's hands back a
+    picture distorted by exactly that difference, and `crop` cannot see it:
+    cropping to the delivery ratio trims the edges and keeps the distortion.
+    A drawn circle through the 2.40 path came out 1.030 wide-to-tall before
+    this existed and 1.000 after. See season_paths.canvases() for the five
+    seasons that shipped without noticing.
+
+    THE TEST IS THE EXACT SIZE, NOT AN APPROXIMATE ASPECT. `sources` is the
+    season's own canvas ladder, so this fires on a frame that came off the
+    video model and on nothing else. A plate is 2432x1664 and a bake frame is
+    delivery-sized; neither is ever a rung, and matching on "looks a bit
+    off-aspect" would have un-squeezed a picture somebody framed that way on
+    purpose.
+
+    The long edge is kept and the short one moved, so this only ever adds
+    pixels -- an un-squeeze that scaled DOWN would throw away detail to correct
+    a ratio, and the fit immediately after is resampling to delivery size
+    anyway.
+    """
+    if im.size not in {(int(a), int(b)) for a, b in sources}:
+        return im
+    sw, sh = im.size
+    want = int(w) / int(h)
+    if abs(sw / sh - want) <= 1e-4:
+        return im
+    if sw / sh > want:                      # canvas too wide: picture squeezed
+        return im.resize((sw, max(1, round(sw / want))), Image.LANCZOS)
+    return im.resize((max(1, round(sh * want)), sh), Image.LANCZOS)
+
+
 def apply(name: str, im: Image.Image, w: int, h: int,
           opt: dict | None = None) -> Image.Image:
     """Fit `im` into exactly `w` x `h`. Always returns that size."""

@@ -550,6 +550,12 @@ def plan():
 # bake
 
 
+# THE SEASON'S OWN RENDER CANVASES, so a frame that came off the video model
+# can be told from a plate and from a bake frame by its exact size. See
+# framing.unsqueeze() and season_paths.canvases().
+CANVASES = season_paths.canvases(identity.season.W, identity.season.H)
+
+
 def fit_aspect(im, w, h, sid: str | None = None):
     """A plate into the frame, the film's way, and this beat's way if it has one.
 
@@ -558,11 +564,25 @@ def fit_aspect(im, w, h, sid: str | None = None):
     shares. See ../framing.py. `sid` is optional so the QC tools and the
     devices' `ctx["fit"]`, which are fitting a picture rather than placing a
     beat, can call this without inventing one.
+
+    THE UN-SQUEEZE COMES FIRST AND IT IS NOT OPTIONAL. A video model handed a
+    plate at a canvas whose ratio is not the delivery's SQUASHES it -- measured
+    8 of 8 against both crops -- and every frame comes back compressed by that
+    difference. A crop cannot undo it: it trims the edges and keeps the
+    distortion, which is how a 2.40 season shipped 2.56% squeezed with every
+    check green. See season_paths.canvases() for the five seasons that did not
+    notice.
+
+    IT IS HERE BECAUSE THIS IS THE CHOKE POINT. Every path that puts a picture
+    in a frame -- the beat, the flat layer, a device's `ctx["fit"]`, the QC
+    tools -- comes through this one function, and `docs/02_traps.md` is explicit
+    that one choke point beats per-site checks: a `unsqueeze()` call at each
+    site is only as good as whoever added the last one.
     """
     opt = FIT_OPTS
     if sid is not None and sid in FIT_BEATS:
         opt = dict(FIT_OPTS, **FIT_BEATS[sid])
-    return framing.apply(FIT, im, w, h, opt)
+    return framing.apply(FIT, framing.unsqueeze(im, w, h, CANVASES), w, h, opt)
 
 
 # THE MASKS AND THE PANEL PASTE MOVED TO ../devices.py, which is where the
