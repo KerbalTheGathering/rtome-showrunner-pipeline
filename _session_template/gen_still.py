@@ -34,8 +34,14 @@ import shot
 # latent, same LoRAs, same words, only the style block swapped. It writes to its
 # own directory so one layer can never be resolved as the other by accident.
 OBJ = "--obj" in sys.argv
+
+# --plain OMITS THE TWO NODES NOBODY HAS MEASURED. See graph() for the argument.
+# It writes to its OWN directory, the same discipline --obj uses: a probe render
+# that could be resolved as a film plate is how an A/B ends up in the cut.
+PLAIN = "--plain" in sys.argv
 OUT = os.path.join(season_paths.COMFY_OUTPUT,
-                   f"{shot.OBJ_NAME if OBJ else shot.NAME}")
+                   f"{shot.OBJ_NAME if OBJ else shot.NAME}"
+                   + ("_plain" if PLAIN else ""))
 HOST = season_paths.COMFY_URL
 
 # A cold load is ~120-150s, so anything under ~200s cannot distinguish "still
@@ -57,7 +63,66 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
     node 59 is OMITTED ENTIRELY rather than run at strength 0 -- a zeroed loader
     still loads the file and still costs VRAM on a card already carrying a 12GB
     unet, and it makes the graph lie about what is applied.
+
+    TWO NODES IN HERE WENT UNMEASURED FOR SIX SEASONS, and `--plain` omits both:
+
+        node 51   krea2filterbypass3.safetensors, at strength 100/100
+        node 28   ConditioningKrea2Rebalance, multiplier 5 with a twelve-value
+                  per-layer weight list, applied to the NEGATIVE conditioning
+                  -- which is itself a ConditioningZeroOut of the positive
+
+    A fork's render harness omits both deliberately, on the grounds that they
+    degrade Krea2. That was a claim from somewhere else about a graph that had
+    produced every plate in six seasons here, so the flag exists to settle it
+    with a render rather than an argument:
+
+        python gen_still.py --beat=07              # the graph as it ships
+        python gen_still.py --beat=07 --plain      # the same, without those two
+
+    Same seed, same latent, same LoRAs, same words. `--plain` renders into its
+    own `<NAME>_plain` directory -- the discipline `--obj` already uses -- so a
+    probe can never be resolved as a film plate.
+
+    WHAT THE COMPARISON FOUND, two seeds, one prompt, no LoRAs, everything else
+    byte-identical -- a painted night interior with brass, glass, a named
+    optical part and a figure:
+
+                        A (as ships)        B (--plain)
+        near-black       15.3% / 21.5%       0.21% / 0.77%   of the frame
+        detail (lapvar)  0.0074 / 0.0076     0.0095 / 0.0121
+        saturation       0.236 / 0.297       0.188 / 0.217
+        the fresnel lens generic lantern     rendered as asked
+                         at BOTH seeds       at BOTH seeds
+
+    THE LENS IS THE FINDING. The prompt names "the great fresnel lens" and A
+    returned an ordinary storm lantern at both seeds while B drew the concentric
+    prism rings at both. That is docs/05_prompting.md's "a specific prop falls
+    back to a generic" -- the failure that costs re-rolls -- and here it tracks
+    the graph rather than the words or the seed.
+
+    B also holds 30-60% more high-frequency detail and does not crush a fifth of
+    the frame to black. A is more saturated and more contrasty, and that is a
+    LOOK: grades.py produces it on purpose, from a picture that still has the
+    shadow information in it.
+
+    AGAINST B: A honoured "the only light is the lamp itself" better; B lit the
+    room ambiently at both seeds. And B renders "on textured paper" as a literal
+    sheet with margins showing, which a full-bleed plate does not want.
+
+    NOT CHANGED, AND DELIBERATELY. Six seasons shipped through the graph as it
+    stands and removing these nodes changes what every one of them looks like --
+    that is an editorial decision about a body of work, not a bug fix. The
+    measurement is two seeds on one prompt with NO LoRA loaded, and every season
+    that shipped ran a style LoRA, which is exactly the thing a bypass at
+    strength 100 would interact with. Run it again on your own film's prompt,
+    with your own LoRAs, before you move the default.
     """
+    # WHERE THE CHAIN STARTS, AS A PAIR, because --plain deletes the node that
+    # everything else used to hang off. Every loader below chains from this
+    # rather than from a literal "51" -- the third time this file has had to
+    # learn that lesson; node 59's comment is the second.
+    root = (["51", 0], ["51", 1]) if not PLAIN else (["1", 0], ["13", 0])
+
     def _tail(idx: int = 0) -> list:
         """Last node in the LoRA chain, whichever loaders actually exist.
 
@@ -72,7 +137,7 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
             return ["59", idx]
         if shot.STYLE_LORA:
             return ["52", idx]
-        return ["51", idx]
+        return list(root[idx])
 
     g = {
         "1": {"class_type": "UNETLoader",
@@ -81,7 +146,13 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
         "2": {"class_type": "KSampler",
               "inputs": {"seed": seed, "steps": 8, "cfg": 1, "sampler_name": "er_sde",
                          "scheduler": "simple", "denoise": 1, "model": _tail(0),
-                         "positive": ["45", 0], "negative": ["28", 0],
+                         "positive": ["45", 0],
+                         # WITHOUT THE REBALANCE THE NEGATIVE IS THE ZEROED
+                         # CONDITIONING ITSELF, which is what node 28 was being
+                         # handed anyway. It is not "no negative": at cfg 1 the
+                         # negative is barely consulted either way, which is
+                         # half of why nobody could hear the difference.
+                         "negative": ["28", 0] if not PLAIN else ["8", 0],
                          "latent_image": ["65", 0]}},
         "4": {"class_type": "VAELoader",
               "inputs": {"vae_name": "Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors"}},
@@ -93,17 +164,9 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
                "inputs": {"filename_prefix": prefix, "format": "png",
                           "format.bit_depth": "8-bit",
                           "format.input_color_space": "sRGB", "images": ["53", 0]}},
-        "28": {"class_type": "ConditioningKrea2Rebalance",
-               "inputs": {"multiplier": 5,
-                          "per_layer_weights": "1.0,1.0,1.0,1.0,1.0,1.0,1.0,2.5,5.0,1.1,4.0,1.0",
-                          "conditioning": ["8", 0]}},
         "45": {"class_type": "TextEncodeKrea2",
                "inputs": {"prompt": prompt, "vision_megapixels": 3,
                           "mask_padding": 0, "clip": _tail(1)}},
-        "51": {"class_type": "LoraLoader",
-               "inputs": {"lora_name": "krea2filterbypass3.safetensors",
-                          "strength_model": 100, "strength_clip": 100,
-                          "model": ["1", 0], "clip": ["13", 0]}},
         "53": {"class_type": "VAEUtils_VAEDecodeTiled",
                "inputs": {"upscale": -1, "tile": False, "tile_size": 512,
                           "overlap": 64, "temporal_size": 4096,
@@ -112,6 +175,21 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
                "inputs": {"width": shot.LATENT[0], "height": shot.LATENT[1],
                           "batch_size": 1}},
     }
+    # THE TWO UNMEASURED NODES, ADDED ONLY WHEN THEY ARE WANTED. Same discipline
+    # as the LoRA loaders below: a node that is not being used is absent from the
+    # graph rather than present and neutralised, so the graph never lies about
+    # what was applied. See the docstring for what --plain is for.
+    if not PLAIN:
+        g["51"] = {"class_type": "LoraLoader",
+                   "inputs": {"lora_name": "krea2filterbypass3.safetensors",
+                              "strength_model": 100, "strength_clip": 100,
+                              "model": ["1", 0], "clip": ["13", 0]}}
+        g["28"] = {"class_type": "ConditioningKrea2Rebalance",
+                   "inputs": {"multiplier": 5,
+                              "per_layer_weights":
+                                  "1.0,1.0,1.0,1.0,1.0,1.0,1.0,2.5,5.0,1.1,"
+                                  "4.0,1.0",
+                              "conditioning": ["8", 0]}}
     # Each loader is added only if its file is actually set, so the graph never
     # carries a loader at strength 0 and _tail() never points at a node that is
     # not there. The COWRIE copy of this file lost node 52 while its indentation
@@ -122,7 +200,7 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
                    "inputs": {"lora_name": shot.STYLE_LORA,
                               "strength_model": shot.STYLE_W,
                               "strength_clip": shot.STYLE_W,
-                              "model": ["51", 0], "clip": ["51", 1]}}
+                              "model": list(root[0]), "clip": list(root[1])}}
     if shot.CHAR_LORA:
         # WHAT THE CHARACTER LORA CHAINS FROM DEPENDS ON WHETHER THERE IS A
         # STYLE LORA, and this used to be hard-coded to "52".
@@ -137,12 +215,29 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
         # Nothing caught it because no film had tried it. The reference season
         # ran style-only or neither; the first film to want a character
         # likeness without a season style was the first to hit it.
-        _base = "52" if shot.STYLE_LORA else "51"
+        # AND IT IS `root` NOW, NOT "51", for the same reason one step further:
+        # --plain removes node 51 as well, so the literal that replaced the
+        # first literal would have had the identical fault under the new flag.
+        base = (["52", 0], ["52", 1]) if shot.STYLE_LORA else root
         g["59"] = {"class_type": "LoraLoader",
                    "inputs": {"lora_name": shot.CHAR_LORA,
                               "strength_model": shot.CHAR_W,
                               "strength_clip": shot.CHAR_W,
-                              "model": [_base, 0], "clip": [_base, 1]}}
+                              "model": list(base[0]), "clip": list(base[1])}}
+
+    # EVERY LINK POINTS AT A NODE THAT IS IN THE GRAPH. This file has shipped
+    # the opposite twice -- node 59 -> node 52 for the character-LoRA-only
+    # combination, and the COWRIE copy losing node 52 outright -- and both were
+    # HTTP 400s at submit that only surfaced because ComfyUI validates links.
+    # Four combinations of two LoRAs times two settings of --plain is eight
+    # graphs, and no film exercises more than one of them.
+    for _nid, _node in g.items():
+        for _k, _v in _node["inputs"].items():
+            if isinstance(_v, list) and len(_v) == 2 and isinstance(_v[0], str):
+                assert _v[0] in g, (
+                    f"node {_nid}.{_k} links to node {_v[0]}, which is not in "
+                    f"this graph (style={bool(shot.STYLE_LORA)} "
+                    f"char={bool(shot.CHAR_LORA)} plain={PLAIN})")
     return g
 
 
