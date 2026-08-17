@@ -330,6 +330,67 @@ def font(name: str) -> str:
     return p
 
 
+def check_instance(timeout: float = 4.0) -> list[str]:
+    """Is the ComfyUI answering at COMFY_URL the one living at COMFY?
+
+    THESE ARE TWO SEPARATE FACTS AND check() ONLY EVER TESTED ONE OF THEM. It
+    asks whether COMFY is a directory. It is perfectly possible for that to be
+    true of a tree that is not the tree the running server uses -- an old
+    install, a second checkout, the default this file falls back to when
+    SEASON_COMFYUI is unset.
+
+    FOUND ON THE DEVELOPMENT MACHINE, DOING EXACTLY THIS. SEASON_COMFYUI was
+    unset, so COMFY fell back to C:\\ComfyUI\\ComfyUI, which exists and holds
+    output folders from a fortnight earlier. The server was running out of
+    I:\\ComfyUI\\ComfyUI. `python season_paths.py` printed "all present" for
+    the ComfyUI line. Renders submitted, ran, and succeeded; the files landed
+    in the other tree; and every plate resolver in the repo would then have
+    said `FAIL: no plate for beat 07 -- run gen_still.py` about a beat that had
+    just been rendered twice.
+
+    THE TEST IS READ-ONLY AND COMPARES THE TWO LISTINGS. ComfyUI advertises its
+    own input directory in LoadImage's file combo. If the files on disk at
+    COMFY_INPUT and the files the server offers have NOTHING in common, and
+    both lists are non-empty, they are not the same folder.
+
+    IT SAYS NOTHING RATHER THAN GUESSING when it cannot tell: server not
+    running (which is not an error -- most of this pipeline runs without it),
+    or either listing empty. An empty input folder is a fresh install, not a
+    misconfiguration, and a check that cannot distinguish those must not
+    pretend to. Advisory by construction.
+    """
+    import json
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"{COMFY_URL}/object_info/LoadImage",
+                                    timeout=timeout) as r:
+            info = json.load(r)
+    except Exception:                                        # noqa: BLE001
+        return []                                    # not running: nothing to say
+    try:
+        served = {str(f) for f in
+                  info["LoadImage"]["input"]["required"]["image"][0]}
+    except (KeyError, IndexError, TypeError):
+        return []
+    if not os.path.isdir(COMFY_INPUT):
+        return [f"ComfyUI answers at {COMFY_URL} but {COMFY_INPUT} is not a "
+                f"directory -- SEASON_COMFYUI points somewhere else than the "
+                f"server is running from"]
+    on_disk = {f for f in os.listdir(COMFY_INPUT)
+               if not f.startswith(".") and
+               os.path.isfile(os.path.join(COMFY_INPUT, f))}
+    if not on_disk or not served or (on_disk & served):
+        return []
+    return [f"the ComfyUI at {COMFY_URL} is NOT the install at {COMFY}.\n"
+            f"    Its input folder and {COMFY_INPUT} have no file in common "
+            f"({len(served)} served, {len(on_disk)} on disk).\n"
+            f"    Renders will succeed and land somewhere this season cannot "
+            f"read: every plate\n    resolver will then say 'no plate -- run "
+            f"gen_still.py' about a beat it just rendered.\n"
+            f"    Set SEASON_COMFYUI to the tree the server is actually "
+            f"running from."]
+
+
 def check() -> list[str]:
     """Everything this machine is missing, as a list of sentences."""
     bad = []
@@ -368,7 +429,10 @@ if __name__ == "__main__":
         rungs = " ".join(f"{cw}x{ch} {e * 100:+.2f}%" for (cw, ch), e
                          in zip(canvases(w, h), aspect_error(w, h)))
         print(f"    {label} {w}x{h}  {rungs}")
-    problems = check()
+    # THE PATHS EXIST, AND THEY ARE THE RIGHT ONES, ARE TWO QUESTIONS. The
+    # second one needs the server, so it is asked here rather than inside
+    # check() -- which every identity.py calls on import and must stay offline.
+    problems = check() + check_instance()
     if problems:
         print("\n  MISSING:")
         for b in problems:
