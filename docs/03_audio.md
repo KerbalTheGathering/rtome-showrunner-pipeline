@@ -38,6 +38,45 @@ shaving transients (`QUIET_WARN` in `assemble.py`).
 
 ---
 
+## Getting the score out of the way: by signal, or by plan
+
+`identity.MIX` names one of `mixes.py`'s buses, and the choice that matters is
+whether the duck follows the **waveform** or the **edit**.
+
+`ducked` sidechains the score to the voice bus. It is the carried arrangement
+and the right default for anything narrated: the duck follows the actual signal,
+so a loud line pushes the music further down than a quiet one.
+
+**`under` draws the same duck from the edit instead, and for this pipeline that
+is often the better answer.** The edit already states the exact second every
+take begins and how long it runs — `assemble.mix()` hands those spans to the bus
+— so there is nothing to infer from the signal. Measured on the toy film
+`python mixes.py --graph` builds, lines at 4.0–6.0 s, 6.5–8.0 s and 20.0–23.0 s:
+
+| t | gain | |
+|---|---|---|
+| 0.00 | 0.550 | before any line |
+| 3.85 | 0.165 | **fully ducked 0.15 s before the word**, not after a compressor notices it |
+| 6.25 | 0.165 | **still down between two lines 0.5 s apart** — spans closer than `2×(pad+ramp)` merge, so it cannot swell inside a sentence |
+| 9.00 | 0.550 | back up |
+
+Three things follow from having no sidechain:
+
+- It **cannot be fooled by a breath or a hard consonant**, and the film's floor
+  does not wander with the performance.
+- It ducks around **silence a sidechain cannot see** — a beat where somebody is
+  clearly about to speak stays down through the pause.
+- It has **no sidechain input to be bounded by**. `sidechaincompress` is bounded
+  by its key, which is how the ducked score once stopped when the last take did
+  and `-shortest` took forty frames of picture with it. `under` cannot reach that
+  fault; `ducked` pads its key to the full length to avoid it.
+
+The cost is that it is the same dip every time, whatever the take is doing. That
+is the point of it — pick by whether the film wants the score to react or to
+behave.
+
+---
+
 ## Loudness
 
 Target: **−16.0 LUFS integrated, −1.5 dBTP true peak**, ceiling −2.0 dBFS.

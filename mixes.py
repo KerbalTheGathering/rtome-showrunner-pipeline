@@ -167,6 +167,17 @@ def _ducked(vo, mus, ctx, o):
     DEGENERATE ON PURPOSE. With no cues this is the voice alone; with no takes
     it is the score alone. Both are said out loud by the caller rather than
     quietly producing a graph with an empty sum in it.
+
+    IF THE EDIT KNOWS ITS OWN LINE TIMES, LOOK AT `under` BEFORE CHOOSING THIS.
+    A sidechain GUESSES where speech is from the signal, and this pipeline does
+    not have to guess -- assemble.mix() already hands the bus the exact spans it
+    placed the takes at. `under` draws the envelope from those instead: it opens
+    the duck before the word rather than after a compressor notices one, it
+    cannot be fooled by a breath or a hard consonant, and it has no sidechain
+    input to be bounded by, so the `-shortest` fault the docstring at the top of
+    this file describes is not reachable from it. This one is still the right
+    default -- a duck that follows the performance is what most narration wants
+    -- but it is a choice, not the only shape. See docs/03_audio.md.
     """
     total = float(ctx["total"])
     parts = []
