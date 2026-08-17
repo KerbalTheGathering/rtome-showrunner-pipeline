@@ -30,6 +30,10 @@ something.
 """
 from __future__ import annotations
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+import direction                                                    # noqa: E402
+
 import identity
 
 import shot
@@ -44,23 +48,27 @@ EXAMPLE_CONTENT = True
 # style block runs in every beat of a session: the thing that must not vary is
 # the thing that gets restated every time.
 _STUDIO = (
-    "Locked-off television studio camera, completely static: the framing does "
-    "not change at any point, the camera does not push in, does not pull back "
-    "and does not drift, and no more of the studio comes into view than is "
-    "already in the first frame. The flat even studio lighting stays exactly as "
-    "bright and as even as it is in the first frame and never changes. The "
-    "painted cloth backdrop behind him hangs still. He is the only person in the "
-    "picture from the first frame to the last and nobody else comes into the "
-    "shot at any point. "
+    "Locked-off television studio camera, bolted to its tripod and completely "
+    "static: it holds one fixed field of view for the whole segment, at the "
+    "same distance and the same angle, and the four edges of the frame fall "
+    "across exactly the same parts of the studio at the end as at the start. "
+    "The flat even studio lighting stays exactly as bright and as even as it is "
+    "in the first frame, and it is that same brightness and evenness in the "
+    "last frame. The painted cloth backdrop behind him hangs still. "
 )
+# The count of people is stated ONCE, in _BODY. It used to be here as well
+# ("He is the only person in the picture... and nobody else comes into the
+# shot") and in _BODY, which is the same fact in two blocks free to disagree --
+# the shape this repo refuses everywhere else.
 
 # THE BOARD. Positive description of an intact surface -- see the header.
 _BOARD = (
-    "The big display board beside him stays exactly where it is on its easel "
-    "and does not move or tilt. Its face stays one unbroken sheet of plain dark "
-    "turquoise felt for the entire shot, the same flat colour from edge to edge "
-    "and from the first frame to the last, clean and completely empty, with the "
-    "pale wooden frame around it unchanged. "
+    "The big display board beside him stands exactly where it is on its easel, "
+    "at the same angle, and it holds that exact position and angle for the "
+    "whole shot. Its face stays one unbroken sheet of plain dark turquoise "
+    "felt for the entire shot, the same flat colour from edge to edge and from "
+    "the first frame to the last, an uninterrupted field of felt with the pale "
+    "wooden frame around it unchanged. "
 )
 
 # The desk, for the same reason it is described in the plate: an empty surface
@@ -93,7 +101,7 @@ THE COUNT OF PEOPLE IS ONE
 There is exactly one person in this picture and it is the presenter already seated in the first frame. He is the only figure in the frame at every moment, and he is still the only figure in the last frame.
 
 THE FRAME IS LOCKED
-The framing is identical in the first and last frame. No push in, no pull back, no drift, no reframing.
+The framing is identical in the first and last frame. It holds one fixed field of view for every frame of the segment, at the same distance and the same angle, and the edges of the frame fall in exactly the same places at the end as at the start.
 """
 
 MOTION = {sid: _HOLD + _BODY for sid in shot.CUT}
@@ -121,3 +129,11 @@ for _sid, _p in MOTION.items():
         assert _w not in _p.lower(), (
             f"segment {_sid} mentions {_w!r} -- the board is filled in post, "
             "and naming writing is how the model paints some")
+
+# A PROHIBITION IS NOT A POSITION, ENFORCED. This file's own docstring makes
+# the argument better than most -- the board is "stated as a POSITIVE PROPERTY
+# OF A SURFACE rather than as a ban on writing, because naming writing is how
+# writing arrives" -- and then _STUDIO spent four clauses on what the camera
+# does NOT do and _BODY's frame lock four more. The rule was understood
+# perfectly and applied to one surface out of the shot. See ../direction.py.
+direction.check(MOTION, what="segment")

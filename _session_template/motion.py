@@ -45,6 +45,10 @@ mid-action; on a beat that STARTS something the ramp is what you wanted.
 """
 from __future__ import annotations
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+import direction                                                    # noqa: E402
+
 import identity
 import shot
 
@@ -54,13 +58,13 @@ import shot
 EXAMPLE_CONTENT = True
 
 
-_HEAD = """{secs}s | 4:3 | 24fps | painted 2D illustration, gouache and ink, visible brush texture -- NOT photoreal, NOT 3D, NOT CGI, NOT anime
+_HEAD = """{secs}s | 4:3 | 24fps | painted 2D illustration, gouache and ink on textured paper, visible brush marks and confident ink linework
 
 FIRST FRAME
-The supplied first frame is the complete and final composition, palette and painting style. Do not redesign it, do not recompose it, and do not add anything that is not already in it.
+The supplied first frame is the complete and final composition, palette and painting style. Everything in this clip is already in that frame, and it keeps that same design, that same layout and those same colours for the whole clip.
 
 STYLE LOCK
-Hold the painted surface of the first frame for the whole clip: visible brush and palette-knife texture, flat layered colour, ink linework, slightly stepped tonal banding. Never resolve toward photography, never smooth into a 3D render, never add photographic depth of field, bloom, glare or lens flare.
+Hold the painted surface of the first frame for the whole clip: visible brush and palette-knife texture, flat layered colour, ink linework, slightly stepped tonal banding. The picture is paint on paper in the first frame, in every frame between, and in the last frame.
 """
 
 # THE FRAME, HELD. Runs in every beat of the film unchanged, for the same
@@ -73,14 +77,14 @@ Hold the painted surface of the first frame for the whole clip: visible brush an
 # a NameError on import, in the file that teaches the rule.)
 _LOCK = """
 THE FRAME
-The framing is identical in the first frame and the last frame. It does not push in, does not pull back, does not drift and does not reframe at any point, and no more of the location comes into view than is already in the first frame."""
+The framing is identical in the first frame and the last frame. It holds one fixed field of view for the whole clip, at the same distance and the same angle, and the four edges of the frame fall across exactly the same parts of the location at the end as they do at the start."""
 
 # AMBIENT BLOCKS. One per condition, shared by every beat in that condition --
 # two beats in the same weather must be handed the same string, or they are not
 # the same weather.
 _NIGHT = """
 THE NIGHT
-The air is still and the grass moves only where the wind touches it. The lamp keeps its exact brightness and its exact colour. The dark beyond the headland stays dark and nothing brightens it."""
+The air is still and the grass moves only where the wind touches it. The lamp keeps its exact brightness and its exact colour. The dark beyond the headland is the same flat black in the first frame, in every frame between, and in the last."""
 
 _DAWN = """
 THE MORNING
@@ -89,9 +93,15 @@ The sky brightens very slowly and evenly from the horizon up. The sea below hold
 # THE AUDIO CHANNEL, OCCUPIED. Written as what the soundtrack IS, continuously,
 # because a list of things it must not contain buys mumbling rather than
 # silence. Verified by transcribing the returned audio -- see docs/04_lipsync.md.
+#
+# THIS BLOCK USED TO END WITH SIX PROHIBITIONS ("No voice, no dialogue, no
+# whispering, no muttering, no singing and no music at any point") in the file
+# whose docstring forbids them, and docs/05_prompting.md's own table sends that
+# exact phrasing back to "describe the room tone". The description was already
+# doing the work; the list was spending words arguing with it.
 _AUDIO = """
 AUDIO
-The soundtrack of this clip is one continuous quiet room tone and nothing else, at the same steady level from the first frame to the last: wind over grass, the small sounds of the building, and still air. That flat ambience is the entire soundtrack and it never stops, never changes and is never interrupted. No voice, no dialogue, no whispering, no muttering, no singing and no music at any point."""
+The soundtrack of this clip is one continuous quiet room tone, at the same steady level from the first frame to the last: wind over grass, the small sounds of the building, and still air. That flat ambience is the whole of the soundtrack, it runs unbroken for the entire length of the clip, and it is the only thing on the audio track in the last frame as in the first."""
 
 MOTION: dict[str, str] = {
 
@@ -102,7 +112,7 @@ MOTION: dict[str, str] = {
     "01": _HEAD.format(secs="10.0") + _LOCK + _NIGHT + """
 BEATS
 0-4s       The keeper walks steadily away from the camera up the slope, his lantern swinging a little at his side. The grass moves around his boots.
-4-8s       He keeps walking at the same pace and does not turn. He is smaller in the frame and still walking away.
+4-8s       He keeps walking at the same pace with his back to the camera the whole way. He is smaller in the frame and still walking away.
 8-10s      He is still walking away up the slope in the last frame.
 
 THE COUNT OF PEOPLE IS ONE
@@ -113,17 +123,17 @@ The lamp room at the top of the tower is unlit and black in the first frame, it 
 
     "02": _HEAD.format(secs="9.0") + _LOCK + _NIGHT + """
 BEATS
-0-3s       The keeper stands at the rail with his hand on it, looking at the lens. Nothing else in the room moves.
-3-7s       He takes his hand off the rail and lets it fall to his side. His shoulders stay square to the lens and his feet do not move.
+0-3s       The keeper stands at the rail with his hand on it, looking at the lens. Every other object in the room holds the exact position it has in the first frame.
+3-7s       He takes his hand off the rail and lets it fall to his side. His shoulders stay square to the lens and both feet stay planted where they are.
 7-9s       He is still standing in the same place with his hand at his side in the last frame.
 
 THE LENS KEEPS ITS POSITION
-The great lens stands exactly where it is in the first frame, at the same angle, and it does not rotate, tilt or move at any point. It is in the same position in the last frame.""",
+The great lens stands exactly where it is in the first frame, at the same angle, and it holds that exact position and that exact angle for every frame of the clip. It is in the same position at the same angle in the last frame.""",
 
     "03": _HEAD.format(secs="11.0") + _LOCK + _DAWN + """
 BEATS
 0-4s       The keeper walks down the slope away from the tower, side-on to the camera, unhurried.
-4-9s       He continues down at the same pace, crossing the frame from right to left, getting no closer to the camera.
+4-9s       He continues down at the same pace, crossing the frame from right to left, holding the same distance from the camera the whole way.
 9-11s      He is still walking down and to the left in the last frame.
 
 THE LAMP STAYS LIT
@@ -176,3 +186,17 @@ assert set(MOTION) == set(shot.CUT), (
     f"motion covers {sorted(set(MOTION) ^ set(shot.CUT))} differently from the "
     "cut -- every beat that is shot needs direction and only beats that are "
     "shot should have any")
+
+# AND THE RULE AT THE TOP OF THIS FILE IS NOW ENFORCED RATHER THAN RECOMMENDED.
+#
+# It was a docstring for five seasons, and it is broken by accident in the most
+# natural phrasing English offers -- a fork writing "constant pace" reached for
+# "moving NO faster at the end than at the beginning", into this very file,
+# minutes after reading the paragraph that forbids it.
+#
+# EVERY BLOCK IN THE EXAMPLE ABOVE FAILED THIS WHEN IT WAS FIRST RUN: the style
+# header's "NOT photoreal, NOT 3D", the frame lock's four "does not"s, the
+# night's "nothing brightens it", the audio block's six "no"s, and three of the
+# beats. The template was demonstrating against its own rule in the tree that
+# gets cloned into every new season. See ../direction.py.
+direction.check(MOTION)

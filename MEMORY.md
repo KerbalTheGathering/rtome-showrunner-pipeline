@@ -77,6 +77,7 @@ wrong, with the numbers.
   grades.py              the look library. `none` default, `flat` carried
   framing.py             crop/pad/stretch with a named or measured anchor
   mixes.py               the audio bus library. `ducked` default
+  direction.py           refuses a motion prompt that says what NOT to do
   new_season.py          clone this template / add a session folder
   docs/
   cold_open/             the front door. Its own tree. Delete if not wanted

@@ -21,6 +21,10 @@ the light is lying on.
 """
 from __future__ import annotations
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+import direction                                                    # noqa: E402
+
 import identity
 
 import shot
@@ -36,15 +40,20 @@ EXAMPLE_CONTENT = True
 # true in the last frame -- a prohibition is not a position (docs/05_prompting).
 _HOLD = """
 THE FRAME IS LOCKED
-The framing is identical in the first and last frame. No push in, no pull back, no drift, no handheld tremor, no reframing, no zoom.
+The framing is identical in the first and last frame. The camera is bolted down on a tripod and holds one fixed field of view for the whole clip, at the same distance, the same height and the same angle, and the four edges of the frame fall across exactly the same parts of the location at the end as at the start.
 
 THE LIGHT IS THE SAME AT THE END AS AT THE START
 The hour, the colour and the direction of the light are exactly as they are in the first frame for every frame of the clip, and they are exactly the same in the last frame. The sun holds the position it has and holds the size it has, and it is in that same position at that same size in the last frame.
 """
 
+# THE PLACE, STATED AS WHAT IT HOLDS. This block used to read "There are no
+# people, no boats and no animals..." -- which is the exact example
+# docs/05_prompting.md uses for the trap ("'No boats' does not remove boats"),
+# sitting in the tree that is copied into every new season. The count is a
+# positive property and reads as one now.
 _EMPTY = """
-THE PLACE STAYS EMPTY
-There are no people, no boats and no animals in the first frame, none arrive at any point, and there are still none in the last frame. Nothing enters the frame from any edge.
+THE PLACE KEEPS EXACTLY WHAT IT HAS
+Everything in this picture is already in the first frame: the water, the light and the built things standing in it, and that is the complete list for every frame of the clip. The count of people in the frame is zero from the first frame to the last, the count of boats is zero, the count of animals is zero, and all three counts are still zero in the last frame. The four edges of the frame stay closed for the whole clip.
 """
 
 # THE AUDIO CHANNEL, OCCUPIED. An omni-modal model invents a soundtrack when you
@@ -52,7 +61,7 @@ There are no people, no boats and no animals in the first frame, none arrive at 
 # one thing it cannot have. See docs/04_lipsync.md.
 _AUDIO = """
 AUDIO
-The soundtrack of this clip is one continuous quiet ambience and nothing else, at the same steady level from the first frame to the last: moving water, distant air, and nothing more. That flat ambience is the entire soundtrack and it never stops, never changes and is never interrupted. No voice, no dialogue, no singing and no music at any point.
+The soundtrack of this clip is one continuous quiet ambience, at the same steady level from the first frame to the last: moving water and distant air, and that pair is the complete contents of the audio track. That flat ambience is the whole of the soundtrack, it runs unbroken for the entire length of the clip, and it is the only thing on the track in the last frame as in the first.
 """
 
 MOTION = {
@@ -63,11 +72,11 @@ BEATS
 """,
     "02": _HOLD + _EMPTY + _AUDIO + """
 BEATS
-0-10s      Small waves break against the base of the piling and run back down it. The piling itself does not move, lean or rock.
+0-10s      Small waves break against the base of the piling and run back down it. The piling itself stands rigid and vertical in the first frame and is still rigid and vertical in the last.
 """,
     "03": _HOLD + _EMPTY + _AUDIO + """
 BEATS
-0-12s      The water moves in long slow swells. The far shoreline holds its exact shape and darkness and does not come closer.
+0-12s      The water moves in long slow swells. The far shoreline holds its exact shape, its exact darkness and its exact distance from the camera for the whole clip.
 """,
 }
 
@@ -107,6 +116,21 @@ for _sid, _p in MOTION.items():
 # NOBODY SPEAKS IN THE COLD OPEN. If a mouth moves here, the cut to the first
 # interstitial stops being the first voice in the feature, which is the whole
 # shape of the thing.
+#
+# NOTE WHAT THIS CHECK IS AND IS NOT. It asks whether the PROMPT names speech,
+# because naming it is how it arrives -- it is a guard on the words, not on the
+# clip, and the clip still has to be listened to. That is also why it reads as
+# a list of forbidden words while direction.check() below refuses forbidden
+# words in the prompt: one is a rule about what the text may MENTION, the other
+# a rule about how the text may PHRASE what it wants.
 for _sid, _p in MOTION.items():
     for _w in ("speak", "says", "talking", "mouth moves", "lips"):
         assert _w not in _p.lower(), f"beat {_sid} has somebody speaking"
+
+# A PROHIBITION IS NOT A POSITION, ENFORCED. This tree is where the rule was
+# most broken: `_HOLD` opened with six ("No push in, no pull back, no drift, no
+# handheld tremor, no reframing, no zoom") and `_EMPTY` was three more of the
+# exact phrasing docs/05_prompting.md uses as its worked example of the trap --
+# in the folder that is copied verbatim into every new season. Fault 3 in
+# learnings.md fixed this file's LIGHT guard and left its prompts alone.
+direction.check(MOTION)

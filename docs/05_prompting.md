@@ -111,6 +111,14 @@ true in the last frame.
 The pattern is always the same three parts: **what it is now, that it stays, and
 that it is still that way in the last frame.**
 
+**And it is a check now, not advice.** `direction.py` holds the banned list and
+every `motion.py` calls `direction.check(MOTION)` at import, because this rule
+is broken by accident in the most natural phrasing English offers — a fork
+writing "constant pace" reached for *"moving **no** faster at the end than at
+the beginning"*, into the very file that forbids it, minutes after reading the
+paragraph above. Sixteen of the eighteen direction blocks this repo shipped
+would have been refused by it.
+
 ### The other motion rules
 
 - **Naming what a character LOOKS AT rotates them toward it.** Useful when you
