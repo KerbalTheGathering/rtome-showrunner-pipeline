@@ -5,11 +5,13 @@
 A running document. Each section is one season built on this template, what it
 broke, and what was changed in response. Append; do not rewrite.
 
-Four seasons so far and twenty faults between them. **Every single one
+Six seasons so far and twenty-seven faults between them. **Every single one
 rendered clean, exited 0, and was wrong** -- that is not a coincidence, it is
 selection: the faults that crash get found in the first hour by whoever wrote
 them, and the ones that reach a document like this are the ones a green build
-cannot see.
+cannot see. Fault 27 is the purest example in here: a render that succeeded, a
+file that was written, a check that printed "all present", and a pipeline that
+could not find any of it.
 
 The first fork's report is [`docs/10_fork_report.md`](docs/10_fork_report.md).
 It took the template to a 139.6s feature — a cold open, three films, a
@@ -20,8 +22,13 @@ film, no show layer, 55.2s, 2.39:1 scope, shot end to end in an afternoon.**
 A small season exercises different machinery from a large one, and all three
 faults below are things a six-film season would never have hit.
 
-Everything here happened. Nothing is speculative, and every fix named was
-applied to this repo and then run.
+Everything here happened. Nothing is speculative.
+
+**Every fix named was applied to this repo and then run.** Faults 21–26 came
+out of a sixth season built in a copy that has since diverged completely, so
+they arrived here as a work order rather than a changelog; that work was done
+on **2026-08-17** and each entry now says what landed. Fault 27 was found while
+doing it.
 
 ---
 
@@ -1137,3 +1144,543 @@ exits, not a sign of health.
   the files a table points at exist on disk. The fix here was operator
   discipline (run `make_music.py`); the check that would have caught it in
   four seconds instead of after a full video bake has not been written.
+
+---
+
+# A Suitable Candidate — a sixth season, a scope aspect that did not snap, and a model that needs a run-up
+
+**Read this one differently from the five above it.** Every previous section
+could end "and the fix was applied to this repo and then run." This one cannot.
+This season was built in a **copy** of the template at
+`E:\Claude\Projects\EMPLOYMENT OPPORTUNITIES`, which is not a git repo and no
+longer shares a line of code with this one. Every fix named below was written
+and run **there**.
+
+So this section arrived as a work order rather than a changelog. Faults 21–24
+were findings about *this* repo, verified against the files in it at
+**`cbf8378`** (2026-08-16, `docs: add 11_asset_library.md`). 25 and 26 were
+carried from that fork's own documentation.
+
+> **All of it has now been applied here**, on 2026-08-17, one commit per fault.
+> Each entry below carries a **What landed** note. Fault 25's A/B was run
+> against the local instance rather than taken on trust, and doing so turned up
+> a twenty-seventh fault, which is written up at the end.
+
+Fault 21 was reproducible in four lines and was the one to start with:
+
+```
+python -c "import season_paths as sp; cw,ch=sp.canvases(2688,1120)[0]; \
+print(f'{cw}x{ch} = {cw/ch:.4f} against a delivery 2.4000')"
+```
+
+---
+
+## The season this came from
+
+| | |
+|---|---|
+| Shape | one narrated short film, six movements, no show layer |
+| Delivery | **2592×1080, 2.40:1** — 1080 on the SHORT side |
+| Runtime | 349.0s of cut + a 6.5s end card = **355.5s** |
+| Plates | Krea2 + 3 style LoRAs + 1 character LoRA, 72 locked plates |
+| Motion | local H3, 6-step turbo, ~90 takes, $0.00 |
+| Voice | ElevenLabs, 34 takes, 131.0s of speech |
+| Score | ElevenLabs `music_v2`, one 340s composition plan, 10 cues, ~$0.85 |
+
+---
+
+## 21. `season_paths.canvases()` does not return the delivery aspect, and five seasons never noticed
+
+Its docstring is the claim:
+
+> ```
+> Render canvases at the DELIVERY aspect, largest first.
+> ```
+
+It snaps **both edges independently** to a multiple of 32 (`_snap32`), which
+cannot preserve an arbitrary ratio. Measured against this repo:
+
+| delivery | canvas returned | aspect error |
+|---|---|---|
+| 4:3, 1440×1080 | 1024×768 | **0.00%** |
+| 16:9, 1920×1080 | 1024×576 | **0.00%** |
+| 2.39 scope, 1482×602 | 1024×416 | **−0.01%** |
+| **2.40 scope, 2688×1120** | **1024×416** | **+2.56%** |
+
+**That is why five seasons ran clean.** 4:3 and 16:9 snap exactly. And the
+second fork's 2.39 delivery — 1482×602 — *is itself* 2.4618:1, which is the
+canvas aspect, so its plates were already the shape the canvas wanted. The
+function has only ever been asked for aspects that happened to agree with it.
+
+Ask it for a true 2.40:1 and the canvas is 2.4615:1, and every plate handed to
+the video model is squeezed 2.56% before the model sees it.
+
+**The model squashes; it does not crop.** Measured rather than assumed — clip
+frame zero against the source plate resized three ways (squashed to fit,
+cropped horizontally, cropped vertically), on eight shots spanning all four
+style LoRAs. Squash fit 2–3× better than either crop, **unanimously, 8 of 8**.
+
+So the picture comes back squeezed and **nothing in the bake un-squeezes it**.
+`assemble.fit_aspect()` → `framing.apply(FIT, …)` fits by cropping, which
+preserves the distortion and trims the edges as well.
+
+**The repo already knows this failure mode by name.** Directly beneath
+`canvases()` sits `at_aspect()`, whose docstring reads:
+
+> ```
+> that pair was typed, so a season that is not 4:3 would have synced at 4:3
+> and been squashed on the way back out.
+> ```
+
+The lip-sync path was fixed for exactly this. The plate path was not.
+
+**What landed** (`95c03df`). Both halves, plus a third nobody had noticed.
+
+`_fit_grid()` searches the long edge two 32-steps down and tries **both**
+short-edge neighbours at each, scoring on ratio error with ties to the larger
+canvas; the ladder is derived from the pair that won rather than from the
+pre-search one. `framing.unsqueeze()` then finishes the job at the bake, called
+from `fit_aspect()` before any fit, keyed on the **exact** canvas size so it
+fires on a frame off the video model and on nothing else.
+
+Measured end to end on a drawn circle through the 2.40 path, width/height:
+
+```
+old canvas 1024x416   crop only 1.0300     unsqueeze+crop 1.0000
+new canvas  992x416   crop only 0.9901     unsqueeze+crop 1.0000
+```
+
+**The third thing:** only rung 0 had ever been measured. The lower rungs were
+worse than the table above and `pick_canvas()` reaches them on a long beat, so
+they were in use — 16:9's bottom rung was **−3.57%**, and is now −0.48%. No
+rung 0 moved on a shape a season has shipped, so existing clips keep their
+canvas.
+
+The tolerance idea was **dropped deliberately**: ~0.2% refuses 16:9's lower
+rungs, which are the best the 32-grid has and are corrected at the bake anyway.
+`aspect_error()` prints instead and says it is advisory —
+`docs/06_verification.md` is explicit that a check refusing correct work costs
+as much as one passing wrong work.
+
+---
+
+## 22. `h3_shoot.py` gives the video model no run-up, and the first half second of every clip is slower than the rest
+
+`h3_shoot.py:173` — `length = grid(secs)`. The clip is exactly as long as the
+beat, so its first frame is the cut's first frame.
+
+That first frame is a **still plate**, and the model spends roughly its opening
+half second climbing from it to the motion that was asked for. Measured on one
+shot across **four different seeds**: the opening eighth of each clip ran at
+**0.30, 0.32, 0.33 and 0.34 of that same clip's own peak** frame-to-frame
+change. The consistency across independent draws is the finding — it is a
+property of conditioning on a still, not a bad draw.
+
+Neither words nor seeds move it:
+
+- *"The movement is constant"* was **already in the shipped prompt** and did
+  nothing. It describes a property, not the first frame.
+- Rewriting it to *"already at full speed in the very first frame"* moved the
+  ramp only **2.36× → 2.01×**.
+- The best of four seeds still opened at 0.33 of its own peak.
+
+**On most beats this is invisible or correct** — a man starts walking, a candle
+starts guttering, a banner starts to lift. It is a fault only where the beat
+must be **already at speed on the frame it cuts in on**: a melee, a chase,
+anything cut into mid-action.
+
+**The fix is structural.** Shoot the clip longer by a per-beat amount and throw
+the run-up away in post. In the fork: `motion.RUNUP[47] = 1.0`, read by the
+shooter to extend the length *and* by the trimmer to remove exactly that much —
+one number, so the two cannot drift apart — and the trimmer **asserts that
+enough frames survive to fill the beat** rather than shipping a short clip. That
+assert fired correctly on the first attempt, against a clip shot before `RUNUP`
+existed.
+
+| | first eighth | peak | first/peak | ramp |
+|---|---|---|---|---|
+| as shipped | 1.39 | 8.05 | **0.17** | 2.70× |
+| after dropping the run-up | 7.54 | 8.84 | **0.85** | 0.87× |
+
+**What landed** (`011b86c`). `edit.RUNUP[sid]`, not `motion.RUNUP` — it is a
+claim on the clip **length**, which is the same argument that put `TRANSITIONS`
+in `edit.py` rather than in the assembler. `table()` adds it to the clip length
+(so `h3_shoot` buys it, via `edit.SECS`) and to the in-point (so `assemble`
+skips it, via `r["ss"]`), off one lookup. `motion.py`'s docstring points at it,
+since the beat that needs one is found while writing direction.
+
+```
+no run-up        02  beat 5.40  buy 7s  ss 0.35   (unchanged)
+runup 1.0 on 02  02  beat 5.40  buy 8s  ss 1.35
+runup 1.0 on 01  FAIL: beat 01 needs 11.2s plus a 1.0s run-up but the vendor
+                 caps at 12s -- shorten the line, split the beat, drop the run-up
+```
+
+`assemble.plan()` gets an **exact** frame check when a run-up is in play. The
+trap is specific: `h3_shoot` skips a beat that already has a clip, so adding a
+run-up to an already-shot beat moves the in-point into a clip nobody
+lengthened, and the existing 0.9 slack is loose enough to ship most of a second
+short in silence. The message says to re-shoot it.
+
+`cold_open` gets a note rather than the machinery — it has no in-point at all,
+and its shots are the ones that *start* something, where the ramp is the shot.
+
+---
+
+## 23. `motion.py` teaches the negation rule in prose and does not enforce it
+
+`_session_template/motion.py` opens with the rule, correctly and at length:
+
+> ```
+> Naming a thing you do not want puts it in the frame's vocabulary; it does
+> not reliably remove it…
+> ```
+
+It is a comment. Nothing checks the prompts.
+
+The fork added an assert — a `_BANNED` tuple (`" no "`, `" not "`, `"n't"`,
+`"never"`, `"nothing"`, `"without"`, `"empty of"`, `"free of"`, `"absent"`,
+`"neither"`, `"none of"`) refused at import, naming the offending beat.
+
+**It caught a violation in the same session it was consulted.** Rewriting a beat
+to fix the speed ramp in fault 22, the natural English for "constant pace" came
+out as *"moving **no** faster at the end than at the beginning"* — written into
+the very file that states the rule, by someone who had just read it. The guard
+refused the import; the phrase became *"holding one even pace from the first
+frame to the last."*
+
+A rule this easy to break by accident, in the most natural phrasing available,
+belongs in an assert and not a docstring.
+
+**What landed** (`6695107`). `direction.py` at the season root — one file, not
+three copies, because fault 8 is a correct `draw_text` that sat in
+`cold_open/assemble.py` the whole time while the copy every season clones had
+the broken one. Every `motion.py` calls `direction.check(MOTION)` at import.
+
+**It refused the repo's own shipped example, in every tree.** Run against the
+direction text as it stood at HEAD:
+
+```
+_session_template   8 of 9 blocks refused, 42 phrases
+cold_open           6 of 7 blocks refused, 28 phrases
+show                2 of 2 blocks refused, 11 phrases
+```
+
+The style header's *"NOT photoreal, NOT 3D, NOT CGI, NOT anime"*. The frame
+lock's four "does not"s in one sentence. `cold_open`'s `_HOLD`, opening with
+six, and its `_EMPTY` — which is `docs/05_prompting.md`'s own worked example of
+the trap (*"'No boats' does not remove boats"*) written out as direction, in the
+folder copied verbatim into every new season. `show/motion.py`'s docstring
+makes the argument for the positive form better than most and then spends eight
+clauses on what the camera does not do.
+
+Fault 3 above fixed `cold_open`'s **light guard** and left its prompts alone.
+This is the other half of that finding. Every block is rewritten to the
+three-part form; the audio blocks lose their "No voice, no dialogue" lists
+outright, since `docs/05_prompting.md` sends that exact phrasing back to
+"describe the room tone" and the description was already doing the work.
+
+`python direction.py` self-tests against seven phrasings it must catch and five
+it must not — including "cannot", "another" and "note", which contain banned
+substrings and are ordinary direction. A negation checker that silently matched
+nothing would vouch for every prompt in the repo.
+
+---
+
+## 24. `mixes.py` ducks the score by listening to the voice, when the edit already knows where every line is
+
+`mixes.py:157` registers `ducked` — `sidechaincompress`, the score keyed off the
+voice bus. It works, and it carries its own scar in the module docstring: it
+*"once ate forty frames off the end of a finished film"*, because the compressor
+is bounded by its sidechain input.
+
+But a sidechain **guesses where speech is** from the signal. This pipeline does
+not have to guess: the edit states the exact second every take begins and how
+long it runs.
+
+The fork drew the duck envelope from the plan instead — attack applied *before*
+the line starts rather than after a compressor notices, and overlapping windows
+taking the minimum so it cannot pump back up between two lines 0.5s apart. It is
+sample-exact, it cannot be fooled by a breath or a hard consonant, and it has no
+sidechain input to be bounded by, so the `-shortest` fault is not reachable.
+
+Worth having as a second registered mix beside `ducked`, for seasons whose edit
+knows its own line times.
+
+**What landed** (`31dad05`) — **nothing, because it was already there.**
+`mixes.under` has done exactly this since the library was extracted.
+
+Verified rather than assumed: the ffmpeg volume expression evaluated directly,
+on the toy film `mixes.py --graph` builds, lines at 4.0–6.0 s, 6.5–8.0 s and
+20.0–23.0 s:
+
+```
+t 0.00   gain 0.550   before any line
+t 3.85   gain 0.165   fully ducked 0.15s BEFORE the word
+t 6.25   gain 0.165   still down between two lines 0.5s apart
+t 9.00   gain 0.550   back up
+```
+
+Every property named above: attack ahead of the line, spans closer than
+`2×(pad+ramp)` merged so it cannot swell inside a sentence, the deepest duck
+taken where windows overlap, and no sidechain input to be bounded by.
+
+So this is fault 8's shape again — *"AND THE CORRECT CODE WAS ALREADY IN THE
+REPO"* — and `POLO_TEES` hand-porting `italk.py` for the same reason. What was
+actually missing is that **nothing a person reads while deciding how to duck a
+score mentioned it**: `identity.py` names it in a passing comment, and
+`docs/03_audio.md`, the document about the audio chain, had not a word about
+choosing a bus. Fixed where the looking happens, plus a pointer out of
+`_ducked`'s own docstring. No second bus, because a duplicate of `under` is the
+duplication this repo keeps paying for.
+
+---
+
+## 25. `gen_still.py` still carries two nodes a fork removed for degrading Krea2
+
+Present in **all three trees** — `_session_template/gen_still.py:96,104`,
+`show/gen_still.py`, `cold_open/gen_still.py`:
+
+- node `28`, `ConditioningKrea2Rebalance`
+- the `krea2filterbypass3.safetensors` LoRA
+
+The fork's render harness omits both deliberately and says so in its own
+docstring and README.
+
+**⚠ Carried from that fork's documentation.** That session confirmed the nodes
+are still present here, and did **not** run the A/B. Worth one controlled
+comparison before either removing them or writing down why they stay.
+
+**What landed** (`e66f2b2`). **The comparison was run**, against the local
+instance, through the shipped `graph()` itself. Two seeds, one prompt, no
+LoRAs, everything else byte-identical: a painted night interior with brass,
+glass, a named optical part and a figure.
+
+| | A (as ships) | B (`--plain`) |
+|---|---|---|
+| near-black | 15.3% / 21.5% | **0.21% / 0.77%** of the frame |
+| detail (lapvar) | 0.0074 / 0.0076 | **0.0095 / 0.0121** |
+| saturation | 0.236 / 0.297 | 0.188 / 0.217 |
+| the fresnel lens | **generic lantern**, both seeds | **rendered as asked**, both seeds |
+
+**The lens is the finding.** The prompt names "the great fresnel lens"; A
+returned an ordinary storm lantern at both seeds and B drew the concentric
+prism rings at both. That is `docs/05_prompting.md`'s *"a specific prop falls
+back to a generic"* — the failure that costs re-rolls — tracking the **graph**
+rather than the words or the seed. B also holds 30–60% more high-frequency
+detail and does not crush a fifth of the frame to black.
+
+Against B: A honoured *"the only light is the lamp itself"* better, and B
+renders "on textured paper" as a literal sheet with margins, which a full-bleed
+plate does not want. A's extra contrast and saturation is a **look**, and
+`grades.py` makes it on purpose from a picture that still has its shadows.
+
+**The default did not move**, and that is deliberate twice over. Six seasons
+shipped through this graph and removing the nodes changes what all of them look
+like — an editorial decision about a body of work, not a bug fix. And the
+measurement has a hole in it: **no LoRA was loaded**, while every season that
+shipped ran a style LoRA, which is exactly what a bypass at strength 100 would
+interact with. `--plain` is the flag that made this one command instead of an
+edit, and it stays for whoever runs it on a real film's prompt.
+
+Two structural fixes fell out of adding the flag: the chain root is a **pair**
+now rather than the literal `"51"` (node 52 and node 59 both hard-coded a node
+id, and node 59's own comment records the last time that shipped an HTTP 400),
+and `graph()` asserts every link points at a node that is in the graph — two
+LoRAs times `--plain` is eight graphs and no film exercises more than one.
+
+---
+
+## 26. `make_vo.py`'s trailing-transient trim did not reproduce on 34 takes
+
+`_session_template/make_vo.py:17` and `show/make_vo.py:17` state it as
+universal — *"Every eleven_v3 take has a transient glued to its final
+milliseconds"* — and prescribe a trim at mix time.
+
+The fork profiled **all 34 of its takes at sample level** (peak amplitude in the
+final 10ms against peak in the preceding 100ms, which is the actual signature of
+a trailing transient) and found it in **zero of them**. Trimming 25ms from every
+take would have discarded 850ms of real speech across the film to solve a
+problem it did not have.
+
+What *was* wrong is milder and needs a different fix: several takes end while
+low-level energy is still present, and a file ending at 0.09 butted against
+digital silence **clicks**. That is a discontinuity, and the fix for a
+discontinuity is a **fade**, which removes no samples at all.
+
+**⚠ Also carried from that fork's documentation rather than re-measured here.**
+Either way the prescription should be conditional on a measurement rather than
+stated as a property of the vendor.
+
+**What landed** (`39e5f33`). Conditional, in both trees:
+
+```
+transient, ends in silence   trim 25ms, fade 50ms    (the old behaviour)
+transient, ends on a word    trim 12ms, fade 20ms
+no transient                 trim  0,   fade 10ms
+```
+
+The detector reads **peaks, not RMS** — a 10 ms spike barely moves the RMS of
+the window holding it, which is why the existing trailing-silence measurement
+could not have seen one even if it had been looking, and it was not looking.
+Threshold 2.0, below the 3–5× the real ones measured and above anything
+ordinary word-final energy does. Checked against synthetic takes:
+
+```
+documented transient (0.06 tail -> 0.29 spike)   4.83  TRIM
+ends in clean silence                            0.00  fade only
+ends on a word, decaying                         1.06  fade only
+ends abruptly at ~0.09 (clicks, no spike)        1.38  fade only
+word-final plosive, 1.6x                         0.82  fade only
+```
+
+The **fade** is the fix for the milder fault, and it removes no samples. The
+trailing-silence half is kept: it is what stops a warranted trim landing on
+speech, which shipped once on Session #3's last line.
+
+`mix()` prints what the measurement decided (`vo tails: 9 no transient, 1
+transient (25 ms trimmed in total)`). The count it leaves alone is the whole
+point, and a run that suddenly trims everything — or nothing — is the first
+sign the threshold has stopped discriminating. `show/` had no way to ask the
+question at all; `tail_spike()` is new there.
+
+---
+
+## 27. `season_paths.check()` never asked whether the configured ComfyUI is the running one
+
+**Found while running fault 25's A/B, by doing exactly this.**
+`SEASON_COMFYUI` was unset, so `COMFY` fell back to `C:\ComfyUI\ComfyUI` —
+which **exists**, and holds output folders from a fortnight earlier. The server
+was running out of `I:\ComfyUI\ComfyUI`.
+
+`python season_paths.py` printed the ComfyUI line as fine, because `check()`
+asks whether `COMFY` is a directory and it is. The render submitted, ran, and
+succeeded. The file landed in the other tree. The probe script's own
+disk-listing scan found nothing and reported `NO OUTPUT` on a render that had
+completed perfectly — which is how it was noticed at all.
+
+In a season that would read: every plate resolver saying *"FAIL: no plate for
+beat 07 — run gen_still.py"* about a beat that had just been rendered twice,
+and an operator rendering it a third time into the same invisible folder.
+
+> **The path exists and the path is the right one are two facts, and only the
+> first was ever tested.** This is the repo's own thesis pointed at its own
+> configuration layer: the check passed, nothing crashed, and it was wrong.
+
+**What landed** (`e0fccb5`). `check_instance()`, read-only: ComfyUI advertises
+its own input directory in `LoadImage`'s file combo, so if that listing and
+`COMFY_INPUT` have no file in common and both are non-empty, they are not the
+same folder. It also catches the cruder case this machine had, where the
+configured tree has no `input` directory at all.
+
+It says **nothing rather than guessing** when it cannot tell — server not
+running (not an error; most of this pipeline runs without it), or either
+listing empty, since an empty input folder is a fresh install. It lives outside
+`check()`, which every `identity.py` calls on import and which must stay
+offline; `season_paths.py`'s own `main()` runs both.
+
+---
+
+## What this fork built that the template has no equivalent of
+
+Not faults — machinery that did not exist to be broken. Named because the next
+scope-aspect, long-form season will want all of it.
+
+- **A cut defined once and read by everything.** One module owns where every
+  shot and every line lands; the storyboard, the animatic, the assembler and the
+  audio mixer all read it, so they cannot disagree about which shot a line plays
+  over. The template's equivalents each work out their own offsets.
+- **A verifier that proves the assembled film IS the cut.** Length is the check
+  that cannot fail interestingly — a film with two shots transposed is exactly
+  the right length. So: for every shot, compare the frame the finished film has
+  at that shot's timecode against frame zero of the clip it should open on —
+  **and against the wrong clip**, so the test is shown able to fail. Honest
+  matches scored 1.2–4.9; wrong clips 20.9–80.8.
+- **A verifier that proves a post step reached the plate.** Hash every locked
+  plate against every image that could have been its source; anything with a
+  match is provably untouched since the sampler. A plate it *cannot* trace to a
+  raw render is indistinguishable from one somebody quietly painted on — so when
+  a relock renders into a new output directory, the right response is to tell
+  the tool where the renders went, **never to relax the check**. It fired
+  correctly three times this season on exactly that.
+- **Per-cue fader targets for a generated score.** As generated, a 10-cue score
+  spanned **28.6 dB** (loudest cue −14.0 dBFS, quietest −42.6 with a 0.035
+  peak). Normalising the file as a whole put the quiet end near **−46 dBFS —
+  below audibility**, which silently converts "the score fades away" into "there
+  is no score". State a target dBFS per cue, measure each cue, apply the
+  difference, and ride the gain across the joins. 28.6 dB → 11 dB kept the decay
+  *and* kept the quiet end in the room.
+
+---
+
+## Three findings about derivation, which the template does not do at all
+
+The fork derives shots from locked environment plates by img2img. All three cost
+renders.
+
+1. **A description that contradicts the init image fights the derivation instead
+   of steering it — and at denoise 0.65 the description wins.** A block calling
+   a stone "a rounded boulder" when the plate held a low warm-brown slab
+   returned four plates carrying a tall round boulder: perfectly consistent with
+   each other and nothing like the plate they derived *from*. **Transcribe the
+   init image into the prompt before deriving.**
+2. **That failure did not fail to fix the continuity — it MOVED it.** Four shots
+   became consistent with each other and inconsistent with the fifth, which was
+   the payoff shot. *A fix that relocates a problem onto a more expensive shot
+   reads exactly like a fix until you check the neighbour.*
+3. **Denoise is set by what has to be ADDED, not by the shot.** A figure that
+   must appear where the init has clean, confident, empty ground costs far more
+   denoise than one appearing against busy edges. At 0.55 one shot came back
+   beautiful, matching, and **with no character in it**; a two-figure shot in the
+   same sequence was fine at 0.55 because both stood against soft treeline.
+
+Related, for removing something from a plate: **clone-patching only works when
+the SOURCE region is featureless.** Cloning stock from a horizontal offset to
+remove a sword imported a faint tree trunk and stood it up in the middle of a
+light column. Where the background is a smooth gradient, interpolate across the
+gap instead — it looks slightly smeared and imports **no structure**, which is
+the only property an img2img init actually needs. Better still, where the clean
+background for a region exists in an **ancestor plate**, composite it from
+there: real pixels rather than a guess.
+
+---
+
+## And one about reviewing a sequence
+
+**Check the shots a prop is a CLOSE-UP of, not just the shots its location is
+in.** Re-deriving a seven-shot sequence for one stone's continuity, the extreme
+close-up of the sword hilt had **no stone in frame at all** — so a location
+continuity pass could never flag it — yet it was the only frame in the film
+where the hardware is examined at full size, and it disagreed with every other
+plate in the sequence.
+
+From the same pass: **a length-changing post pass breaks any frame-for-frame
+diff report.** It does not merely mislead; the arrays do not broadcast. Report
+what was removed instead.
+
+---
+
+## Still open, from this fork
+
+- ~~**Nothing above has been applied to this repo.**~~ **Applied 2026-08-17**,
+  faults 21–27, one commit each. `smoke.py --template` green after every one.
+  What is *not* done is the thing no check can do: **none of this has been
+  through a finished film.** The un-squeeze, the run-up and the rewritten
+  direction blocks are all verified against measurements and synthetic cases,
+  and the first real season to use them is the one that will find what those
+  missed.
+- **Fault 25's measurement has a hole in it and the default was left alone.**
+  Two seeds, one prompt, **no LoRA loaded** — and every season that shipped ran
+  a style LoRA, which is exactly what a filter bypass at strength 100 would
+  interact with. Re-run `gen_still.py --plain` against a real film's prompt
+  with its own LoRAs before moving the default.
+- **The template's example direction is now positive throughout, and nothing
+  has shot from it.** Sixteen of eighteen blocks were rewritten to satisfy
+  `direction.check()`. They read correctly and they are *untested as prompts* —
+  the previous wording, for all that it broke the rule, had a season behind it.
+- **The fork's copy has diverged completely.** It has its own render harness,
+  shooter, assembler, verifiers, scorer and mixer, none of which import from
+  here. Backporting is a deliberate project, not a merge.
+- **No effects track and no cross-shot grade** exist in the fork either. Its
+  clip-level tool corrects colour drift *within* a clip and has nothing to say
+  about drift *between* two shots rendered weeks apart.
