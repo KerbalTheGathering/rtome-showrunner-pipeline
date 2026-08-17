@@ -67,6 +67,46 @@ SS_GUARD = 0.08              # frames left spare at the tail of every clip
 # receiving end of a transition and carry a widened lead to pay for it.
 TRANSITION_LEAD = 1.1
 
+# --------------------------------------------------------------------------
+# THE RUN-UP: SHOOT LONGER THAN THE BEAT AND THROW THE OPENING AWAY.
+#
+# A VIDEO MODEL CONDITIONED ON A STILL SPENDS ITS FIRST HALF SECOND GETTING UP
+# TO SPEED, and the clip is exactly as long as the beat, so that half second is
+# the cut's first half second. Measured on one shot across FOUR SEEDS: the
+# opening eighth of each clip ran at 0.30, 0.32, 0.33 and 0.34 of that same
+# clip's own peak frame-to-frame change. The consistency across independent
+# draws is the finding -- it is a property of conditioning on a still, not a
+# bad roll, and neither words nor seeds move it:
+#
+#   * "The movement is constant" was ALREADY in the shipped prompt and did
+#     nothing. It describes a property, not the first frame.
+#   * Rewriting it to "already at full speed in the very first frame" moved the
+#     ramp 2.36x -> 2.01x. That is all.
+#   * The best of four seeds still opened at 0.33 of its own peak.
+#
+# ON MOST BEATS THIS IS INVISIBLE OR CORRECT -- a man starts walking, a candle
+# starts guttering, a banner starts to lift. It is a fault only where the beat
+# must be ALREADY AT SPEED on the frame it cuts in on: a melee, a chase,
+# anything cut into mid-action. So it is opt-in per beat and empty by default,
+# the same shape as PLATE_ALIAS and MID_CARDS.
+#
+#     RUNUP = {"07": 1.0}       # seconds of clip shot and then discarded
+#
+#   as shipped          first eighth 1.39  peak 8.05  0.17 of peak  2.70x ramp
+#   after a 1.0s runup  first eighth 7.54  peak 8.84  0.85 of peak  0.87x ramp
+#
+# IT IS ONE NUMBER AND BOTH ENDS READ IT. table() adds it to the clip LENGTH
+# (so h3_shoot buys it) and to the IN-POINT (so assemble skips exactly what was
+# bought). Typing the two separately is the bug this whole file is built to
+# refuse -- a shooter that grew the clip while the assembler entered at the old
+# mark would ship the run-up AND lose the tail.
+#
+# WHY IT LIVES HERE AND NOT IN motion.py, where the direction lives: it is a
+# claim on the clip LENGTH, which is the same argument that put TRANSITIONS in
+# this file rather than in the assembler. motion.py's docstring points back at
+# it, because the beat that needs one is discovered while writing direction.
+RUNUP: dict[str, float] = {}
+
 # THE TRANSITION TABLE LIVES HERE, WITH THE TIMELINE, NOT IN THE ASSEMBLER.
 # It was in assemble.py first and that put the knowledge in the wrong file: a
 # transition needs the OUTGOING beat to supply live frames past the end of its
@@ -305,17 +345,33 @@ def table() -> list[dict]:
                      f"an accident.")
         gaps = extra * (len(lids) - 1) if lids else 0.0
         beat = lead + speech + gaps + tail
-        clip = min(CLIP_MAX, max(CLIP_MIN, math.ceil(beat + CLIP_MARGIN)))
-        if clip < beat:
-            sys.exit(f"FAIL: beat {sid} needs {beat:.1f}s but the vendor caps "
-                     f"at {CLIP_MAX}s -- shorten the line or split the beat")
+        # THE RUN-UP IS BOUGHT AND THEN SKIPPED, and both numbers come off this
+        # one lookup so they cannot drift apart. See RUNUP above.
+        runup = float(RUNUP.get(sid, 0.0))
+        clip = min(CLIP_MAX,
+                   max(CLIP_MIN, math.ceil(beat + runup + CLIP_MARGIN)))
+        if clip < beat + runup:
+            sys.exit(
+                f"FAIL: beat {sid} needs {beat:.1f}s"
+                + (f" plus a {runup:.1f}s run-up" if runup else "")
+                + f" but the vendor caps at {CLIP_MAX}s -- shorten the line, "
+                f"split the beat"
+                + (", drop the run-up" if runup else "")
+                + ".\n  CLIP_MAX is what a PAID vendor will sell in one call. "
+                "A film shooting on local\n  h3_shoot.py has no such ceiling -- "
+                "raise it here, with the reason beside it.")
         # A transition source has to hand the assembler live frames PAST the end
         # of its own beat, so its clip must cover in-point + beat + transition.
         trans = TRANS_EXTRA.get(sid, 0.0)
-        ss = max(0.0, min(SS_MAX, clip - beat - trans - SS_GUARD))
+        # THE IN-POINT IS THE RUN-UP PLUS WHATEVER SETTLING FITS. The settle is
+        # what is left over after the beat and the transition have been paid
+        # for, capped at SS_MAX -- so a run-up never eats the frames the beat
+        # itself needs. It cannot: the clip was bought `runup` longer above.
+        ss = runup + max(0.0, min(SS_MAX,
+                                  clip - runup - beat - trans - SS_GUARD))
         rows.append({"sid": sid, "lines": lids, "lead": lead, "tail": tail,
                      "extra": extra, "speech": speech, "beat": beat,
-                     "clip": clip, "ss": ss, "trans": trans})
+                     "clip": clip, "ss": ss, "trans": trans, "runup": runup})
     return rows
 
 
@@ -359,7 +415,8 @@ def __getattr__(name: str):
 def main() -> int:
     rows = table()
     print(f"  {'#':>2} {'beat':>4} {'lines':<8} {'lead':>5} {'talk':>6} "
-          f"{'tail':>5} {'beat':>6} {'buy':>4} {'in':>5} {'in+beat':>8}")
+          f"{'tail':>5} {'beat':>6} {'buy':>4} {'run':>5} {'in':>5} "
+          f"{'in+beat':>8}")
     bad = 0
     for i, r in enumerate(rows, 1):
         need = r["ss"] + r["beat"] + r["trans"]
@@ -367,7 +424,8 @@ def main() -> int:
         bad += bool(flag)
         print(f"  {i:>2} {r['sid']:>4} {','.join(r['lines']) or '--':<8} "
               f"{r['lead']:>5.1f} {r['speech']:>6.2f} {r['tail']:>5.1f} "
-              f"{r['beat']:>6.2f} {r['clip']:>3d}s {r['ss']:>5.2f} "
+              f"{r['beat']:>6.2f} {r['clip']:>3d}s "
+              f"{r['runup'] or '':>5} {r['ss']:>5.2f} "
               f"{need:>7.2f}s{flag}")
     pic = sum(r["beat"] for r in rows)
     buy = sum(r["clip"] for r in rows)

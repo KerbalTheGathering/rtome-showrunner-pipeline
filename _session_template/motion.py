@@ -33,6 +33,15 @@ THE OTHER RULES, all learned the expensive way (docs/05_prompting.md):
   * OCCUPY THE AUDIO CHANNEL. Some video models are omni-modal -- picture and
     sound decode from one latent -- so undirected audio gets INVENTED, and an
     invented voice moves the mouth. Describe room tone. See docs/04_lipsync.md.
+
+A BEAT THAT MUST BE AT SPEED ON ITS FIRST FRAME CANNOT BE WRITTEN INTO THIS
+FILE. The model is conditioned on a still and spends its opening half second
+climbing out of it -- measured at 0.30-0.34 of the clip's own peak across four
+independent seeds, and "already at full speed in the very first frame" moved it
+2.36x -> 2.01x and no further. It is a property of the conditioning, not a
+wording failure, so the fix is structural and lives in edit.RUNUP: shoot the
+beat longer and throw the opening away. Reach for it only on a beat cut into
+mid-action; on a beat that STARTS something the ramp is what you wanted.
 """
 from __future__ import annotations
 

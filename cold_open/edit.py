@@ -39,6 +39,16 @@ def grid(seconds: float) -> int:
 FRAMES = {sid: grid(shot.SECS[sid]) for sid in shot.CUT}
 SECS = {sid: FRAMES[sid] / FPS for sid in shot.CUT}
 
+# THERE IS NO RUN-UP HERE, AND THAT IS A DECISION. `_session_template/edit.py`
+# carries RUNUP -- shoot a beat longer and discard the opening, because a model
+# conditioned on a still opens at ~0.3 of its own peak movement. Two reasons it
+# is not in this tree: a cold open has no in-point at all (assemble.py explodes
+# from frame zero, so buying a run-up would need the machinery as well as the
+# number), and a cold open's shots are the ones that START something -- the
+# ramp out of the still is the shot, not a fault in it. A cold open that has to
+# cut into mid-action wants both, and should copy the film tree's version
+# rather than inventing a second one.
+
 # WHAT EACH SHOT WILL COST THE CARD, AT THE CANVAS IT WILL ACTUALLY GET.
 #
 # This computed `FRAMES * 128 * 96` -- 1024x768, typed as two magic numbers --

@@ -468,6 +468,18 @@ def plan():
         extra = r["trans"]
         got = explode(make_video.clip(sid), r["ss"], r["beat"] + extra,
                       os.path.join(WORK, sid), f"beat {sid}")
+        # A RUN-UP MAKES THIS EXACT RATHER THAN APPROXIMATE, and it has to.
+        # h3_shoot.py SKIPS a beat that already has a clip, so adding a run-up
+        # to a beat that was already shot moves the in-point later into a clip
+        # nobody lengthened -- and 0.9 is loose enough to ship a beat most of a
+        # second short without a word. The clip is only short because it
+        # predates the run-up, so the message says to re-shoot it.
+        if r["runup"] and len(got) < want:
+            sys.exit(f"FAIL: beat {sid} has a {r['runup']:.2f}s run-up and its "
+                     f"clip yielded {len(got)} frames against the {want} the "
+                     f"beat needs.\n  The clip on disk was shot before the "
+                     f"run-up existed and h3_shoot.py skipped it:\n"
+                     f"    python h3_shoot.py --rej=runup {sid}")
         if len(got) < want * 0.9:
             sys.exit(f"FAIL: beat {sid} yielded {len(got)} frames, wanted "
                      f"~{want} -- in-point {r['ss']}s + {r['beat']:.2f}s runs "
