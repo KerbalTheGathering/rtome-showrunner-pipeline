@@ -75,6 +75,81 @@ threshold that called 12 % relief solid — but fundamentally the move was a zoo
   summary that overstates its evidence is the same silent-green failure as a
   checker that matches nothing.
 
+### 5. A whole-frame mean is blind to every fault a viewer notices
+
+A clip checker measured mean frame-to-frame motion, whole-frame drift and
+end-to-end saturation, and rated 45 clips clean. Three faults had shipped: a
+character lip-syncing to a song nobody on screen sings, eyes lighting up in a
+close-up, and a vehicle whose cab detached and drove off separately. A mouth is
+about **1 %** of the frame. Averaged over half a million pixels, all three are
+noise.
+
+The metric answered its question correctly. The question was wrong.
+
+- **Faults are local; means are global.** If a checker only ever reduces the
+  frame to one number, it can only find faults that move the whole frame.
+- Useful local statistics: **peak block motion over median block motion** on a
+  coarse grid, **largest frame-to-frame jump over the median jump**, and
+  **edge-energy growth** first-to-last (a thing that splits in two has more
+  outline than it started with; a mouth opening adds edges).
+- None of them replaces looking. See rule 7.
+
+### 6. Assert that output is *sane*, not only that it is *exact*
+
+A tiler that cuts a song into shots asserted its output tiled the source
+exactly, in order, with no gaps, summing to the total duration. Four asserts,
+all passing, on a tiling whose final unit was **32 seconds** — because the
+search ran out of legal cut points and the fallback took everything to the end.
+Nothing asked whether a unit was a length a camera could be asked for.
+
+> **An exhaustive check of the wrong property is not a check.** Structural
+> asserts (ordering, coverage, sums) are cheap and they all pass on nonsense.
+> Add the *range* assert: no unit shorter than X, none longer than Y, and say
+> what X and Y are for.
+
+This is fault 27's shape one layer up: the thing was consistent and it was
+wrong, and consistency was all anyone measured.
+
+### 7. Calibrate a metric against known faults, and publish where it fails
+
+Before trusting a new detector, run it over clips **already confirmed bad by
+eye** and clips **already confirmed good**, and print them side by side. A
+metric that does not separate those is not worth running.
+
+Done honestly this will sometimes embarrass the metric, and that is the point.
+One localisation score rated three confirmed faults at 2.1–3.1 and two
+confirmed-good clips at 5.9–6.0 — **the wrong way round**, because in a
+close-up the whole frame is textured so a moving mouth is not anomalous against
+its neighbours. It shipped with that stated, and with a different metric doing
+the real work.
+
+> **Metrics rank suspicion. The picture decides.** Build the cheap way to look
+> — N frames per clip for every clip, in sheets — and treat every flag as "go
+> and look", never as a verdict. Every fault above was obvious in a filmstrip
+> and invisible in every number.
+
+### 8. Non-convergence tells you the alarm is measuring content, not defect
+
+A correction was applied for end-to-end saturation drift: measure the residual,
+reapply, repeat. Three clips converged inside one pass. Two **oscillated**
+(+31/+21/+28 and +18/+21/+21) and never settled — because their rise was not
+drift at all. Both were slow push-ins that genuinely brought more warm content
+into frame. The frame really did get more colourful, because the move asked it
+to. Correcting them would have flattened a correct shot.
+
+> **A real global defect is close to a global multiplier and converges
+> immediately. A compositional change has no multiplier that fixes it.** Iterate
+> even when one pass would do, and read non-convergence as a diagnosis.
+
+### 9. Measure the artifact the delivery actually uses
+
+A QC pass read the raw renders while the assembler preferred corrected versions
+from a different directory. It reported faults fixed three steps earlier — and
+would have stayed silent about a correction that made a shot worse.
+
+Wherever a pipeline has a "corrected wins over raw" rule, **every checker must
+resolve the same way the assembler does**, or it is grading a draft.
+
 ---
 
 ## Known-bad metrics in this codebase

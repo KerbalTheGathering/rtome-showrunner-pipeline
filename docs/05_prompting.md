@@ -119,7 +119,68 @@ the beginning"*, into the very file that forbids it, minutes after reading the
 paragraph above. Sixteen of the eighteen direction blocks this repo shipped
 would have been refused by it.
 
+### When the prompt cannot win: an architectural prior
+
+Conservation and negation rules assume the model is *free* to do the thing you
+are steering it away from. Some behaviour is not a free choice — it is what the
+model was trained to produce, and no phrasing reaches it.
+
+A video model whose weights carry an **audio head** generates a vocal
+performance and lip-syncs any legible face to it. In a film whose only sound is
+a record nobody on screen is singing, that reads as broken sync. Two fixes were
+tried:
+
+1. **Conserve by name** — the rule that reliably holds props and practical
+   lights. `"his mouth stays closed and still, lips together"`. Mouth kept
+   moving.
+2. **3× the sampling budget** — full 20-step sampling instead of a 6-step turbo
+   LoRA, on the theory that adherence was a step-count problem. Mouth kept
+   moving, and a close-up's eyes still lit up.
+
+> **A prior that survives a direct instruction AND a much larger sampling budget
+> is not being under-served, it is being obeyed.** Stop rewriting the prompt.
+
+The fix is to change model, and **to split the work by shot type rather than
+switching wholesale**: send only the shots that trip the prior to the model that
+lacks it, and keep the faster model everywhere else. Here that was faces to a
+video-only model and landscape, machinery and distant figures staying put — a
+figure too small for a mouth to read needs neither the clause nor the slower
+model.
+
+Two side benefits worth planning for: a video-only model usually exposes a
+**real negative prompt**, so the fault can be named on the side where naming
+removes instead of summons; and models disagree about legal frame counts
+(17n+5 against 4n+1 here), so **a mixed-model cut will not all be re-processable
+by one of them afterwards.**
+
 ### The other motion rules
+
+- **A thing that must match across shots is a paste, not a paraphrase.** Shared
+  blocks exist for characters; the same discipline applies to any recurring
+  object. One shot *described* the film's vehicle in its own words instead of
+  inserting the canonical block, and got a visibly different vehicle — in the
+  climax, four shots after the audience last saw the real one. If it must match,
+  it is a constant.
+- **A simile becomes the subject.** "a seam running through the wall **like a
+  river** of white metal" rendered a literal river; "green-bright glittering
+  copper ore" rendered gemstone. The model does not distinguish what a thing IS
+  from what it is COMPARED TO. Describe geometry and material, not resemblance.
+- **An instantaneous pose is invented badly.** "caught at the top of the swing,
+  body twisted" is a frozen instant the model must construct a whole body from,
+  and it constructs it wrong — a distorted arm. Ask for the *continuous action*
+  ("swinging, both hands on the haft, shoulders square") and let it pick the
+  instant.
+- **A rigid object made of visible parts must be conserved as ONE BODY.** Motion
+  models track the action and let the object follow — the same failure as a
+  character asked to walk carrying a sword arriving empty-handed. A vehicle's
+  cab detached from its bed and drove on separately. "its bonnet, cab and bed
+  joined together as one rigid body that keeps its shape" fixed it, alongside a
+  quieter verb: **verb energy is the throttle and structure is what it spends.**
+- **Camera movement must respect the frame, not just the object.** A slow
+  sideways track through a *symmetrical* two-object composition put one object
+  alone in centre frame halfway through and threw the pairing away. Match the
+  move to what the frame was composed for; a push holds symmetry, a track
+  destroys it.
 
 - **Naming what a character LOOKS AT rotates them toward it.** Useful when you
   want it; a trap when you name scenery for atmosphere.

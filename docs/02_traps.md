@@ -69,6 +69,15 @@ every derived artifact on its RECIPE** — source name + size + mtime + in-point
 frame count — as a hash in the filename or a sidecar JSON. Duration checks
 cannot detect a content swap.
 
+**Caching by existence alone is a trap the moment an earlier run was a
+rehearsal.** An assembly chain was validated end-to-end *before* the real
+sources existed, using a documented placeholder path. That left a full set of
+cached placeholder segments on disk. Every later run would have reused them and
+delivered the rehearsal — correct length, correct order, every check green.
+**Invalidate a derived artifact whose source is newer than it** (compare mtimes,
+or the recipe hash above). A `--rebuild` flag you have to remember is not a
+safeguard; the whole failure mode is that you do not remember.
+
 **`_rej_` must be skipped explicitly by every selector, in every script.**
 Renaming a reject to `10_foo_rej_tall_00001.png` does not merely fail to be
 skipped — under a `stem.rsplit("_00",1)[0]` key it becomes *its own entity*,
@@ -180,6 +189,69 @@ this template all do, and they refuse ambiguous anchors rather than guessing.
 **Prefer one choke point to per-site checks.** Validating every drawable string
 in a `preflight()` cannot be forgotten at a new draw site; a `safe()` call at
 each site is only as good as whoever added the last one.
+
+---
+
+## Long batches, guards and a shared GPU
+
+**A guard that prevents corruption but permits deadlock is half a guard.** Four
+copies of a batch tool ran at once, each correctly refusing to submit while the
+render queue was busy — and each waiting on the others. GPU at 0 %, one stuck
+job at the head, no output, and **nothing in any log to say why**. The guard sat
+at the point of damage ("is this action safe") when the missing one was at the
+point of entry ("should this process exist"). Put a **PID lockfile at process
+start** on anything owning a GPU, a queue or an output directory — and **treat a
+lock whose PID is dead as stale and take it over**, or every `kill -9` leaves a
+file that stops the next run and becomes the thing you route around at 4am.
+
+**A guard that can block forever is worse than no guard.** A free-VRAM floor was
+copied from a stage that loads a small model to one that deliberately runs the
+card nearly full and swaps. The wait was `while free < floor: sleep`. It stalled
+on the third item and would have waited until morning having produced two.
+**Bound every wait**, then proceed with a warning. It fails silently and looks
+exactly like slow progress.
+
+**A resource limit is a property of a stage, not of the machine.** The same
+number was sensible in one stage and *below normal operation* in the next.
+
+**Order a fallible batch by importance, not by identifier.** Numeric order put
+the two most important shots in a film last; the run lost its budget to crashes
+and would have kept only the least important work. Reordering mid-run recovered
+one of them.
+
+**Degrade to the next-best real artifact, not to nothing.** A missing clip fell
+straight back to a held still — right for a shot that never rendered, wrong for
+one that rendered fine and was awaiting a re-shoot. Keep the ladder explicit:
+new take → previous take → placeholder.
+
+**An intermittent crash you cannot prevent is one you plan around.** A model
+that hard-aborted the server roughly one run in four, on *both* attention
+backends, with no pattern. The answer is a supervisor that owns the server, not
+just the job: health-check before each item, relaunch when it dies, **alternate
+the backend after a crash** (whichever just died is the one not to pick again),
+and run **one item per subprocess** so an abort costs one item and not the
+batch. Hand-driving the same work lost an hour to three aborts; supervised, it
+finished with zero failures. **And do not conclude a backend is at fault from
+one crash** — the same abort hit both.
+
+**Do not orphan a process on a shared GPU, and verify teardown with the driver.**
+Three traps, none guessable:
+- **`nohup cmd &` under a tool harness reports success while the child keeps
+  running.** The completion notification describes the wrapper, not the process.
+- **The PID from `Start-Process -PassThru` is not necessarily the listener.**
+  Cross-check `netstat -ano` for the port, then walk parents for the tree.
+- **An "unload models / free memory" endpoint returns 200 without releasing
+  VRAM** — the allocator keeps its arena reserved. Only killing the process
+  returns it. **`nvidia-smi` is the evidence; the API response is not.**
+
+Guard teardown on an empty queue so you never kill someone's render, and prefer
+an instance that already exists over starting your own.
+
+**Check whether a file is already installed before downloading it.** A model
+listed as "5.21 GB" upstream and "4.85 GB" locally was the *same file* —
+decimal GB against binary GiB. Compare **exact byte counts**, and after any
+download verify the bytes match and the container parses (a truncated or
+HTML-error download is a valid-looking file of the wrong size).
 
 ---
 

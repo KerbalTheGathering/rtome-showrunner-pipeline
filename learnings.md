@@ -1684,3 +1684,215 @@ what was removed instead.
 - **No effects track and no cross-shot grade** exist in the fork either. Its
   clip-level tool corrects colour drift *within* a clip and has nothing to say
   about drift *between* two shots rendered weeks apart.
+
+---
+
+# Like a Stone — a music video, a rejected first cut, and a fault class the checks could not see
+
+A 4:17 music video cut to a pre-existing recording: 45 shots, two generation
+models, no narration. The first cut was **rejected by the user on sight** for
+three faults — a character mouthing the lyrics, a vehicle splitting in two, and
+"other graphical glitches". All three were real, all three were in the delivered
+file, and **every check that fork had written rated all of them clean.**
+
+That is the season's finding. The faults below are numbered from 28; the rules
+they generalise to are in `docs/02_traps.md`, `docs/05_prompting.md` and
+`docs/06_verification.md`.
+
+## The shape this pipeline was not built for
+
+A film driven by an **existing recording** inverts the template's core
+assumption. The template derives every duration from narration it generates;
+here the audio is fixed and immovable and the picture must be cut to it. What
+that needed, and the template has no equivalent of:
+
+- **A measured song, not a described one.** Tempo, bar grid, and the exact spans
+  where anyone is singing, gated off an isolated vocal stem rather than the mix.
+- **A forced alignment of the writer's lyric sheet against the record**, so the
+  words are authoritative and the times are measured, and neither is typed.
+- **A beat sheet derived from that alignment** — every shot length a consequence
+  of where a line falls, tiling the record exactly.
+
+## 28. A clip checker measured whole-frame means, and could not see any fault that shipped
+
+**Found by the user, not by the checks.** The pass measured mean frame-to-frame
+motion, whole-frame drift and end-to-end saturation across 45 clips and reported
+44 clean. Meanwhile: a character was lip-syncing a song nobody on screen sings,
+an old man's eyes lit up orange in a close-up, and a vehicle's cab detached from
+its bed and drove on as a second vehicle.
+
+A mouth is about **1 %** of the frame. Averaged over half a million pixels, all
+three faults are noise. The metric answered its question correctly.
+
+> **Faults are local; means are global.** A checker that reduces each frame to
+> one number can only find faults that move the whole frame.
+
+**What landed.** A structural pass measuring peak-block over median-block
+motion, largest jump over median jump, and edge-energy growth — and, more
+importantly, **a filmstrip sheet for every clip**, because all three faults were
+obvious in five frames and invisible in every number. See rules 5 and 7 in
+`docs/06_verification.md`.
+
+## 29. A tiler asserted its output was exact and never that it was sane
+
+Beats tiled the record exactly, in order, gapless, summing to the duration —
+four asserts, all green, on a tiling whose **final beat was 32 seconds**,
+because the cut search ran out of legal points and the fallback took everything
+to the end. Nothing asked whether a beat was a length a camera could be asked
+for.
+
+> **An exhaustive check of the wrong property is not a check.** Structural
+> asserts are cheap and all of them pass on nonsense.
+
+**What landed.** A per-unit range assert, and a two-tier cut-candidate list
+(prefer a lyric line, fall back to the bar grid) so the search cannot run dry.
+
+## 30. A concurrency guard sat at the point of damage, not the point of entry
+
+A backgrounded batch outlived its shell invisibly, so a second copy was started;
+four ended up alive. Each **correctly** refused to submit while the render queue
+was busy — and all four waited on each other behind one stuck job. GPU at 0 %,
+no output, nothing in any log.
+
+> **A guard that prevents corruption but permits deadlock is half a guard.**
+> Correctness guards answer "is this action safe"; they cannot answer "should
+> this process exist".
+
+**What landed.** A PID lockfile at process entry, with **stale locks taken over
+rather than obeyed** — a safety device survives `kill -9` only if it can tell a
+dead owner from a live one.
+
+## 31. A VRAM floor was copied between two stages with opposite profiles, and its wait was unbounded
+
+3000 MB free is a sensible floor for a small resident model and is **below
+normal operation** for one that fills the card and swaps its text encoder. The
+batch stalled on its third item. The wait was `while free < floor: sleep`, so it
+would have waited until morning having produced two clips.
+
+> **A resource limit is a property of a stage, not of the machine — and a guard
+> that can block forever fails silently and looks like slow progress.**
+
+**What landed.** Per-stage floors, and every wait bounded, then proceeding with
+a warning.
+
+## 32. A rehearsal was cached and would have shipped as the film
+
+The assembly chain was deliberately validated end-to-end *before* any clip
+existed, using the documented placeholder path. That left a full set of cached
+placeholder segments. Every later run would have reused them and delivered the
+animatic: right length, right cuts, every check green.
+
+> **Caching by existence alone is a trap the moment an earlier run was a
+> rehearsal.** Invalidate against source mtime. A flag you must remember is not
+> a safeguard — not remembering is the entire failure mode.
+
+## 33. A fallible batch ran in index order, so running out of time cost the most important shots
+
+Numeric order put the film's reveal and its two-hander last. Crashes ate the
+budget. Stopped and restarted in importance order mid-run, which recovered the
+reveal; the next one was lost to the following crash.
+
+> **Order a fallible batch by importance, not by identifier.** When the clock
+> runs out you keep what matters instead of what sorts first.
+
+## 34. A degradation path skipped the good fallback for the poor one
+
+A beat with no clip fell straight back to a held still. Correct for a shot that
+never rendered; wrong for one that had rendered fine and was awaiting a
+re-shoot, where the archived take was right there.
+
+> **Degrade to the next-best real artifact, not to nothing.** A moving take with
+> a known fault beats a frozen frame. Keep the ladder explicit.
+
+---
+
+## The fault no prompt could fix, and how to tell
+
+The lip-sync was not a prompting failure. The video model carries an **audio
+head** — it generates a vocal performance and syncs any legible face to it.
+
+Two fixes were tried, and **trying both is what produced the diagnosis**:
+
+1. **Conserve by name**, the rule that reliably holds props and practical
+   lights. The mouth kept moving.
+2. **3x the sampling budget** — 20 steps instead of a 6-step turbo LoRA, on the
+   theory that adherence was a step-count problem. Mouth kept moving, eyes still
+   lit.
+
+> **A prior that survives a direct instruction AND a much larger sampling budget
+> is not being under-served, it is being obeyed.** Stop rewriting the prompt and
+> change model.
+
+**Split by shot type rather than switching wholesale.** Faces went to a
+video-only model; landscape, machinery, distant figures and silhouettes stayed
+on the faster one. A figure too small for a mouth to read needs neither the
+clause nor the slower model. Two consequences to plan for: the video-only model
+exposes a **real negative prompt**, so the fault can be named where naming
+removes rather than summons; and the two disagree about legal frame counts
+(17n+5 against 4n+1), so **a mixed-model cut is not uniformly re-processable by
+either afterwards.**
+
+## Four prompting findings, from re-rendering the shots that were wrong
+
+- **A thing that must match across shots is a paste, not a paraphrase.** One
+  shot described the film's vehicle in its own words instead of inserting the
+  shared block, and got a visibly different vehicle — in the climax, four shots
+  after the audience last saw the real one.
+- **A simile becomes the subject.** "like a river of white metal" rendered a
+  river; "green-bright glittering copper ore" rendered gemstone. The model does
+  not distinguish what a thing IS from what it is COMPARED TO.
+- **An instantaneous pose is invented badly.** "caught at the top of the swing"
+  gave a distorted arm; the continuous action did not.
+- **Camera movement must respect the frame, not just the object.** A sideways
+  track through a symmetrical two-object composition put one alone in centre
+  frame and threw the pairing away.
+
+## Two findings about measurement that generalise past this film
+
+- **Non-convergence tells you the alarm is measuring content, not defect.** An
+  iterative saturation correction converged in one pass on three clips and
+  **oscillated** on two — because those two were push-ins that genuinely brought
+  more warm content into frame. Correcting them would have flattened a correct
+  shot. Iterate even when one pass would do, and read non-convergence as a
+  diagnosis.
+- **Validate an alignment externally, never by its own confidence.** A forced
+  aligner scores how well audio matched the text it was *told* to match, so its
+  weakest lines were simply the most heavily produced part of the record. The
+  real check was an independent transcriber that never saw the lyric sheet:
+  where both named the same word they agreed to a **median 0.18 s**.
+
+## Identity across 45 shots with no character LoRA
+
+Two characters — the same man young and old — held by **three age-invariant
+marks pasted verbatim into every prompt** (a bead on a named side of the beard,
+a scar through a named eyebrow, a distinctive nose). Everything else was free to
+age. Derivation was deliberately **not** used despite being available: a derived
+plate inherits its parent's camera, and 45 shots inheriting one camera is one
+shot 45 times. **Identity by text; framing free.**
+
+## Confirmed again, a fifth time
+
+- **An estimator's octave error is invisible until the edit is wrong.** Tempo
+  detection returned the eighth-note pulse (172 BPM against a true 86). The tell
+  was structural: at the wrong reading the song is 185 bars, which no
+  four-minute rock song is. Pin it, and record the measurement that settles it.
+- **Match the generation canvas to the delivery aspect** and nothing is squashed
+  anywhere in the chain — fault 21, avoided by choosing 16:9 up front.
+- **A latent budget can be a hang, not an error.** Past the ceiling the sampler
+  stops progressing rather than failing, and takes the night with it.
+
+## Still open
+
+- **None of faults 28–34 has been applied to this repo's own tooling.** They
+  were found and fixed in a fork whose harness does not import from here. The
+  rules are written into `docs/`; the code changes are not.
+- **The structural QC metric published a known failure.** Its localisation score
+  ranks by *shot type* as much as by fault — it rated three confirmed faults
+  below two confirmed-good clips, because in a close-up the whole frame is
+  textured. It ships with that stated and with edge-growth doing the real work.
+  A metric that separates local motion from local texture would replace it.
+- **Nine of twenty face shots were re-shot only on the second attempt**, after
+  an intermittent server abort ate the first budget. The supervisor pattern that
+  fixed it is written into `docs/02_traps.md` and exists in no tool in this repo.
+- **No cross-shot grade, still.** Two models now contribute shots to one film and
+  nothing measures drift *between* them.
