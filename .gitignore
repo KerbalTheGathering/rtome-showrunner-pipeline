@@ -41,6 +41,10 @@ out/
 # The clip-folder ownership stamp (see season_identity.claim_clips)
 .season
 
+# solo.py's per-stage PID locks. Ephemeral by design -- a stale one is taken
+# over, not obeyed -- so there is nothing in them worth versioning.
+_locks/
+
 # ---------------------------------------------------------------------------
 # Python
 # ---------------------------------------------------------------------------
