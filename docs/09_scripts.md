@@ -24,6 +24,7 @@ Most scripts take **beat ids as positional arguments** (`python gen_still.py 03
 | `smoke.py` | **Imports every module in every tree**, one subprocess per file. `--template` stubs identity so it runs on a fresh clone. Four seconds |
 | `contract.py` | **Asserts the facts that span files** — beats agree, board type never exceeds spoken copy, every transition has a branch, every cue has a prompt. `season.py` runs it before it builds |
 | `residue.py` | Finds the **previous season** in this one: beat ids and proper names that are not this season's. Advisory, exits 0 |
+| `supervise.py` | Runs a **resumable** batch under a ComfyUI that sometimes hard-crashes: health-check, relaunch, **alternate the attention backend after a crash**, retry the command (finished items skip). `--stop` kills only what it launched, refuses on a busy queue, and prints `nvidia-smi` — the driver's number is the teardown evidence |
 | `solo.py` | **One copy of a stage at a time**, refused at process entry. Every generator calls it in `main()`. `busy()` stops two renders overlapping; this stops two *processes* deadlocking on each other's queue guard. A stale lock from a dead PID is taken over, not obeyed. `--force` overrides |
 | `surface.py` | Finds the largest flat surface in a plate and **draws the answer back on**. Given a colour hint and a search region, emits the rect type is drawn into. It finds the SURFACE, not the usable area |
 | `devices.py` | **The transition library.** Ten of them, asked for by name in `edit.TRANSITIONS` with per-transition settings. `--sheet` renders every one so you can look rather than guess. A film with a device nobody else wants drops a `devices_extra.py` beside its own `edit.py` |
@@ -75,7 +76,10 @@ another. The template shipped with only the first column filled in, and
 | `storyboard.py` | One film's board: every plate in story order with its runtime and the line spoken over it. Needs `edit.table()`, so it **cannot be drawn before the VO exists** — that is what `../contact.py` is for. For approval, **not for counting things** |
 | `h3_shoot.py` | Generates motion locally on MiniMax H3. Free. The default |
 | `make_video.py` | Generates motion on a paid partner node. Resolves the current clip for a beat — **use `make_video.clip(sid)` rather than globbing** |
-| `qc_clips.py` | Inspect returned clips against the plates they came from |
+| `qc_clips.py` | Inspect returned clips against the plates they came from — a filmstrip per clip, because one frame cannot see motion |
+| `qc_drift.py` | Ranks the **joins** by luma/saturation jump — drift *between* shots, which no per-clip check sees. Advisory, exits 0; says where to look first |
+| `verify_cut.py` | Proves the assembled film **is the cut**: the frame after every join against the clip that should be there *and against a wrong one*, so the test is shown able to fail |
+| `track.py` | The fixed-recording mode: `analyze` measures a song (tempo **candidates**, sung spans off a Demucs stem), `beats --bpm` derives a shootable beat sheet and prints paste-ready `SILENT`/`SILENT_SECS`. Refuses to guess the tempo octave |
 | `check_clip.py` | Six evenly-spaced frames from one clip. **`h3_shoot.py` runs it for you** — motion breaks in the middle, and a review step you have to remember gets skipped |
 | `res_ladder.py` | Compare output at several resolutions |
 | `mouth_scan.py` | Ranks takes by mouth aperture inside a beat window. Read `docs/04_lipsync.md` on its limits first |

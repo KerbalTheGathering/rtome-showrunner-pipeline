@@ -24,6 +24,16 @@ instead of saying what THEY had to say. A module whose whole job is to describe
 a half-built season must not require a built one.
 
     python parts.py           # print the running order and what is missing
+    python parts.py --json    # the same facts, machine-readable
+
+WHY --json EXISTS. This repo is operated by agent sessions, and a session
+re-entering a half-built season used to re-derive "what exists" by parsing the
+prose above -- every time, at the cost of its own context. The JSON is the same
+discovery (regex off the files, existence off the disk, imports of nothing), so
+it stays runnable on a season too blank to import. Counts come with the path
+they were counted in, so a zero can be told from a wrong NAME: a `*_clips`
+folder that does not exist yet and a folder being looked for in the wrong
+place print identically as 0 without the path beside them.
 """
 from __future__ import annotations
 
@@ -174,7 +184,48 @@ def running_order() -> list[tuple[str, str, str]]:
     return out
 
 
+def state() -> dict:
+    """Everything a session needs to resume, importing nothing per-tree."""
+    ss, bad = audit()
+    sys.path.insert(0, ROOT)
+    import season_paths
+    parts = []
+    for label, mp4, wav in running_order():
+        parts.append({"label": label, "mp4": mp4,
+                      "built": os.path.exists(mp4),
+                      "mtime": os.path.getmtime(mp4)
+                      if os.path.exists(mp4) else None})
+    trees = []
+    for r in ss:
+        clips = (os.path.join(season_paths.COMFY_OUTPUT, f"{r['name']}_clips")
+                 if r["name"] else None)
+        vo = os.path.join(r["path"], "_vo")
+
+        def _n(d, ext):
+            if not d or not os.path.isdir(d):
+                return 0
+            return len([f for f in os.listdir(d)
+                        if f.endswith(ext) and "_rej_" not in f])
+        trees.append({**{k: r[k] for k in ("dir", "no", "name", "title",
+                                           "slug")},
+                      "clips_dir": clips, "clips": _n(clips, ".mp4"),
+                      "vo_takes": _n(vo, ".mp3") + _n(vo, ".wav"),
+                      "baked": _n(os.path.join(r["path"], "_baked"), ".png"),
+                      "out_mp4": os.path.exists(
+                          os.path.join(r["path"], "out", f"{r['slug']}.mp4"))
+                      if r["slug"] else False})
+    return {"season": {"SEASON": season.SEASON,
+                       "SEASON_TITLE": season.SEASON_TITLE,
+                       "N_SESSIONS": season.N_SESSIONS,
+                       "blank": season.blank},
+            "problems": bad, "sessions": trees, "running_order": parts}
+
+
 def main() -> int:
+    if "--json" in sys.argv:
+        import json
+        print(json.dumps(state(), indent=1))
+        return 0
     ss, bad = audit()
     print(f"  {season.SEASON}  --  {season.SEASON_TITLE!r}")
     print(f"  {len(ss)} session folder(s) of {season.N_SESSIONS} declared"
