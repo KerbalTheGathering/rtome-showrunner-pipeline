@@ -1,14 +1,27 @@
-"""One frame per bought clip, on a sheet, so the session is QC'd as a session.
+"""A filmstrip per bought clip, on a sheet, so the session is QC'd as a session.
 
 WHY A SHEET AND NOT FIFTEEN PLAYBACKS. What goes wrong in an i2v buy is mostly
 INVENTED CONTENT -- an animal, a boat, a figure that the plate never had and the
 prompt never asked for -- and that is spotted by scanning, not by watching. Beat 01
 came back with two quadrupeds on the beach and a swan that are in no plate.
 
-THE FRAME IS TAKEN LATE ON PURPOSE. Seedance conditions on the FIRST frame, so frame
-zero always matches the plate and tells you nothing; drift accumulates, so the honest
-sample is near the end. Taken at 80% of duration rather than the last frame because
-the last frame is sometimes a fade.
+IT WAS ONE FRAME PER CLIP AND THAT COULD NOT SEE MOTION AT ALL. A single late
+sample catches invented CONTENT, which is what it was written for, and is blind
+by construction to everything that happens BETWEEN frames: a character
+lip-syncing to a song nobody sings, an object that comes apart halfway through
+and continues as two, a light that ramps up over four seconds. A fork shipped a
+film with all three, past a checker of this shape, and the user found them on
+first viewing.
+
+So it samples ACROSS the clip now. Frame zero is still skipped -- an i2v model
+conditions on it, so it always matches the plate and tells you nothing -- and
+the last frame is still avoided because it is sometimes a fade. The strip runs
+between those two.
+
+Whole-frame numbers were considered and rejected for the same job: a mouth is
+about 1% of the picture, so any mean over the frame reads it as noise. What
+finds these faults is frames across time, looked at. See docs/06_verification.md
+rules 5 and 7.
 
 This is a LOOK, not a checker -- it cannot pass or fail anything, and it deliberately
 does not try. The plate contact sheet is next to it for comparison; what the eye is
@@ -37,47 +50,61 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "_qc")
 FF = season_paths.FFMPEG
 
-COLS = 5
-TILE = 440
-AT = 0.80          # fraction of the clip to sample
+COLS = 1           # one clip per row -- a row IS the filmstrip
+TILE = 300         # per-frame width; a row is N of these
+N = 5              # frames per clip
+FIRST, LAST = 0.12, 0.94   # skip the conditioning frame and any tail fade
 
 
-def frame(sid: str, dst: str) -> None:
+def strip(sid: str) -> list[str]:
+    """N frames spread across one clip, earliest first."""
     src = make_video.clip(sid)
-    t = edit.SECS[sid] * AT
-    subprocess.run([season_paths.ff("ffmpeg"), "-v", "error", "-y",
-                    "-ss", f"{t:.2f}", "-i", src, "-frames:v", "1", dst],
-                   check=True)
+    dur = edit.SECS[sid]
+    out = []
+    for i in range(N):
+        f = FIRST + (LAST - FIRST) * (i / max(N - 1, 1))
+        dst = os.path.join(OUT, f"f{sid}_{i}.png")
+        subprocess.run([season_paths.ff("ffmpeg"), "-v", "error", "-y",
+                        "-ss", f"{dur * f:.2f}", "-i", src,
+                        "-frames:v", "1", dst], check=True)
+        if os.path.exists(dst):
+            out.append(dst)
+    return out
 
 
 def main() -> int:
     os.makedirs(OUT, exist_ok=True)
     sids = list(shot.CUT)
 
-    tiles = []
+    strips = []
     for sid in sids:
-        p = os.path.join(OUT, f"f{sid}.png")
-        frame(sid, p)
-        im = Image.open(p).convert("RGB")
-        im.thumbnail((TILE, TILE), Image.LANCZOS)
-        tiles.append((sid, im))
+        ims = []
+        for p in strip(sid):
+            im = Image.open(p).convert("RGB")
+            im.thumbnail((TILE, TILE), Image.LANCZOS)
+            ims.append(im)
+        if ims:
+            strips.append((sid, ims))
+    if not strips:
+        sys.exit("FAIL: no clips resolved -- nothing to QC")
 
-    tw, th = tiles[0][1].size
-    rows = (len(tiles) + COLS - 1) // COLS
-    pad, bar = 8, 22
-    sheet = Image.new("RGB", (COLS * (tw + pad) + pad,
-                              rows * (th + bar + pad) + pad), (20, 20, 20))
+    tw, th = strips[0][1][0].size
+    pad, bar = 6, 22
+    sheet = Image.new("RGB", (N * (tw + pad) + pad,
+                              len(strips) * (th + bar + pad) + pad),
+                      (20, 20, 20))
     d = ImageDraw.Draw(sheet)
-    for i, (sid, im) in enumerate(tiles):
-        x = pad + (i % COLS) * (tw + pad)
-        y = pad + (i // COLS) * (th + bar + pad)
-        sheet.paste(im, (x, y))
-        d.text((x + 3, y + th + 4), f"{sid}  {edit.SECS[sid]}s @{AT:.0%}",
-               fill=(230, 230, 230))
+    for r, (sid, ims) in enumerate(strips):
+        y = pad + r * (th + bar + pad)
+        for c, im in enumerate(ims):
+            sheet.paste(im, (pad + c * (tw + pad), y))
+        d.text((pad + 3, y + th + 4),
+               f"{sid}  {edit.SECS[sid]}s  --  {N} frames, "
+               f"{FIRST:.0%} to {LAST:.0%}", fill=(230, 230, 230))
 
     dst = os.path.join(OUT, "clips_sheet.png")
     sheet.save(dst)
-    print(f"  {len(tiles)} frames -> {dst}")
+    print(f"  {len(strips)} clips x {N} frames -> {dst}")
     return 0
 
 

@@ -52,6 +52,15 @@ FF = season_paths.FFMPEG
 CLIP_MARGIN = 1.2
 CLIP_MIN, CLIP_MAX = 3, 12
 
+# THE FLOOR ON A BEAT ITSELF, WHICH IS NOT CLIP_MIN. CLIP_MIN is what a vendor
+# will sell; this is what a cut can hold. They are unrelated numbers and the
+# gap between them is where a fault hides: `clip` is clamped UP to CLIP_MIN, so
+# without this a beat of 0.4s buys three seconds of video, spends the money,
+# and lands a four-frame shot in the film. Raise it if a season genuinely cuts
+# faster than this -- but raise it deliberately, having looked at a cut that
+# short.
+BEAT_MIN = 1.2
+
 # THE IN-POINT IS DERIVED, NOT FIXED. assemble.py enters each clip a little way
 # in so the first frames (where a vendor sometimes settles) are not used. A
 # constant 0.35s works everywhere except on a beat that has been pushed up
@@ -345,6 +354,33 @@ def table() -> list[dict]:
                      f"an accident.")
         gaps = extra * (len(lids) - 1) if lids else 0.0
         beat = lead + speech + gaps + tail
+        # AND IS IT A LENGTH A CAMERA COULD BE ASKED FOR? Everything above this
+        # line checks that the number is CONSISTENT -- every beat has a source,
+        # nothing is negative, the tables agree. None of it asks whether the
+        # answer is SHOOTABLE, and those are different questions.
+        #
+        # A fork's beat tiler asserted its output covered the whole song
+        # exactly, in order, with no gaps, summing to the duration -- four
+        # asserts, all green, on a tiling whose last beat was THIRTY-TWO
+        # SECONDS. Structural asserts are cheap and every one of them passes on
+        # nonsense.
+        #
+        # Here the short end is the one that gets through: `clip` below is
+        # clamped UP to CLIP_MIN, so a beat of 0.4s quietly buys three seconds
+        # of video and puts a four-frame shot in the cut. The long end is
+        # already caught, by the vendor-cap exit a few lines down.
+        if beat < BEAT_MIN:
+            sys.exit(
+                f"FAIL: beat {sid} works out at {beat:.2f}s of picture, under "
+                f"the {BEAT_MIN}s floor.\n"
+                f"  lead {lead:.2f} + speech {speech:.2f} + gaps {gaps:.2f} + "
+                f"tail {tail:.2f}.\n"
+                f"  That is a real number and it is not a shot. Usually a "
+                f"broken VO take\n"
+                f"  measured near zero, or a SILENT_SECS entry typed in "
+                f"frames instead of\n"
+                f"  seconds. Fix the source, or fold this beat into its "
+                f"neighbour.")
         # THE RUN-UP IS BOUGHT AND THEN SKIPPED, and both numbers come off this
         # one lookup so they cannot drift apart. See RUNUP above.
         runup = float(RUNUP.get(sid, 0.0))

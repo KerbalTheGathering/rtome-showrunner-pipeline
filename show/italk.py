@@ -42,6 +42,7 @@ from __future__ import annotations
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import season_paths                                                # noqa: E402
+import solo                                                        # noqa: E402
 
 
 import json
@@ -365,6 +366,12 @@ def audio(sid: str, secs: float | None = None) -> str:
 
 
 def main() -> int:
+    # ONE COPY OF THIS STAGE AT A TIME, refused at entry rather than at the
+    # point of damage. `busy()` below already stops two renders overlapping;
+    # it cannot stop two PROCESSES from waiting on each other forever. See
+    # solo.py -- four copies of a batch tool once deadlocked on their own
+    # correct queue guard, at 0% GPU, with nothing in any log.
+    solo.solo("lipsync", where=HERE, force="--force" in sys.argv)
     test = "--test" in sys.argv
     want = [a for a in sys.argv[1:] if not a.startswith("-")] or list(shot.CUT)
     os.makedirs(WORK, exist_ok=True)

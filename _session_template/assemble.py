@@ -1062,11 +1062,56 @@ def main() -> int:
     keep = "--keep-frames" in sys.argv
     rows = edit.table()
     if keep:
-        n = len([f for f in os.listdir(BAKED) if f.endswith(".png")])
+        baked = [f for f in os.listdir(BAKED) if f.endswith(".png")]
+        n = len(baked)
         want = sum(round(r["beat"] * FPS) for r in rows)
         if abs(n - want) > len(rows):
             sys.exit(f"FAIL: {n} baked frames against ~{want} wanted -- the "
                      "edit changed; re-run without --keep-frames")
+        # A COUNT IS NOT A RECIPE, AND THIS ONE ONLY CHECKED THE COUNT.
+        # Re-render a clip, re-grade a beat, or swap a plate, and the frame
+        # count does not move -- so `--keep-frames` happily re-bakes the OLD
+        # picture at exactly the right length, and every check downstream
+        # passes because length is all any of them measure.
+        #
+        # The severe version of this is not a stale clip, it is a REHEARSAL:
+        # a fork validated its whole assembly chain against placeholder
+        # sources before the real ones existed, and every later run reused
+        # that cache and would have shipped the animatic -- right length,
+        # right order, all green.
+        #
+        # So: if anything the bake was made FROM is newer than the frames
+        # themselves, the cache is stale and says so.
+        # THE SOURCE IS THE CLIP EACH BEAT EXPLODES, which is what plan()
+        # reads and therefore the only honest thing to compare against. An
+        # earlier draft of this check compared `r["src"]/r["clip"]/r["plate"]`
+        # -- keys that either do not exist on a row or, in `clip`'s case, hold
+        # an INT number of seconds. It would have found nothing, ever, and
+        # reported success: the exact vacuous check this repo keeps writing
+        # about. Resolve the real path or do not claim to have checked.
+        newest = max((os.path.getmtime(os.path.join(BAKED, f))
+                      for f in baked), default=0.0)
+        srcs = []
+        for r in rows:
+            try:
+                p = make_video.clip(r["sid"])
+            except SystemExit:
+                # A missing clip is not this check's business -- reusing frames
+                # is legitimate after the clips have been cleared away.
+                continue
+            if os.path.exists(p):
+                srcs.append(p)
+        fresher = sorted({p for p in srcs if os.path.getmtime(p) > newest})
+        if fresher:
+            sys.exit(
+                f"FAIL: {len(fresher)} source(s) are newer than the baked "
+                f"frames --\n  " + "\n  ".join(
+                    os.path.basename(p) for p in fresher[:6])
+                + ("\n  ..." if len(fresher) > 6 else "")
+                + f"\n  The frame COUNT still matches, which is why this is "
+                f"not caught by\n  the check above and why it would have "
+                f"baked the old picture at the\n  right length. Re-run "
+                f"without --keep-frames.")
         w, h = Image.open(os.path.join(BAKED, "b_00000.png")).size
         print(f"  reusing {n} baked frames at {w}x{h}")
     else:

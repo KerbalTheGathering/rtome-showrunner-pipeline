@@ -1883,9 +1883,24 @@ shot 45 times. **Identity by text; framing free.**
 
 ## Still open
 
-- **None of faults 28–34 has been applied to this repo's own tooling.** They
-  were found and fixed in a fork whose harness does not import from here. The
-  rules are written into `docs/`; the code changes are not.
+- ~~**None of faults 28–34 has been applied to this repo's own tooling.**~~
+  **Applied.** 28 (`qc_clips.py` now samples a filmstrip across each clip
+  instead of one late frame), 29 (`edit.BEAT_MIN`, a floor on the derived beat
+  itself — `CLIP_MIN` is what a vendor sells, not what a cut can hold), 30
+  (`solo.py`, wired into all nine generator entry points), 32
+  (`--keep-frames` now refuses when any source clip is newer than the baked
+  frames, because a count is not a recipe).
+- **31, 33 and 34 were checked and have no instance here, and that is the
+  finding.** All four wait loops were already bounded (`SLOW_S`, 1200, 3600,
+  5400). Every output resolver either honours `subfolder` or never joins on
+  `filename`. There is no "importance" concept for a batch to order by, and a
+  missing clip *should* fail loudly in the template rather than substitute
+  something. **Not inventing a fix for a fault a repo does not have** is the
+  same discipline as not inventing a metric.
+- **The two new guards are unexercised against a real season.** `BEAT_MIN`
+  cannot fire without measured VO on disk, and the `--keep-frames` staleness
+  check needs a baked film — `smoke.py` imports modules, it does not run bakes.
+  Same caveat as faults 21–27 carried, and for the same reason.
 - **The structural QC metric published a known failure.** Its localisation score
   ranks by *shot type* as much as by fault — it rated three confirmed faults
   below two confirmed-good clips, because in a close-up the whole frame is

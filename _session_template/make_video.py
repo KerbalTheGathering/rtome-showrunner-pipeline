@@ -28,6 +28,7 @@ from __future__ import annotations
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import season_paths                                                # noqa: E402
+import solo                                                        # noqa: E402
 
 
 import json
@@ -195,6 +196,13 @@ def buy(sid: str, key: str) -> int:
 
 
 def main() -> int:
+    # ONE COPY OF THIS STAGE AT A TIME, refused at entry rather than at the
+    # point of damage. `busy()` below already stops two renders overlapping;
+    # it cannot stop two PROCESSES from waiting on each other forever. See
+    # solo.py -- four copies of a batch tool once deadlocked on their own
+    # correct queue guard, at 0% GPU, with nothing in any log.
+    solo.solo("clips", where=os.path.dirname(os.path.abspath(__file__)),
+              force="--force" in sys.argv)
     only = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--beat=")]
     todo = [s for s in shot.CUT
             if (not only or s in only)

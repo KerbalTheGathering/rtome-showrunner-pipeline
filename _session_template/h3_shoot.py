@@ -42,6 +42,7 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import season_paths  # noqa: E402
+import solo  # noqa: E402
 import check_clip  # noqa: E402  -- the filmstrip after every shoot
 import edit        # noqa: E402
 import identity    # noqa: E402  (the season's delivery geometry)
@@ -217,6 +218,13 @@ def shoot(sid: str, turbo: bool, seed: int = SEED) -> bool:
 
 
 def main() -> int:
+    # ONE COPY OF THIS STAGE AT A TIME, refused at entry rather than at the
+    # point of damage. `busy()` below already stops two renders overlapping;
+    # it cannot stop two PROCESSES from waiting on each other forever. See
+    # solo.py -- four copies of a batch tool once deadlocked on their own
+    # correct queue guard, at 0% GPU, with nothing in any log.
+    solo.solo("clips", where=os.path.dirname(os.path.abspath(__file__)),
+              force="--force" in sys.argv)
     turbo = "--slow" not in sys.argv
     # A REASON RETIRES THE OLD TAKE INSTEAD OF LEAVING IT BESIDE THE NEW ONE.
     # The resolver takes the highest-numbered non-reject file, so a bare --force
