@@ -43,7 +43,11 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 # THIS LIST IS THE WHOLE OF WHAT preflight CAN SEE, which is also its limit:
 # it reads content and nothing else. What the modules DO is smoke.py's
 # question, and whether their tables agree is contract.py's.
-CONTENT = ("script.py", "shot.py", "motion.py", "edit.py", "make_music.py")
+# `verify.py` IS ON THIS LIST. It names beats, devices and the moments they
+# are expected to fire -- one film's claims about one film -- and it was left
+# off because a verifier did not look like content. See learnings.md 37.
+CONTENT = ("script.py", "shot.py", "motion.py", "edit.py", "make_music.py",
+           "verify.py")
 
 
 def still_example(path: str) -> bool:

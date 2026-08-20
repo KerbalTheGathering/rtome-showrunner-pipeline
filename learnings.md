@@ -1806,6 +1806,127 @@ re-shoot, where the archived take was right there.
 
 ---
 
+## 35. A probe's isolation was documented, half-implemented, and reported as a failed render
+
+`gen_still.py --plain` exists to settle an A/B without contaminating the film,
+and its docstring is explicit: the probe renders "into its own `<NAME>_plain`
+directory -- the discipline `--obj` already uses -- so a probe can never be
+resolved as a film plate."
+
+`OUT` appended the suffix. **The write prefix did not** -- that line honoured
+`--obj` and had never been extended -- so the probe landed in the film's plate
+directory while the poller watched an empty `<NAME>_plain` folder and printed
+`NO OUTPUT after 20s -- check _comfy_startup.log`.
+
+Two failures at once, and only the harmless one is visible. `plate()` resolves a
+beat as `have[-1]`, the last file for that sid, so the probe silently becomes
+the plate the film is shot from -- and the thing that tells you about it is a
+message saying the render **failed**.
+
+Found on the first `--plain` render anyone ever ran, in all three copies of the
+file.
+
+> **A guard that is described in a docstring and implemented in one of the two
+> places it needs to be is not a guard.** When a mode gets its own output
+> directory, everything that writes AND everything that reads must derive the
+> path from one expression -- not two that agree today.
+
+> **And an isolation bug can present as a failed render.** "No output" from a
+> renderer that plainly ran is not a render fault; it is a path fault, and the
+> output is somewhere. Look for the file before you look at the log.
+
+---
+
+## 36. A direction block named something the plate did not have, so the model drew it
+
+Two beats of a music video were written from the film's TREATMENT, which
+describes a crowd walking off toward the horizon. Neither of their plates has a
+crowd in it -- both are an empty plain with one chair.
+
+Handed an empty plain and told what "the last of the crowd" does, the model
+invented a crowd. On the beat whose entire job was that **everything stops**, it
+invented one and then walked it around: the stillest beat in the film came back
+as the busiest thing on the clip sheet.
+
+Nothing failed. Both clips were coherent, well exposed and beautifully lit, and
+the whole-frame numbers were unremarkable -- an invented crowd at that scale is
+a few percent of the picture.
+
+> **A noun in a direction block that is absent from the plate is a request to
+> draw it.** An i2v model is conditioned on a still and told what happens next;
+> a thing named in the direction and missing from the frame is the one
+> instruction it can only satisfy by drawing. Motion prompts are written against
+> the PLATE, not against the treatment. The treatment is what the film is
+> about; the plate is what the model can see.
+
+> **And this is what `qc_clips.py` is for.** It cannot pass or fail anything and
+> deliberately does not try -- it puts every clip's frames on one sheet beside
+> the plate contact sheet, and what the eye is doing is diffing two sheets. A
+> crowd that is in one and absent from the other is instant; the same fault is
+> invisible in any per-clip metric.
+
+---
+
+## 37. The file whose job is to say the film is wrong was another film's
+
+`verify.py` looks at the finished film where each device is supposed to fire and
+measures the mix. A clone's copy still held the beat ids and device names of the
+film the template was extracted from, and it went through the whole pipeline
+untouched: `preflight.py` did not list it (`CONTENT` was script / shot / motion /
+edit / make_music -- a verifier did not look like content), `smoke.py` imported
+it clean because the stale table is read inside `main()` rather than at import,
+`residue.py` saw beat ids that all exist in this film, and `contract.py` has no
+opinion about it.
+
+It surfaced by crashing on the first run after the first bake, on a transition
+table this film deliberately leaves empty. **That is the lucky case.** In a tree
+where every name happens to resolve -- which is the normal case, since every
+film numbers its beats from "01" -- it would have measured the wrong moments
+against the wrong expectations and reported a pass.
+
+> **A verifier is content.** It names beats, devices and the moments they are
+> expected to fire, and all of those belong to one particular film. The file
+> whose whole job is to tell you the film is wrong is the last file that should
+> be another film's.
+
+Fixed by putting `EXAMPLE_CONTENT = True` in `_session_template/verify.py` and
+adding it to `preflight.CONTENT`. Same fix, same reasoning and same paragraph as
+`make_music.py`, which was added to that list for the same reason after a fork
+shipped three cues written for another season.
+
+---
+
+## 38. The delivery spec was declared in season_identity and ignored by the file that delivers
+
+`season_identity.py` states the season's loudness targets, its ceiling and its
+sample rate, with a paragraph about why they live in one place. `assemble.py`
+then opened with
+
+    I_TARGET, TP_TARGET, LRA_TARGET = -16.0, -1.5, 11.0
+    CEIL_DBFS = -2.0
+    RATE = 48000
+
+-- the same four numbers, typed again, three inches from a comment explaining
+that `24` had been typed in eleven files beside a `season_identity.FPS` that
+already said so.
+
+Found by moving one: a music video wanted -14 LUFS instead of -16, the value was
+changed in `season_identity.py`, the film was re-baked, and it came out at -16
+with the build log printing the number it had ignored. Nothing failed. The only
+reason it was caught is that the operator happened to read the line.
+
+> **A value that is declared in one file and obeyed in another is not
+> declared.** Deriving it is one line; the duplicate is silent for as long as
+> nobody moves it, and the day somebody moves it is the day it lies.
+
+The comments around those literals were about the METHOD -- two-pass loudnorm,
+static gain, an explicit ceiling -- and they were all true and worth keeping.
+That is what made the duplication easy to miss: the paragraph justified the
+mechanism, not the number, so it read as a considered decision rather than as a
+copy.
+
+---
+
 ## The fault no prompt could fix, and how to tell
 
 The lip-sync was not a prompting failure. The video model carries an **audio
@@ -1911,3 +2032,115 @@ shot 45 times. **Identity by text; framing free.**
   fixed it is written into `docs/02_traps.md` and exists in no tool in this repo.
 - **No cross-shot grade, still.** Two models now contribute shots to one film and
   nothing measures drift *between* them.
+
+# The Late Bulletin — a seventh season, a talking format, and the prior that dresses its own set
+
+## The season this came from
+
+An SNL-style news-satire episode, 2026-08-19: a G-Man cold-open monologue
+(the cold open's first VO lane), an InfiniteTalk anchor at 16:9, and three
+sketches cut from that week's verified news. 350.5s delivered, all picture
+local, one day from scaffold to publish. Seven faults surfaced; three were
+machinery and are fixed in this repo, four were content lessons recorded
+below and in `docs/05_prompting.md`.
+
+## 39. The tube dial was declared in identity and obeyed nowhere
+
+`show/identity.py` declares `TV` and its comment says `""` disables the tube
+pass entirely. `show/assemble.py` carried its own `TV = "heavy"` literal and
+never read the identity. A season that set `TV = ""` (a clean modern
+broadcast, not a television) shipped all three desk segments through the
+heavy tube, at the tube's cabinet geometry, and the only tell was a log line
+saying `tube=heavy` on a season whose identity said otherwise.
+
+Same class as fault 38, found six days later in the next file over: a spec
+declared in one place and obeyed in another is not a spec. `assemble.py` now
+reads `identity.TV`, and an empty dial skips the crt pass at the call site
+— `crt.PRESETS` has no `""` entry and must not grow one, because a preset
+named "nothing" that renders something is this fault wearing a disguise.
+
+## 40. The show bake's cover scale never cropped, and 4:3 hid it for five seasons
+
+`dims()` scales a source UP until it covers both delivery floors and hands
+the result straight to the encoder. On every 4:3 season the numbers happen
+to land exact (768x576 -> 1440x1080). On a 16:9 season, InfiniteTalk's
+near-16:9 canvas came back **1920x1082**, and `feature.py` — correctly —
+refuses a part two rows taller than the films it joins.
+
+`_bake_one` now centre-crops the overshoot to the season's exact geometry,
+and `bake()` reports what was written rather than what was scaled: a log
+that says 1082 about a directory full of 1080s is a count of what was asked
+for, which is fault 12's lesson wearing new clothes.
+
+## 41. The base clip was welded to the segment, and a talkative desk cannot shoot itself
+
+The show's H3 base clip was sized to the full segment. A desk that talks
+22-27s a segment needs a 600-670 frame hold — over the 2.80M latent budget
+at every canvas the aspect offers, and past the budget H3 thrashes rather
+than fails. The reference reel's segments were half that length, so the
+weld never showed.
+
+What broke the weld was reading what the sync actually consumes: `italk.py`
+takes FRAME ZERO of the clean bake as its anchor and regenerates the entire
+segment from the voice at `edit.FRAMES` length; every base frame after zero
+is discarded. The base clip's job is to exist and to make the driver audio
+the right length. So `edit.BASE_CAP_F` caps the base shoot at 294f (the
+longest clip proven on the measured card), `h3_shoot.py` shoots the cap,
+and the clean pass pads to segment length by repeating the last frame. On a
+reel whose segments fit, `BASE_FRAMES == FRAMES` and nothing changes.
+
+## The prior dresses its own set — three findings, one rule
+
+All three are in `docs/05_prompting.md` now; the incidents:
+
+- **"Seen from behind over his shoulder" summoned a second G-Man, twice.**
+  An over-the-shoulder framing implies somebody to look at, and the LoRA
+  populated the implication — at two seeds, which is the prompt-fault
+  signal. "He stands alone with his back to the camera... the only figure
+  anywhere in the studio" fixed it at the same seed.
+- **"One rack in a dark aisle" was a wall of lit racks, twice.** A
+  datacenter aisle is a genre prior that fills itself with rows. The orphan
+  needed geometry, not adjectives: "a single free-standing rack alone in a
+  wide bare concrete hall."
+- **An empty deposition room staffed itself.** The interview sketch's rack
+  beats first grew a clerk's arm arranging a folder (fixed by a positive
+  occupancy clause — the same rule as an unoccupied face), and then, with
+  the humans banned, H3 *materialised the props instead*: folder, glass and
+  a wire tray fading in mid-clip, because the plate's table was bare and
+  the deposition prior insists on a dressed one. The root fix was in the
+  PLATE: give the first frame the props the prior demands, and the motion
+  clause pins them. **Give the prior what it insists on in frame zero, or
+  it will fetch it during the clip** — the conservation family's fourth
+  member, beside negation, allocation and identity-scale.
+
+## What was confirmed, a fifth time
+
+- The clip-folder stamp (`claim_clips`) refused a reused NAME on day one —
+  `OPEN_clips` belonged to another season — which is the guard doing
+  exactly what its docstring promises.
+- The InfiniteTalk chain end to end on a NEW host at a NEW aspect:
+  `which_source` proved all three segments baked from the synced render,
+  `sync_probe` worst lag +0.9ms. The two proofs exist because six
+  interstitials once shipped from the wrong picture; they took seconds.
+- `BEAT_MIN` and the vendor-cap exit both fired during editing (a 12.8s
+  take against `CLIP_MAX = 12`) and were answered with words, not machinery.
+- The `--plain` A/B's own measurement was adopted as production: this
+  season shot the plain graph into the film plate directories (`--filtered`
+  is the probe now, in this season's copies), and the props the prompts
+  named arrived as asked.
+
+## Still open
+
+- ~~**The season's gen_still probe inversion is not in the template.**~~
+  **Applied, 2026-08-20, on the user's go-ahead.** All three gen_still
+  copies now ship the plain graph as production and `--filtered` as the
+  probe (its own `<NAME>_filtered` directory, same isolation discipline).
+  The docstring's own condition was met before the move: two production
+  seasons ran plain on their own prompts, one with a character LoRA loaded.
+- ~~**`show/tvtest.py` names segment 05.**~~ **Applied, 2026-08-20.** The
+  default sample is now first/middle/last of `shot.CUT`, derived — a reel
+  of any length gets a spread of what it actually has.
+- **The anchor segment 02 mix works its clipper for 1.6 dB on one
+  transient.** In spec (-16.0 / -1.9 dBTP) and shipped; the fix, if the ear
+  wants one, is at the take — content in the delivered season, not
+  machinery, so it stays here rather than in a tool.

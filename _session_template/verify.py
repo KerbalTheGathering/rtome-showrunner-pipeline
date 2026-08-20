@@ -7,6 +7,21 @@ cannot drift out of step with the cut.
 """
 from __future__ import annotations
 
+# THE CHECKS BELOW ARE THE TEMPLATE'S EXAMPLE, NOT YOUR FILM'S.
+# preflight.py refuses to render while this line is here. Delete it when you
+# have replaced the check table -- and only then.
+#
+# WHY A VERIFIER CARRIES THE SENTINEL AT ALL. It did not, and preflight's
+# CONTENT list was script/shot/motion/edit/make_music, because a verifier did
+# not look like content. It is: it names BEATS, DEVICES and the moments they
+# are expected to fire, all of them belonging to one particular film. A clone
+# that keeps this table either crashes on a beat id that resolves to nothing --
+# which is the cheap case, and is how this was found -- or, in a tree where
+# every name happens to resolve, quietly verifies the wrong claims and reports
+# a pass. The file whose whole job is to tell you the film is wrong is the last
+# file that should be another film's.
+EXAMPLE_CONTENT = True
+
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import season_paths                                                # noqa: E402

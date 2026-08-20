@@ -96,6 +96,21 @@ CEIL_DBFS = -2.0                 # sample-peak ceiling for the hard clip
 # here rather than reaching for a name in the file that draws it.
 FONT_DISPLAY = "impact.ttf"
 
+# HOW HEAVY THE OUTLINE BEHIND THE TYPE IS, as a fraction of frame height.
+#
+# THIS BELONGS WITH THE FACE AND IT WAS `max(2, round(h * 0.014))` INSIDE
+# assemble.py -- 15px at 1080. That is sized for a heavy display face, where the
+# outline is thinner than the letter strokes. Put a light face in front of it --
+# a season changing FONT_DISPLAY, which is the one line this file invites you to
+# change -- and the outline is thicker than the letters, so the type stops
+# reading as type and starts reading as a sticker. A considered typographic
+# choice then arrives looking worse than the default it replaced, and the reason
+# is in another file.
+#
+# 0.014 is what the reference season used with Impact. A light or monospaced
+# face wants something nearer 0.003.
+FONT_STROKE = 0.014
+
 # --------------------------------------------------------------------------
 # WHERE FINISHED WORK GOES
 # --------------------------------------------------------------------------

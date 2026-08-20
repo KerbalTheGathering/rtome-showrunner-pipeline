@@ -201,7 +201,18 @@ def frames_of(sid: str) -> list[str]:
 # samples on Session #3). This is not "adding limiting" -- dynamic-mode loudnorm
 # has a limiter inside it and was already using it. All that changes is that the
 # gain in front of it stops converging: opening deficit -2.12 dB -> -0.55 dB.
-I_TARGET, TP_TARGET, LRA_TARGET = -16.0, -1.5, 11.0
+# THESE WERE TYPED HERE, BESIDE A season_identity THAT ALREADY SAID SO -- the
+# exact fault this repo records about `24` in eleven files and `impact.ttf` in
+# three. Found by moving one: a season's loudness target was changed from -16
+# to -14, the film was re-baked, and it came out at -16 with the build log
+# printing the number it had ignored. A delivery spec that is declared in one
+# file and obeyed in another is not a spec. See learnings.md 38.
+#
+# LRA stays local: it is a property of this normalisation method rather than of
+# the season, and season_identity does not claim it.
+I_TARGET = identity.season.I_TARGET
+TP_TARGET = identity.season.TP_TARGET
+LRA_TARGET = 11.0
 CEIL_DBFS = -2.0          # sample-peak ceiling; leaves room for intersample
 RATE = 48000              # ONE delivery rate for the whole season, see below
 

@@ -168,7 +168,18 @@ LOUDNORM = "anull"
 # to about 0.1 LU. `linear` is not always granted -- if the move needed would
 # clip, loudnorm silently falls back to dynamic -- so pass two is asked what it
 # did and says so out loud.
-I_TARGET, TP_TARGET, LRA_TARGET = -16.0, -1.5, 11.0
+# THESE WERE TYPED HERE, BESIDE A season_identity THAT ALREADY SAID SO -- the
+# exact fault this repo records about `24` in eleven files and `impact.ttf` in
+# three. Found by moving one: a season's loudness target was changed from -16
+# to -14, the film was re-baked, and it came out at -16 with the build log
+# printing the number it had ignored. A delivery spec that is declared in one
+# file and obeyed in another is not a spec. See learnings.md 38.
+#
+# LRA stays local: it is a property of this normalisation method rather than of
+# the season, and season_identity does not claim it.
+I_TARGET = identity.season.I_TARGET
+TP_TARGET = identity.season.TP_TARGET
+LRA_TARGET = 11.0
 
 
 #     AND `linear=true` IS NOT GRANTED HERE -- THE GUARD CAUGHT IT.
@@ -189,8 +200,9 @@ I_TARGET, TP_TARGET, LRA_TARGET = -16.0, -1.5, 11.0
 # THIS IS NOT "ADDING LIMITING". Dynamic-mode loudnorm has a limiter inside it
 # and was already using it; all that changes is that the gain in front of it
 # stops converging. Same amount of peak control, no fade-up at every join.
-CEIL_DBFS = -2.0          # sample-peak ceiling; leaves room for intersample
-RATE = 48000              # ONE delivery rate for the whole season, see below
+CEIL_DBFS = identity.season.CEIL_DBFS   # sample-peak ceiling; leaves
+                                        # room for intersample. As above.
+RATE = identity.season.A_RATE           # ONE delivery rate, season-wide
 
 
 def measure(path: str) -> dict:
@@ -676,7 +688,10 @@ def bake(frames, w, h):
     if SLICE is None:
         shutil.rmtree(BAKED, ignore_errors=True)
         os.makedirs(BAKED)
-    stroke = max(2, round(h * 0.014))
+    # THE OUTLINE IS A PROPERTY OF THE FACE, so it is declared beside the
+    # face in season_identity.py rather than fixed here: a weight sized for
+    # a heavy display face buries a light one. See the note there.
+    stroke = max(1, round(h * identity.season.FONT_STROKE))
 
     width_of = {}
     for rec in frames:

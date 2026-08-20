@@ -36,14 +36,16 @@ import shot
 # own directory so one layer can never be resolved as the other by accident.
 OBJ = "--obj" in sys.argv
 
-# --plain OMITS THE TWO NODES NOBODY HAD MEASURED. See graph() for what the
-# comparison found. It writes to its OWN directory, the same discipline --obj
-# uses: a probe render that could be resolved as a film plate is how an A/B
-# ends up in the cut.
-PLAIN = "--plain" in sys.argv
+# THE PLAIN GRAPH IS PRODUCTION; --filtered OPTS BACK INTO THE TWO NODES AS
+# THE PROBE. See graph() for the A/B that decided it and the two seasons
+# that confirmed it in production. The probe still writes to its OWN
+# directory, the same discipline --obj uses: a probe render that could be
+# resolved as a film plate is how an A/B ends up in the cut.
+FILTERED = "--filtered" in sys.argv
+PLAIN = not FILTERED
 OUT = os.path.join(season_paths.COMFY_OUTPUT,
                    f"{shot.OBJ_NAME if OBJ else shot.NAME}"
-                   + ("_plain" if PLAIN else ""))
+                   + ("_filtered" if FILTERED else ""))
 HOST = season_paths.COMFY_URL
 
 # A cold load is ~120-150s, so anything under ~200s cannot distinguish "still
@@ -66,24 +68,25 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
     still loads the file and still costs VRAM on a card already carrying a 12GB
     unet, and it makes the graph lie about what is applied.
 
-    TWO NODES IN HERE WENT UNMEASURED FOR SIX SEASONS, and `--plain` omits both:
+    TWO NODES IN HERE WENT UNMEASURED FOR SIX SEASONS, and the plain graph --
+    the shipping default now; `--filtered` restores them -- omits both:
 
         node 51   krea2filterbypass3.safetensors, at strength 100/100
         node 28   ConditioningKrea2Rebalance, multiplier 5 with a twelve-value
                   per-layer weight list, applied to the NEGATIVE conditioning
                   -- which is itself a ConditioningZeroOut of the positive
 
-    A fork's render harness omits both deliberately, on the grounds that they
-    degrade Krea2. That was a claim from somewhere else about a graph that had
-    produced every plate in six seasons here, so the flag exists to settle it
-    with a render rather than an argument:
+    A fork's render harness omitted both deliberately, on the grounds that
+    they degrade Krea2. That was a claim from somewhere else about a graph
+    that had produced every plate in six seasons here, so the flag existed to
+    settle it with a render rather than an argument:
 
-        python gen_still.py --beat=07              # the graph as it ships
-        python gen_still.py --beat=07 --plain      # the same, without those two
+        python gen_still.py --beat=07              # plain -- the graph as it ships NOW
+        python gen_still.py --beat=07 --filtered   # the old pair, as the probe
 
-    Same seed, same latent, same LoRAs, same words. `--plain` renders into its
-    own `<NAME>_plain` directory -- the discipline `--obj` already uses -- so a
-    probe can never be resolved as a film plate.
+    Same seed, same latent, same LoRAs, same words. `--filtered` renders into
+    its own `<NAME>_filtered` directory -- the discipline `--obj` already
+    uses -- so a probe can never be resolved as a film plate.
 
     WHAT THE COMPARISON FOUND, two seeds, one prompt, no LoRAs, everything else
     byte-identical -- a painted night interior with brass, glass, a named
@@ -111,13 +114,17 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
     room ambiently at both seeds. And B renders "on textured paper" as a literal
     sheet with margins showing, which a full-bleed plate does not want.
 
-    NOT CHANGED, AND DELIBERATELY. Six seasons shipped through the graph as it
-    stands and removing these nodes changes what every one of them looks like --
-    that is an editorial decision about a body of work, not a bug fix. The
-    measurement is two seeds on one prompt with NO LoRA loaded, and every season
-    that shipped ran a style LoRA, which is exactly the thing a bypass at
-    strength 100 would interact with. Run it again on your own film's prompt,
-    with your own LoRAs, before you move the default.
+    THE DEFAULT MOVED, AND ON THE TERMS THIS DOCSTRING SET. The paragraph
+    that used to end it said: the A/B was two seeds, one prompt, NO LoRA --
+    run it on your own film, with your own LoRAs, before you move the
+    default. Two seasons then did exactly that in production: a 37-beat
+    music video and a seven-part news satire both shot plain into their
+    plate directories (the satire with a character LoRA loaded in its cold
+    open), and the props their prompts named arrived as asked. So plain is
+    the production graph now, `--filtered` is the probe, and the A/B above
+    is the record of why. The old look is not lost: A's contrast and
+    saturation are a LOOK, and grades.py produces it on purpose from a
+    picture that still has the shadow information in it.
     """
     # WHERE THE CHAIN STARTS, AS A PAIR, because --plain deletes the node that
     # everything else used to hang off. Every loader below chains from this
@@ -309,7 +316,24 @@ def render(sid: str, prompt: str, what: str, seed: int) -> int:
         print(f"FAIL: {n} prompt(s) already queued. One Krea2 render at a time.")
         return 1
 
-    name = shot.OBJ_NAME if OBJ else shot.NAME
+    # THE WRITE PREFIX HONOURED --obj AND NOT THE PROBE FLAG, AND THAT BROKE
+    # THE ONE THING THE PROBE EXISTS FOR. `OUT` above appends the probe
+    # suffix; this line did not, so a probe render was written STRAIGHT INTO
+    # THE FILM'S PLATE DIRECTORY while the poller watched an empty probe
+    # folder and reported "NO OUTPUT after 20s". (The probe was spelled
+    # --plain then; it is --filtered now that plain ships. Same trap.)
+    #
+    # TWO FAILURES AT ONCE, AND ONLY THE HARMLESS ONE IS VISIBLE. `plate()`
+    # resolves a beat by taking `have[-1]`, the LAST file for that sid -- so
+    # the probe becomes the plate the film is shot from, and the thing that
+    # tells you is a message saying the render failed.
+    #
+    # Found on the first --plain render anyone ever ran. The flag arrived with
+    # a docstring promising that a probe can never be resolved as a film plate;
+    # that isolation was only half implemented, in all three copies of this
+    # file. A guard present in one of three copies is not present.
+    name = ((shot.OBJ_NAME if OBJ else shot.NAME)
+            + ("_filtered" if FILTERED else ""))
     body = json.dumps({"prompt": graph(prompt, f"{name}\\{sid}", seed)}).encode()
     req = urllib.request.Request(f"{HOST}/prompt", data=body,
                                  headers={"Content-Type": "application/json"})

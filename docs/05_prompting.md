@@ -90,6 +90,57 @@ post from clean stock taken from the same plate. See `docs/02_traps.md`.
 
 ## Motion
 
+### Write the direction against the PLATE, not against the treatment
+
+A motion prompt is handed a still and told what happens to it. **A noun in that
+prompt which is absent from the still is the one instruction the model can only
+satisfy by drawing it.**
+
+Two beats of a music video named "the last of the crowd" because the treatment
+described a crowd walking off toward the horizon. Both plates were an empty
+plain with one chair. The model invented a crowd in each -- and on the beat
+whose entire job was that everything stops, it invented one and then walked it
+around, so the stillest beat in the film came back as the busiest thing on the
+clip sheet. Both clips were coherent and beautifully lit and nothing failed.
+
+The treatment is what the film is about. The plate is what the model can see.
+Read the plate, then write the block -- and diff `qc_clips.py`'s sheet against
+`contact.py`'s, because content that is in one and not the other is instant to
+spot and invisible to any per-clip number.
+
+### Give the prior what it insists on in frame zero
+
+The rule above is about nouns in the DIRECTION. This one is about nouns the
+GENRE demands: if the plate withholds something the scene-type strongly
+implies, the model will fetch it during the clip, and no occupancy clause
+stops the fetching -- it only changes what arrives.
+
+Measured on one interview sketch, three rounds: an empty deposition room
+across the table from a server rack grew **a clerk's arm arranging a
+folder** (an unoccupied room fills itself, exactly as an unoccupied face
+fills itself). A positive occupancy clause -- "the rack is the only occupant,
+in the first frame, in every frame between, and in the last" -- banned the
+humans, and the model then **materialised the props instead**: a folder, a
+water glass and a wire tray fading in mid-clip, persisting to the last
+frame. The deposition prior insists on a dressed table, and it will send
+either a person or a poltergeist to dress it.
+
+The root fix was in the PLATE, not the direction: re-roll the still WITH the
+folder and glass on the table, so frame zero already has everything the
+prior wants, and let the conservation clause pin it ("everything resting on
+the table keeps the exact position the first frame gives it"). Same family
+as negation and allocation: the model fills undirected space, undirected
+audio, unallocated motion -- and unmet genre expectations.
+
+Two smaller instances from the same season, both prompt faults confirmed at
+two seeds: "seen from behind over his shoulder" summoned a SECOND figure
+(an over-the-shoulder framing implies somebody to look at -- say "alone,
+with his back to the camera" instead), and "one rack in a dark aisle" came
+back a wall of lit racks (an aisle is a prior that fills itself with rows;
+the orphan needed "a single free-standing rack alone in a wide bare hall").
+Geometry beats adjectives, and framings carry implications the same way
+negations carry nouns.
+
 ### A prohibition is not a position
 
 This is the single most load-bearing rule in `motion.py`.

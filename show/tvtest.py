@@ -100,7 +100,13 @@ def crop(im: Image.Image, box: tuple) -> Image.Image:
 
 
 def main() -> int:
-    want = [a for a in sys.argv[1:] if not a.startswith("-")] or ["01", "03", "05"]
+    # A SPREAD ACROSS THE REEL, DERIVED. This defaulted to ["01", "03", "05"]
+    # -- the six-segment reference reel's first/middle/last -- and on any reel
+    # shorter than five segments the default FAILS a tool whose whole job is
+    # to be looked at. First, middle and last of whatever the reel actually
+    # is; on a reel of one or two, the set collapses to what exists.
+    spread = sorted({shot.CUT[0], shot.CUT[len(shot.CUT) // 2], shot.CUT[-1]})
+    want = [a for a in sys.argv[1:] if not a.startswith("-")] or spread
     bad = [s for s in want if s not in shot.CUT]
     if bad:
         sys.exit(f"FAIL: {bad} are not segments")

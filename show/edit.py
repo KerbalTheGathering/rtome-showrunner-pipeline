@@ -108,6 +108,24 @@ def table() -> list[dict]:
     return rows
 
 
+# THE H3 BASE CLIP IS NOT THE SEGMENT, AND ON A TALKATIVE SHOW IT CANNOT BE.
+#
+# A desk that talks 22-27s a segment needs a 600-670 frame hold, which is
+# over the 2.80M latent budget at every canvas the aspect offers -- and past
+# the budget H3 does not fail, it thrashes. What saves it is what the sync
+# actually consumes: italk.py takes FRAME ZERO of the clean bake as its
+# anchor image and regenerates the whole segment at FRAMES length from the
+# voice; every base frame after zero is discarded. So the base shoot is
+# capped here and the clean bake pads the remainder by repeating the last
+# frame (see assemble.bake), which keeps the driver audio full length. On a
+# reel whose segments fit under the cap, BASE_FRAMES == FRAMES and nothing
+# changes.
+#
+# 294 frames is the H3 grid at ~12s -- the longest clip the reference season
+# proved on the measured card.
+BASE_CAP_F = 294
+
+
 # COMPUTED ON FIRST ACCESS, NOT ON IMPORT. These were two module-level
 # comprehensions over table(), which decodes every VO take -- so `import edit`
 # required the reel to have been recorded, and everything downstream of edit
@@ -115,10 +133,15 @@ def table() -> list[dict]:
 # _session_template/edit.py. `edit.SECS[sid]` and `edit.FRAMES[sid]` are
 # unchanged for every caller; they are just no longer paid for at import.
 def __getattr__(name: str):
-    if name in ("SECS", "FRAMES"):
+    if name in ("SECS", "FRAMES", "BASE_SECS", "BASE_FRAMES"):
         rows = table()
         globals()["SECS"] = {r["sid"]: r["clip"] for r in rows}
         globals()["FRAMES"] = {r["sid"]: r["frames"] for r in rows}
+        # The base shoot: capped, still on the 17k+5 grid by construction.
+        globals()["BASE_FRAMES"] = {r["sid"]: min(r["frames"], BASE_CAP_F)
+                                    for r in rows}
+        globals()["BASE_SECS"] = {s: f / FPS
+                                  for s, f in globals()["BASE_FRAMES"].items()}
         return globals()[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

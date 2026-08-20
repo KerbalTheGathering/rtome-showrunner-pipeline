@@ -126,10 +126,15 @@ LINE_GAP = 0.085
 # Override for one run with --tv=NAME, which is how tvtest.py's answer gets
 # turned into a bake without editing anything.
 #
-# "heavy" IS THE USER'S CHOICE, made off tvtest.py's 1:1 sheet on 2026-08-08,
-# over the softer "tube" -- along with the vertical roll on the cut-in and the
-# cabinet. Do not quietly walk it back toward the middle.
-TV = "heavy"
+# THE DIAL LIVES IN identity.py AND IS READ, NOT RETYPED. This was
+# `TV = "heavy"` typed here beside an identity.TV the identity's own comment
+# claimed was the setting -- so a season that set identity.TV = "" (a show
+# that is not on a television) shipped three segments through the heavy tube
+# anyway, at the tube's cabinet geometry. A spec declared in one file and
+# obeyed in another is not a spec; same class as fault 38's loudness target.
+# ("heavy" itself was the user's choice off tvtest.py's 1:1 sheet on
+# 2026-08-08 and stays recorded in identity.py, where the dial is.)
+TV = identity.TV
 
 # WHAT SITS UNDER WHAT, from ../mixes.py. The show's arrangement is fixed
 # levels -- see identity.py. The `music` setting carries the sting's 0.42,
@@ -239,13 +244,26 @@ def _bake_one(i: int) -> int:
     c = _CTX
     im = Image.open(os.path.join(c["dir"], c["names"][i])).convert("RGB")
     im = im.resize((c["w"], c["h"]), Image.LANCZOS)
+    # THE COVER SCALE OVERSHOOTS ON A SOURCE THAT IS NOT EXACTLY THE DELIVERY
+    # ASPECT, AND ON A 4:3 SEASON THAT NEVER SHOWED. dims() scales UP to cover
+    # both delivery floors and nothing here ever cropped: InfiniteTalk's
+    # near-16:9 canvas came back 1920x1082 on a 16:9 season, and feature.py
+    # (rightly) refused a part two rows taller than the films. On 4:3 the
+    # numbers happen to land exact, which is why five seasons never saw it.
+    if (c["w"], c["h"]) != (W_MIN, H_MIN):
+        x0 = (c["w"] - W_MIN) // 2
+        y0 = (c["h"] - H_MIN) // 2
+        im = im.crop((x0, y0, x0 + W_MIN, y0 + H_MIN))
     if not c["plain"]:
         shown = sum(1 for m in c["marks"] if i >= m)
         im = draw_board(im, c["sid"], shown)
         # THE FRAME INDEX GOES IN because the tube is not a still filter -- the
         # hum bar drifts, and passing 0 every frame would nail it to one height
-        # and turn a rolling band into a permanent bright stripe.
-        im = crt.tube(im, c["tv"], i)
+        # and turn a rolling band into a permanent bright stripe. AN EMPTY DIAL
+        # SKIPS THE PASS -- identity.TV = "" is a show that is not on a
+        # television, and crt.PRESETS has no "" entry to fall through to.
+        if c["tv"]:
+            im = crt.tube(im, c["tv"], i)
     im.save(os.path.join(BAKED, f"b_{i:05d}.png"), compress_level=1)
     return i
 
@@ -291,6 +309,16 @@ def bake(sid: str, src: str | None = None,
     got = sorted(os.listdir(frames_dir))
     want = edit.FRAMES[sid]
     n = min(len(got), want)
+    # THE CLEAN PASS PADS A SHORT BASE UP TO THE SEGMENT. The H3 base clip is
+    # capped (edit.BASE_FRAMES -- the latent budget cannot carry a long
+    # talking hold), and the sync consumes exactly two things from this bake:
+    # FRAME ZERO as its anchor image, and total_s as the length of the driver
+    # audio. The repeated frames feed neither a viewer nor the model; they
+    # exist so vo_XX.wav covers the whole segment. The FINAL pass never comes
+    # through here short -- it bakes italk's full-length synced render.
+    if plain and len(got) < want:
+        got = got + [got[-1]] * (want - len(got))
+        n = want
 
     marks = board_marks(sid)
 
@@ -315,7 +343,10 @@ def bake(sid: str, src: str | None = None,
             if done % 200 == 0:
                 print(f"    baked {done}/{n}")
     shutil.rmtree(frames_dir, ignore_errors=True)
-    return n, w, h
+    # WHAT WAS WRITTEN, NOT WHAT WAS SCALED. _bake_one centre-crops the cover
+    # overshoot to the season's exact geometry; reporting the pre-crop pair
+    # here is how a log says 1082 about a directory full of 1080s.
+    return n, min(w, W_MIN), min(h, H_MIN)
 
 
 # --------------------------------------------------------------------------
@@ -509,7 +540,18 @@ def vo_tail(trailing: float, spike: bool) -> tuple[float, float]:
 # -18.6 LUFS, 2.6 LU under the five around it. `asoftclip=type=hard` clamps the
 # handful of samples that poke through and leaves every other sample bit for
 # bit alone -- what a limiter does, minus the lookahead that was the bug.
-I_TARGET, TP_TARGET, LRA_TARGET = -16.0, -1.5, 11.0
+# THESE WERE TYPED HERE, BESIDE A season_identity THAT ALREADY SAID SO -- the
+# exact fault this repo records about `24` in eleven files and `impact.ttf` in
+# three. Found by moving one: a season's loudness target was changed from -16
+# to -14, the film was re-baked, and it came out at -16 with the build log
+# printing the number it had ignored. A delivery spec that is declared in one
+# file and obeyed in another is not a spec. See learnings.md 38.
+#
+# LRA stays local: it is a property of this normalisation method rather than of
+# the season, and season_identity does not claim it.
+I_TARGET = identity.season.I_TARGET
+TP_TARGET = identity.season.TP_TARGET
+LRA_TARGET = 11.0
 CEIL_DBFS = -2.0          # sample-peak ceiling; leaves room for intersample
 QUIET_WARN = 1.5          # dB the ceiling may cost before it is worth saying
 RATE = 48000              # ONE delivery rate for the whole season, see below

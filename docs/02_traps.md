@@ -84,6 +84,21 @@ skipped — under a `stem.rsplit("_00",1)[0]` key it becomes *its own entity*,
 survives frame prep as a separate item, and gets billed as a second clip for the
 same beat, generated from the picture that was thrown out.
 
+**A mode with its own output directory must derive that path ONCE.** `--plain`
+existed so an A/B probe could never be resolved as a film plate, and its
+docstring said so. The directory the poller *watched* appended the suffix; the
+prefix the render *wrote* did not, because that line had been extended for
+`--obj` and never for `--plain`. The probe landed in the film's plate directory,
+where `plate()` takes the last file for that sid — so the probe became the plate
+the film would be shot from. **Two failures at once, and only the harmless one
+is visible:** what the operator saw was `NO OUTPUT after 20s`, i.e. a message
+saying the render had failed, from a render that had succeeded into the wrong
+folder.
+
+So: **"no output" from a renderer that plainly ran is a path fault, not a render
+fault, and the file is somewhere.** Look for the file before you read the log.
+And when two expressions have to agree about a path, make them one expression.
+
 **An unquoted glob after `ffmpeg -i` destroys the second match.** ffmpeg's
 grammar is positional, so `ffmpeg -i "$B/s09_"*.mp4 ... out.png` takes the first
 path as input and the second — an accepted take of a published film — as an

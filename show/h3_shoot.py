@@ -193,7 +193,12 @@ def build(prompt: str, image_name: str, length: int, prefix: str,
 
 def shoot(sid: str, turbo: bool, seed: int = SEED,
           wh: tuple[int, int] = CANVASES[0]) -> bool:
-    secs = edit.SECS[sid]
+    # THE BASE, NOT THE SEGMENT. Only frame zero of this clip survives into
+    # the film (italk regenerates the rest from the voice at edit.FRAMES),
+    # so the shoot reads edit.BASE_SECS -- capped for the latent budget, and
+    # equal to the full length on a reel whose segments fit. See the note
+    # above BASE_CAP_F in edit.py.
+    secs = edit.BASE_SECS[sid]
     length = grid(secs)
     src = gen_still.plate(sid)
 
@@ -293,8 +298,8 @@ def main() -> int:
             if turbo else f"base {BASE_STEPS}st {BASE_SAMPLER}/{BASE_SCHED}")
     print(f"  {shot.NAME} / Session #{shot.SESSION_NO}: {shot.TITLE}")
     print(f"  {len(todo)} beat(s) to shoot, "
-          f"{sum(edit.SECS[s] for s in todo):.1f}s "
-          f"of clip  seed {seed}"
+          f"{sum(edit.BASE_SECS[s] for s in todo):.1f}s "
+          f"of base clip (frame zero feeds the sync)  seed {seed}"
           f"{'' if seed == SEED else f' (session seed is {SEED})'}"
           f"  [{mode}]  -- LOCAL, $0.00")
     for s in skip:
@@ -305,14 +310,15 @@ def main() -> int:
     # not fail, it HANGS -- fifty-two minutes at 100% utilisation with no output
     # and no error. A refusal up front is worth a great deal more than a clean
     # log line an hour later.
-    sizes = {s: (SMALL if small else pick_canvas(edit.FRAMES[s]))
+    sizes = {s: (SMALL if small else pick_canvas(edit.BASE_FRAMES[s]))
              for s in todo}
-    over = [(s, sizes[s], season_paths.latent_m(edit.FRAMES[s], sizes[s]))
+    over = [(s, sizes[s], season_paths.latent_m(edit.BASE_FRAMES[s], sizes[s]))
             for s in todo
-            if season_paths.latent_m(edit.FRAMES[s], sizes[s]) > BUDGET_M]
+            if season_paths.latent_m(edit.BASE_FRAMES[s], sizes[s]) > BUDGET_M]
     if over:
         for s, wh, m in over:
-            print(f"    {s}: {edit.FRAMES[s]}f at {wh[0]}x{wh[1]} = {m:.2f}M")
+            print(f"    {s}: {edit.BASE_FRAMES[s]}f at {wh[0]}x{wh[1]} = "
+                  f"{m:.2f}M")
         sys.exit(
             f"FAIL: {len(over)} clip(s) are over the {BUDGET_M:.2f}M latent "
             f"budget even on the smallest canvas this season's aspect offers "
