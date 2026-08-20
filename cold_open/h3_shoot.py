@@ -297,8 +297,16 @@ def main() -> int:
           f"of clip  seed {seed}"
           f"{'' if seed == SEED else f' (session seed is {SEED})'}"
           f"  [{mode}]  -- LOCAL, $0.00")
+    # A CLIP OUTLIVES THE PLATE IT WAS SHOT FROM (fault 49) -- same stale
+    # check as the session template's.
     for s in skip:
-        print(f"  [{s}] SKIP -- {existing(s)[-1]} on disk")
+        clip = existing(s)[-1]
+        stale = (os.path.getmtime(gen_still.plate(s))
+                 > os.path.getmtime(os.path.join(CLIPS, clip)))
+        note = ("  <-- STALE: its plate is NEWER than this take -- the "
+                "picture changed under it; retire it (--rej=stale_plate) "
+                "and re-shoot" if stale else "")
+        print(f"  [{s}] SKIP -- {clip} on disk{note}")
     print()
 
     # THE CEILING IS CHECKED BEFORE ANYTHING IS SUBMITTED. Going over it does

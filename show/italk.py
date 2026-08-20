@@ -427,8 +427,22 @@ def main() -> int:
         dst = os.path.join(WORK, f"synced_{sid}.mp4")
         raw = os.path.join(WORK, f"it_raw_{sid}.mp4")
         if os.path.exists(dst) and not shift_only and "--force" not in sys.argv:
-            print(f"  [{sid}] have it, skipping (--force to redo)")
-            continue
+            # A SYNC OLDER THAN ITS PICTURE IS NOT "HAVE IT". This skip is an
+            # idempotency shortcut, and it once kept four v1 renders alive
+            # through a full recast: every plate and take upstream had been
+            # replaced, this line said "have it" four times, and only a
+            # face-check on the bake caught it. Same class as the h3_shoot
+            # --seed skip (fault 44): a requested re-render silently not
+            # running. The clean bake is this render's anchor source, so its
+            # mtime is the honest freshness test.
+            clean = os.path.join(WORK, f"clean_{sid}.mp4")
+            if (os.path.exists(clean)
+                    and os.path.getmtime(clean) > os.path.getmtime(dst)):
+                print(f"  [{sid}] synced render predates clean_{sid}.mp4 -- "
+                      f"the picture changed under it; re-rendering")
+            else:
+                print(f"  [{sid}] have it, skipping (--force to redo)")
+                continue
         if shift_only:
             # Re-derive from the raw already on disk. The shift below is a whole
             # number of finished frames, so there is nothing to regenerate and

@@ -302,8 +302,22 @@ def main() -> int:
           f"of base clip (frame zero feeds the sync)  seed {seed}"
           f"{'' if seed == SEED else f' (session seed is {SEED})'}"
           f"  [{mode}]  -- LOCAL, $0.00")
+    # A SEED THAT WAS ASKED FOR AND NOT USED IS HOW A RE-ROLL GETS REPORTED
+    # THAT NEVER RAN (fault 44) -- same message as the session template's.
+    # A CLIP OUTLIVES THE PLATE IT WAS SHOT FROM (fault 49) -- same stale
+    # check as the template's: the SKIP names a plate newer than the take.
     for s in skip:
-        print(f"  [{s}] SKIP -- {existing(s)[-1]} on disk")
+        clip = existing(s)[-1]
+        note = ("  <-- your --seed did NOT re-roll this; retire the take "
+                "first (--rej=<reason>) or pass --force"
+                if seed != SEED else "")
+        stale = (os.path.getmtime(gen_still.plate(s))
+                 > os.path.getmtime(os.path.join(CLIPS, clip)))
+        if stale:
+            note = ("  <-- STALE: its plate is NEWER than this take -- the "
+                    "picture changed under it; retire it (--rej=stale_plate) "
+                    "and re-shoot" + note)
+        print(f"  [{s}] SKIP -- {clip} on disk{note}")
     print()
 
     # THE CEILING IS CHECKED BEFORE ANYTHING IS SUBMITTED. Going over it does

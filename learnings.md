@@ -2144,3 +2144,224 @@ All three are in `docs/05_prompting.md` now; the incidents:
   transient.** In spec (-16.0 / -1.9 dBTP) and shipped; the fix, if the ear
   wants one, is at the take — content in the delivered season, not
   machinery, so it stays here rather than in a tool.
+
+
+# Vertical Hold -- an eighth season, and the tube becomes the season
+
+`E:\Claude\Projects\VERTICAL HOLD` -- 7:37, nine parts, 16:9. A television
+very late at night, counting down past zero: a wordless cold open surfs
+channels 9-4, a lip-synced infomercial host sells sleep, dreams and
+memories between four films that ARE channels (80s fantasy, vaporwave
+exercise, a 1953 parlor drama, the viewer's own living room), and the
+finale finishes the countdown through derived below-zero rooms to the
+white dot. First season to put the crt pass on EVERY part, first with a
+per-part dial, first with a drawn OSD lane, first silent cold open, first
+to use the derive registry pattern in anger (two rungs: h3ref prop-swap,
+qwen door-removal), and the largest (N=4, escalating 76/70/86/130s).
+
+## Faults 42-44
+
+**42. `show/board_rect.py` assumes the reference reel's surface.** It
+hunts dark teal felt; this season's board is a glossy white card on black
+void, and the detector returned nothing for two segments and the HOST'S
+SHIRT for one -- a rect that passes every shape assert and would have put
+the price on the man. What landed: a season-local density measurement
+(only pixels whose 31x31 neighborhood is >90% bright count -- glints are
+thin, a card is a slab), rects drawn back onto the plates and looked at.
+Still open for the template: the detector wants the season to DECLARE its
+surface (a colour band, a brightness class) instead of inheriting the
+felt.
+
+**43. `show/audition.py` derives its "peak" line as `max(style)` and a
+uniform script hands it the first line.** Every line at 0.50 made
+intro==peak and the audition's own duplicate-line assert refused the
+import -- the guard did its job, before money, but the derivation invites
+the tie. What landed: the season gave its true crescendo line the top
+style, which is what the field means anyway. A tie-break that prefers any
+line over lines[0] would remove the trap.
+
+**44. `h3_shoot.py <sid> --seed=N` silently SKIPs a beat whose take is on
+disk.** The flag reads as "re-roll with this seed"; the tool prints SKIP
+and does nothing, and the re-roll only happens after a manual
+`*__rej_<reason>` rename. Correct behavior by the never-delete rule -- but
+the message should say "rename the take to _rej_ first", not just SKIP,
+because a seed that was asked for and not used is how a re-roll gets
+reported that never ran.
+
+## Rules that generalise (instances of standing rules, confirmed hard)
+
+- **A light with a verb rises.** "The striped sun... glowing with a very
+  slow, even pulse" -- written as a HOLD -- raised the sun in all three
+  shots that contained it, identically. docs/05's rule ("a light is never
+  the subject of a verb") covers even gerunds attached to a pinned object.
+  Shipped anyway, deliberately: identical wrongness in every shot reads as
+  the program's own rule, which is this season's premise. That defense is
+  not transferable to a season about a place that behaves.
+- **When the clip contradicts a line and the prior caused it, move the
+  words.** The parlor teapot poured -- no seed un-pours a pot already
+  tilted over a cup in frame zero -- and the line became "There is always
+  more tea. That is one of the terms", which is better than the joke it
+  replaced. Changing words is free; arguing with a physics prior is not.
+- **Frame zero is the law, and sometimes it is the better director.** The
+  finale's plates seated the salesman in the viewer's own couch depression
+  against the motion's "he stands"; the staging ships because occupying
+  the collected seat IS the thesis. Judge the plate's disobedience on what
+  it means, not on whether it obeyed.
+- **The glass is identity; only the wear escalates.** A tube season that
+  drops the cabinet for one part reads as leaving the television. "signed"
+  (no bezel, no curve) was right for a season where the tube was one
+  show's dressing and wrong here; the season added a "worn" preset (tube's
+  glass, lightest wear, the roll kept) to both crt.py copies. If per-part
+  dials become template machinery, the cabinet belongs to the season and
+  the wear to the part.
+
+## What worked without argument
+
+- The season-root channel layer (crt.py copy + new osd.py) went into five
+  assemblers with three byte-identical anchored patches; the OSD drawn
+  BEFORE the tube rides the same glass as the picture, and the tube's
+  roll doubles as the channel detent (per-film at frame 0, per-beat in
+  the cold open).
+- The bleed as a second music cue: channel 3's own VO take, band-passed,
+  under channel 2's held beat -- the ducked bus released it into her
+  silence with no new machinery at all.
+- The derive pattern carried from BALLAST held: ref key spelled
+  `ref_images.ref_image_0`, frame 0 of the R2V sample kept via settle(),
+  h3ref under-removes (right for the prop swap), qwen over-removes (it
+  took the door AND the night; kept -- the over-removal escalated the
+  ladder in the right direction).
+- InfiniteTalk through a clear space helmet: all four segments SYNCED per
+  which_source, worst sync_probe lag +0.8ms. The helmet was never a
+  variable; the mouth is visible and that is all the sync needs.
+
+## Still open
+
+- **The channel layer is season-local.** If a second season wants a tube
+  on its films, the layer (identity.TV defaulting to "", the osd lane,
+  the three assemble patches) belongs in `_session_template` -- an empty
+  TV is exactly every prior season, so the default costs nothing.
+- **`board_rect.py` wants a surface declaration** (fault 42).
+- **The audition peak tie-break** (fault 43).
+
+# The eighth season's polish pass (2026-08-20, faults 45-46)
+
+The user's notes after delivery: recast the host's face younger against a
+reference, drain THE HOLD from technicolor to mono over its runtime, give
+the parlor two-person lip sync, and remove a tube the helmet had grown.
+Everything below was learned applying them.
+
+## Fault 45 -- a V3 dynamic combo's option inputs are dotted paths
+
+`WanInfiniteTalkToVideo.mode` is a `COMFY_DYNAMICCOMBO_V3`: the
+"two_speakers" option carries `audio_encoder_output_2`, `mask_1` and
+`mask_2` as ITS OWN inputs, and in an API prompt they must be spelled
+`mode.audio_encoder_output_2`, `mode.mask_1`, `mode.mask_2`
+(comfy_api/latest/_io.py `parse_class_inputs` finalizes option inputs as
+`<combo_id>.<input_id>`). Spelled flat, the graph is ACCEPTED and the
+three inputs are silently dropped -- the first two-speaker render steered
+both faces from channel 1 alone, and the beat whose channel 1 was a
+silence track moved nobody. Nothing errored anywhere.
+
+Two rules out of it:
+
+- **Acceptance is not consumption.** `--check` proves the names exist on
+  the node; only a judged take proves they were wired. Judge channel 2's
+  mouth specifically, at frames inside ITS OWN line window.
+- **The dotted path is a contract family, not a one-off** -- it is the
+  same shape as the derive graphs' `ref_images.ref_image_0`. When a
+  node's input lives under a parent in `/object_info`, its prompt key
+  lives under the parent too.
+
+What landed: `show/italk_multi.py` rewritten against the read-off-the-node
+contract (guessed ASSUME table deleted); proven by eye on VERTICAL HOLD
+S3 -- both mouths track their own lines, a silent-presence speaker holds
+closed on a full-length silence track. The word UNPROVEN came off the
+port's header the way its own instructions demanded.
+
+## Fault 46 -- an idempotent skip outlives its inputs
+
+`show/italk.py` skipped every segment with a `synced_XX.mp4` on disk.
+After the recast replaced every plate and every take upstream, it said
+"have it, skipping" four times, and the stale v1 faces would have shipped
+if a face-check had not caught them. Same class as fault 44 (h3_shoot's
+--seed skip): a requested re-render silently not running -- one layer up.
+
+What landed: the skip now compares mtimes against `clean_XX.mp4` (the
+anchor source) and re-renders when the picture changed under it. The
+general rule: **an idempotency skip must name the input it is idempotent
+OVER, and check its freshness** -- "the output exists" is not that check.
+
+## Priors that would not roll away (instances of the restage rule)
+
+- **A brass-collared bubble helmet seen in profile grows a diving hose.**
+  Three seeds, three hoses, plate clause and motion clause both present.
+  What worked was denying the angle: restage so the character never turns
+  his back or profile to the camera. A prompt cannot out-argue the prior;
+  blocking can.
+- **Tilted glass under a light source grows a hard glint that
+  crystallizes** (a translucent patch on the forehead, an opaque square
+  on an eye -- three seeds). What worked: a dedicated plate that removes
+  the head-tilt action entirely (the remote already in hand; the beat is
+  only the aim). When two takes fail the same way, change the SHOT, not
+  the seed -- confirmed twice more.
+- **The LoRA's second-copy failure arrives through H3 too**: a duplicate
+  of the character coalesced under the desk mid-clip in an anchor-donor
+  take. Harmless when InfiniteTalk regenerates the picture (it consumes
+  only frame zero), but it means an anchor frame must be chosen EARLY,
+  before the dark space populates.
+
+## What worked without argument
+
+- **A grade that needs to know where it is, is a device**: THE HOLD's
+  technicolor-to-mono drain is a film-local `graded_at(im, i, total)` in
+  its own assemble (smoothstep to full mono at 75%), taking the
+  one-grade-per-frame slot; grades.py stays stateless, exactly as its
+  header demands. A/B the saturated end on a real plate -- 1.45 read as
+  rich gothic, 2.1 rouged the faces, 1.8 shipped.
+- **The face is stated once or it drifts**: the LoRA trigger alone did
+  not hold the host's face across photoreal plates (gaunt bureaucrat in
+  one tree, a different fifty-ish man in another -- the "one long night"
+  read had papered it over). A season-level GMAN_FACE block appended
+  after the trigger in every prompt that stages him pinned the identity
+  in six plates, six clips and four sync chains on the first try.
+
+## Addendum: the infomercial rebuild (same day, faults 47-48 + one pattern)
+
+- **Fault 47 -- ReActor''s bundled face-restore loader is broken on this
+  install**: `face_restore_model="GPEN-BFR-512.pth"` dies inside
+  r_chainner''s `load_state_dict` (unbound `model`). The working chain is
+  ReActorFaceSwap with restore `"none"` piped into the separate
+  "GPENO Face Restoration" node (512 preset -- the 1024 model is not on
+  disk and the node FileNotFounds rather than falling back).
+- **Fault 48 -- an estimator is not a progress bar**: a sync render sat at
+  "~1 second remaining" for the better part of an hour with VRAM pinned
+  at 23.6/24.5 GB -- paging, not progress (43C; heat was never the
+  story). The kill-bounce-requeue cost 8 minutes against the crawl''s 60+.
+  When VRAM is pinned and chunk times triple, restart the server; verify
+  the drop with nvidia-smi, never /free.
+- **The pattern that paid twice: a face swap on frame zero survives
+  whole-shot regeneration.** InsightFace-swapping the PLATE is enough --
+  H3 sustains the swapped face, and InfiniteTalk holds it through
+  11-chunk, 30-second chains (checked at 27s on four segments). Swap
+  once at the source; never chase faces downstream. Corollary: the
+  prompt must carry what the swap cannot -- hairline and build are the
+  render''s job, the oval is the swap''s.
+
+## Addendum: the pre-swap face leak (same day, fault 49)
+
+- **Fault 49 -- a clip outlives the plate it was shot from**: the face
+  swap re-made the plates and retired the old ones with reasons, but the
+  ACCEPTED CLIPS shot from the old plates stayed the highest non-reject
+  takes, and three beats of a delivered feature carried the pre-swap
+  face. The operator caught it in a screenshot; the mtimes had recorded
+  it all along (clips 8:59-9:53 AM, plates swapped 12:01 PM). The italk
+  freshness check (fault 46) could not see it -- it compares synced
+  against clean, one stage downstream of where this one broke. Fix:
+  h3_shoot's SKIP now flags a take older than its plate ("STALE: its
+  plate is NEWER than this take") in all three repo copies. It warns
+  rather than re-rolling because a clip is a reviewed lottery take, not
+  a deterministic derivation -- retiring one needs a reason string,
+  which needs a human or an agent, not a skip path. The general rule:
+  every re-made artifact staleness-dates EVERYTHING downstream of it,
+  and each generator's skip must check one link -- its own input --
+  or the chain has a blind stage.

@@ -276,8 +276,33 @@ def main() -> int:
           f"of clip  seed {seed}"
           f"{'' if seed == SEED else f' (session seed is {SEED})'}"
           f"  [{mode}]  -- LOCAL, $0.00")
+    # A SEED THAT WAS ASKED FOR AND NOT USED IS HOW A RE-ROLL GETS REPORTED
+    # THAT NEVER RAN (fault 44): `h3_shoot.py 07 --seed=N` on a beat with a
+    # take on disk printed a bare SKIP, and the bare SKIP reads as "shot
+    # with your seed" to anyone scanning for the beat id. The skip is
+    # CORRECT -- takes are never overwritten -- so the message now says
+    # what the re-roll actually needs.
+    # A CLIP OUTLIVES THE PLATE IT WAS SHOT FROM (fault 49): re-making a
+    # plate (re-roll, face swap) retires the old PLATE with a reason, but the
+    # accepted clip shot from it stays the highest non-reject take and every
+    # downstream stage keeps eating it. Three beats of a delivered feature
+    # carried a pre-swap face this way. italk.py re-renders on staleness
+    # because a synced render is a deterministic derivation; a clip is a
+    # reviewed lottery take, so nothing here retires it unasked -- but the
+    # SKIP must say the plate changed, or the staleness is invisible until
+    # someone screenshots the wrong face.
     for s in skip:
-        print(f"  [{s}] SKIP -- {existing(s)[-1]} on disk")
+        clip = existing(s)[-1]
+        note = ("  <-- your --seed did NOT re-roll this; retire the take "
+                "first (--rej=<reason>) or pass --force"
+                if seed != SEED else "")
+        stale = (os.path.getmtime(gen_still.plate(s))
+                 > os.path.getmtime(os.path.join(CLIPS, clip)))
+        if stale:
+            note = ("  <-- STALE: its plate is NEWER than this take -- the "
+                    "picture changed under it; retire it (--rej=stale_plate) "
+                    "and re-shoot" + note)
+        print(f"  [{s}] SKIP -- {clip} on disk{note}")
     print()
 
     ok = sum(shoot(s, turbo, seed) for s in todo)

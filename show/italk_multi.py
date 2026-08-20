@@ -1,12 +1,24 @@
-"""TWO SPEAKERS IN ONE SHOT, on the InfiniteTalk *Multi* patch. UNPROVEN.
+"""TWO SPEAKERS IN ONE SHOT, on the InfiniteTalk *Multi* patch.
 
-=========================================================================
-NOTHING IN THIS FILE HAS EVER BEEN RUN. Read this whole header before you
-spend a GPU-hour on it. `italk.py` is the proven single-speaker path and
-took a day of measurement to get right; none of that transfers to a node
-with a different input contract, and this file is written against a
-contract that was READ OFF A DESCRIPTION rather than off a run.
-=========================================================================
+THE NODE CONTRACT IS NO LONGER GUESSED. A port of this file (VERTICAL HOLD,
+S3_HOLD/italk_multi.py, 2026-08-20) ran the Multi patch and proved it by
+eye on a two-shot: each mouth articulates exactly inside its own line
+window, and a silent-presence speaker holds a closed mouth on a
+full-length silence track. Two findings from that run are baked in below:
+
+  * `mode` is a COMFY_DYNAMICCOMBO_V3. Its "two_speakers" option carries
+    the extra inputs, and in an API prompt an option's inputs are DOTTED
+    PATHS -- mode.audio_encoder_output_2, mode.mask_1, mode.mask_2 --
+    never flat keys. Flat keys are ACCEPTED and silently dropped: the
+    first render steered both faces from channel 1 alone and nothing
+    errored. Acceptance is not consumption; judge channel 2's mouth
+    specifically, at frames inside ITS line window.
+  * mask_1 / mask_2 are per-speaker MASK inputs (LoadImageMask output),
+    one white face-rect each, mask_1 belonging to audio_encoder_output_1.
+
+THE PIPELINE IN THIS PARTICULAR FILE (the show-tree plumbing around that
+graph) is still unrun -- verify() re-reads the node every run and refuses
+on drift, exactly as before.
 
 WHAT IS KNOWN, AND IT IS NOT NOTHING:
 
@@ -23,10 +35,6 @@ WHAT IS KNOWN, AND IT IS NOT NOTHING:
     the same failure `docs/04_lipsync.md` records for undirected audio.
     `role_track()` builds that, and it is the one part of this file that is
     testable without ComfyUI. Test it.
-
-WHAT IS GUESSED, ALL OF IT IN `ASSUME` BELOW: the mode string, the names of the
-per-speaker audio inputs, and how the node is told WHICH REGION each speaker
-occupies. Those four names are the whole risk.
 
 SO THIS FILE CANNOT SUBMIT A GRAPH IT HAS NOT CHECKED. Every run begins by
 asking the live ComfyUI what `WanInfiniteTalkToVideo` actually accepts
@@ -92,45 +100,16 @@ PATCH_MULTI = "Wan2_1-InfiniteTalk-Multi_fp16.safetensors"
 
 
 # --------------------------------------------------------------------------
-# THE ASSUMED CONTRACT. Every entry is a GUESS until `--check` says otherwise.
+# THE CONTRACT, READ OFF THE LIVE NODE (VERTICAL HOLD, 2026-08-20).
 # --------------------------------------------------------------------------
 #
-# `alts` is what to try if the primary name is not there -- the same idea under
-# a different spelling is the likeliest failure, and offering the alternatives
-# turns "it does not work" into "it wants this instead".
-ASSUME = {
-    "mode": {
-        "value": "multi_speaker",
-        "alts": ["multi", "two_speaker", "multitalk"],
-        "why": "italk.py passes mode='single_speaker' and the node takes an "
-               "enum, so the multi value is almost certainly a sibling of it. "
-               "--check prints the enum's actual options, which settles it.",
-    },
-    "audio_encoder_output_1": {
-        "value": "audio_encoder_output_1",
-        "alts": [],
-        "why": "PROVEN -- italk.py uses this name today. The `_1` suffix is "
-               "the strongest single piece of evidence that a `_2` exists.",
-    },
-    "audio_encoder_output_2": {
-        "value": "audio_encoder_output_2",
-        "alts": ["audio_encoder_output2"],
-        "why": "GUESSED from the `_1` above. If this is absent the whole "
-               "approach in this file is wrong and the two-pass composite in "
-               "docs/04_lipsync.md is the route instead.",
-    },
-    "masks": {
-        "value": "ref_target_masks",
-        "alts": ["ref_masks", "target_masks", "speaker_masks", "mask"],
-        "why": "GUESSED, and the least certain of the four. Upstream MultiTalk "
-               "tells the model which region each audio track drives with a "
-               "per-person mask; the node has to have SOME way of saying that "
-               "or it cannot know which mouth is which. If it takes something "
-               "other than masks -- boxes, an index, nothing at all because it "
-               "detects faces itself -- --check will show it and speaker_mask() "
-               "below is what needs rewriting.",
-    },
-}
+# `mode` is a COMFY_DYNAMICCOMBO_V3 whose "two_speakers" option carries three
+# optional inputs -- audio_encoder_output_2, mask_1, mask_2 (per-speaker MASK,
+# "required if using two audio inputs"). verify() still re-reads the node
+# every run and refuses on drift. The original guessed table (multi_speaker /
+# ref_target_masks and friends) did not survive contact and is gone.
+MODE_MULTI = "two_speakers"
+EXTRA_INPUTS = ("audio_encoder_output_2", "mask_1", "mask_2")
 
 
 # --------------------------------------------------------------------------
@@ -188,74 +167,47 @@ def inputs_of(info: dict) -> dict:
 
 
 def verify(quiet: bool = False) -> dict:
-    """Check every assumption against the live node. Returns the resolved
-    names, or exits.
-
-    IT RESOLVES RATHER THAN ONLY REPORTING. If the primary name is absent and
-    one of the alternatives is present, that alternative is used and said so
-    out loud -- the point of this file is to get a two-speaker take rendered,
-    not to be right about a name.
-    """
+    """The mode is a V3 dynamic combo: its options each carry their own
+    input set. Find the two_speakers option and confirm the three extra
+    inputs live under it. Refuses, with what the node actually has, on any
+    drift -- the original guessed contract did not survive first contact."""
     info = object_info(NODE)
     ins = inputs_of(info)
-    resolved, bad = {}, []
+    bad = []
 
-    # The mode is an enum value rather than an input name, so it is checked
-    # against the enum's options instead of against the key set.
-    modes = []
+    if "audio_encoder_output_1" not in ins:
+        bad.append("audio_encoder_output_1 is not an input of this node")
+
     spec = ins.get("mode")
-    if isinstance(spec, list) and spec and isinstance(spec[0], list):
-        modes = list(spec[0])
-    want = ASSUME["mode"]
-    if want["value"] in modes:
-        resolved["mode"] = want["value"]
-    else:
-        alt = next((a for a in want["alts"] if a in modes), None)
-        if alt:
-            resolved["mode"] = alt
-        else:
-            bad.append(("mode", want["value"],
-                        f"node offers {modes or 'no enum at all'}"))
-
-    for key in ("audio_encoder_output_1", "audio_encoder_output_2", "masks"):
-        want = ASSUME[key]
-        if want["value"] in ins:
-            resolved[key] = want["value"]
-            continue
-        alt = next((a for a in want["alts"] if a in ins), None)
-        if alt:
-            resolved[key] = alt
-        else:
-            bad.append((key, want["value"], "not an input of this node"))
+    options, extra = [], {}
+    if (isinstance(spec, list) and len(spec) > 1
+            and isinstance(spec[1], dict) and "options" in spec[1]):
+        for o in spec[1]["options"]:
+            options.append(o.get("key"))
+            if o.get("key") == MODE_MULTI:
+                oi = o.get("inputs", {})
+                extra = {**oi.get("required", {}), **oi.get("optional", {})}
+    if MODE_MULTI not in options:
+        bad.append(f"mode has no {MODE_MULTI!r} option -- it offers {options}")
+    missing = [k for k in EXTRA_INPUTS if k not in extra]
+    if missing and MODE_MULTI in options:
+        bad.append(f"the {MODE_MULTI!r} option lacks {missing} -- it has "
+                   f"{sorted(extra)}")
 
     if not quiet:
         print(f"  {NODE} on {HOST}\n")
-        for key in ("mode", "audio_encoder_output_1",
-                    "audio_encoder_output_2", "masks"):
-            assumed = ASSUME[key]["value"]
-            got = resolved.get(key)
-            state = ("CONFIRMED" if got == assumed
-                     else f"RESOLVED to {got!r}" if got else "NOT FOUND")
-            print(f"    {key:<26} {state}")
-        print(f"\n    every input this node takes:\n      "
+        print(f"    mode options            {options}")
+        print(f"    {MODE_MULTI} inputs    {sorted(extra) or 'NONE'}")
+        print(f"\n    every top-level input:\n      "
               + "\n      ".join(sorted(ins)))
-        if modes:
-            print(f"\n    mode options: {modes}")
 
     if bad:
-        print("\n  THE CONTRACT THIS FILE ASSUMES DOES NOT HOLD:\n")
-        for key, assumed, why in bad:
-            print(f"    {key}: assumed {assumed!r} -- {why}")
-            print(f"      why we thought so: {ASSUME[key]['why']}\n")
-        sys.exit(
-            "FAIL: refusing to submit a graph built on a contract the node "
-            "does not have.\n"
-            "  Fix ASSUME at the top of this file against the input list "
-            "above, and\n  rewrite graph() to match. If "
-            "`audio_encoder_output_2` is the one missing,\n  this whole "
-            "approach is wrong -- see the two-pass composite route in\n"
-            "  docs/04_lipsync.md.")
-    return resolved
+        print("\n  THE CONTRACT THIS FILE EXPECTS DOES NOT HOLD:\n")
+        for b in bad:
+            print(f"    {b}")
+        sys.exit("FAIL: refusing to submit a graph built on a contract the "
+                 "node does not have.")
+    return {"mode": MODE_MULTI}
 
 
 def role_track(sid: str, role: str) -> str:
@@ -400,23 +352,22 @@ def graph(img: str, tracks: list[tuple[str, str, str]], n_frames: int,
         it, sch, noi, cfg, smp, dec, new = (f"it{k}", f"sc{k}", f"no{k}",
                                             f"cg{k}", f"sp{k}", f"de{k}",
                                             f"nw{k}")
+        # A V3 DYNAMIC COMBO'S OPTION INPUTS ARE DOTTED PATHS, NOT FLAT KEYS.
+        # comfy_api/latest/_io.py parse_class_inputs() finalizes an option's
+        # inputs as "<combo_id>.<input_id>" -- flat spellings are accepted
+        # and silently dropped (measured: a two-speaker render steered
+        # entirely by channel 1). Same dotted-path contract as the derive
+        # graphs' ref_images.ref_image_0. mask_1 belongs to the speaker
+        # driving audio_encoder_output_1.
         ins = {"mode": names["mode"], "model": ["2", 0],
                "model_patch": ["3", 0], "positive": ["5", 0],
                "negative": ["6", 0], "vae": ["7", 0],
                "width": italk.GW, "height": italk.GH, "length": italk.CHUNK,
-               names["audio_encoder_output_1"]: ["e1", 0],
-               names["audio_encoder_output_2"]: ["e2", 0],
+               "audio_encoder_output_1": ["e1", 0],
+               "mode.audio_encoder_output_2": ["e2", 0],
+               "mode.mask_1": ["m1", 0], "mode.mask_2": ["m2", 0],
                "motion_frame_count": italk.MOTION, "audio_scale": scale,
                "start_image": ["11", 0]}
-        # THE MASKS GO IN UNDER WHATEVER NAME THE NODE ACTUALLY USES. If it
-        # takes one input for both, they are batched; if it takes two, they go
-        # in separately. --check resolved which.
-        if names["masks"].endswith("masks"):
-            g[f"mb{k}"] = {"class_type": "ImageBatch",
-                           "inputs": {"image1": ["m1", 0], "image2": ["m2", 0]}}
-            ins[names["masks"]] = [f"mb{k}", 0]
-        else:
-            ins[names["masks"]] = ["m1", 0]
         if acc is not None:
             ins["previous_frames"] = acc
         g[it] = {"class_type": NODE, "inputs": ins}
@@ -531,7 +482,7 @@ def main() -> int:
     # is an hour of GPU spent on a graph the node was never going to accept.
     names = verify(quiet=True)
     print(f"  contract checked against {HOST}: mode={names['mode']!r}, "
-          f"masks -> {names['masks']!r}")
+          f"per-speaker mask_1/mask_2")
 
     seed = next((int(a.split("=", 1)[1]) for a in argv
                  if a.startswith("--seed=")), italk.SEED)
