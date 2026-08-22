@@ -2606,7 +2606,15 @@ whose weights the film is made of.
 
 So it ships with `EXAMPLE_CONTENT = True`, `preflight.py` now scans the
 SEASON ROOT as well as the folders (`ROOT_CONTENT`), and main() refuses on
-its own too. And one fact that made the lock necessary: **a LoRA's
+its own too -- twice. The second refusal reads the ROLL rather than the
+marker: every replaceable string in the template says "EXAMPLE" out loud, and
+`example_lines()` refuses while any of them survive. That is the lock that
+holds against impatience -- deleting the marker to see the roll move is one
+keystroke, and it leaves a half-filled list (author replaced, LoRA creators
+still EXAMPLE) that only the roll itself can catch. **A placeholder that could
+pass for a credit is worse than no placeholder**: "EXAMPLE CREATOR" is a
+mistake anybody spots in a single frame; "<creator>" or a plausible name is
+one nobody spots at all. And one fact that made the lock necessary: **a LoRA's
 .safetensors carries no author field.** Checked across three of them -- the
 `ss_*` and `modelspec.*` keys hold the base model, the trigger and the
 training run, never a name. Attribution is research, from the page the file

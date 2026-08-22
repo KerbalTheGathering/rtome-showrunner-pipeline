@@ -56,32 +56,42 @@ MUSIC = os.path.join(HERE, "_music")
 W, H, FPS, CRF = season.W, season.H, season.FPS, season.CRF
 
 # --- the roll -----------------------------------------------------------------
-# (heading, [lines]). A heading with no lines is a standalone title beat.
-# `None` in a line list is a blank line -- the layout's only spacer.
-AUTHOR = "<your name>"           # how it should read on screen
-
 # THE ROLL. (heading, [lines]); `None` is a blank line, the layout's only
-# spacer. The tool blocks below are true of any film this repo assembles and
-# are a reasonable default; the names are not. Replace them, credit every LoRA
-# and every voice by the name its creator publishes under, and delete
+# spacer. A heading with no lines is a standalone title beat.
+#
+# EVERY REPLACEABLE STRING BELOW SAYS "EXAMPLE" OUT LOUD, and that is the
+# point. `EXAMPLE_CONTENT`, preflight and main()'s refusal are three locks on
+# the same door, but locks get picked: somebody will delete the marker to see
+# what the roll looks like, render it, and move on. If that render ever
+# reaches an audience it must be unmistakable rather than plausible -- a roll
+# that reads "EXAMPLE CREATOR" is a mistake anybody spots in a frame, and one
+# that reads like a real name is a mistake nobody spots at all. A placeholder
+# that could pass for a credit is worse than no placeholder.
+#
+# The tool blocks are true of any film this repo assembles and are a
+# reasonable default. The names are not: replace them, credit every LoRA and
+# every voice by the name its creator publishes under, and delete
 # EXAMPLE_CONTENT above.
+AUTHOR = "EXAMPLE AUTHOR"        # replace: how your name should read on screen
+
 CREDITS: list[tuple[str, list]] = [
+    ("", ["EXAMPLE CREDITS -- REPLACE BEFORE RENDERING"]),
     ("", [season.SEASON_TITLE]),
     ("WRITTEN, DIRECTED AND CUT BY", [AUTHOR]),
     ("THE CAST", [
-        "<character>  —  <voice>",
-        "<character>  —  <voice>",
+        "EXAMPLE CHARACTER  —  EXAMPLE VOICE",
+        "EXAMPLE CHARACTER  —  EXAMPLE VOICE",
         None,
-        "synthesised with ElevenLabs"]),
+        "synthesised with EXAMPLE VOICE VENDOR"]),
     ("THE LOOK", [
-        "<LORA NAME> — what it does in this film",
-        "a <base model> LoRA by <creator>",
+        "EXAMPLE LORA — what it does in this film",
+        "an EXAMPLE BASE MODEL LoRA by EXAMPLE CREATOR",
         None,
-        "<LORA NAME> — what it does in this film",
-        "a <base model> LoRA by <creator>"]),
-    ("STILLS", ["<the image model>"]),
-    ("MOTION AND SYNC", ["<the video model>", "run locally, on one GPU"]),
-    ("SCORE", ["<the music model>", "generated locally, cue by cue"]),
+        "EXAMPLE LORA — what it does in this film",
+        "an EXAMPLE BASE MODEL LoRA by EXAMPLE CREATOR"]),
+    ("STILLS", ["EXAMPLE IMAGE MODEL"]),
+    ("MOTION AND SYNC", ["EXAMPLE VIDEO MODEL", "run locally, on one GPU"]),
+    ("SCORE", ["EXAMPLE MUSIC MODEL", "generated locally, cue by cue"]),
     ("FINISHING", ["Real-ESRGAN  ·  ffmpeg  ·  ComfyUI"]),
     ("ASSEMBLED BY", [
         "the rtome showrunner pipeline",
@@ -91,7 +101,7 @@ CREDITS: list[tuple[str, list]] = [
     ("", ["Every likeness and every voice in this film",
           "is the author’s own or synthetic.",
           "No other person is depicted or cloned."]),
-    ("", [season.SEASON_TITLE, "<year>"]),
+    ("", [season.SEASON_TITLE, "EXAMPLE YEAR"]),
 ]
 
 # --- the look of the roll ------------------------------------------------------
@@ -161,15 +171,36 @@ def music(secs: float) -> str | None:
     return score.render("credits", secs, cue, MUSIC, season.SEASON)
 
 
+def example_lines() -> list[str]:
+    """Every line still carrying the word EXAMPLE.
+
+    THE SECOND LOCK, AND THE ONE THAT SURVIVES IMPATIENCE. Deleting
+    `EXAMPLE_CONTENT` is one keystroke and somebody will do it to see the roll
+    move; this reads the roll ITSELF, so a half-filled list -- the author
+    replaced, the LoRA creators still EXAMPLE -- is caught by the thing that
+    is actually wrong rather than by a marker somebody forgot.
+    """
+    out = []
+    for head, lines in CREDITS:
+        for ln in [head] + [x for x in lines if x]:
+            if "EXAMPLE" in ln.upper():
+                out.append(ln)
+    return out
+
+
 def main() -> int:
-    if EXAMPLE_CONTENT:
+    left = example_lines()
+    if EXAMPLE_CONTENT or left:
+        why = ("`EXAMPLE_CONTENT = True` is still declared"
+               if EXAMPLE_CONTENT else
+               f"{len(left)} line(s) still say EXAMPLE")
         sys.exit(
-            "FAIL: credits.py is still the template's example roll.\n"
-            "  It names <your name> and <creator> and would ship them.\n"
-            "  Fill CREDITS in with this film's real people -- look every\n"
-            "  LoRA creator up on the page you downloaded it from, the\n"
-            "  weights do not carry a name -- then delete the\n"
-            "  `EXAMPLE_CONTENT = True` line at the top.")
+            f"FAIL: credits.py is still the template's example roll -- {why}.\n"
+            + "".join(f"    {ln}\n" for ln in left[:6])
+            + "  Credits name PEOPLE. Fill CREDITS in with this film's own --\n"
+              "  look every LoRA creator up on the page you downloaded the\n"
+              "  weights from, because the file itself carries no author --\n"
+              "  and delete the `EXAMPLE_CONTENT = True` line at the top.")
     roll = build_roll()
     n = int(round(seconds(roll) * FPS))
     # THE PICTURE OWNS THE LENGTH AND THE MIX IS CUT TO IT, to the sample.
