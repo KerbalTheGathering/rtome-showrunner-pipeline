@@ -215,6 +215,13 @@ each site is only as good as whoever added the last one.
 
 ## Long batches, guards and a shared GPU
 
+**An attention node can be accepted and inert.** A model-patch node that
+uses the SD/DiT `attn1` hook does nothing to H3, which routes through
+`optimized_attention_override`; the graph runs, the log says "applied", the
+render is bit-identical (fault 61). Prove a kernel with a warm clock AND a
+PSNR against the same graph without it; shoot the base twice first so you
+know what zero looks like.
+
 **A resident model family thrashes the next one.** A Krea2 plate re-roll or an
 ACE-Step cue leaves its weights loaded; the next H3 pass sits at sampler 0/6
 with VRAM pinned near the card's ceiling and "0 models unloaded" in the log --

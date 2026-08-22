@@ -2548,3 +2548,34 @@ with nvidia-smi. Not yet automated in `season.py`; that is the open item.
   signature came back for one second at every device. Crop at every site
   that loads a frame, which is the same choke-point argument as
   `fit_aspect`.
+
+## Fault 61 -- an attention node accepted and inert on H3 (fault 45, again)
+
+`comfyui_SLA-sage`'s `SLAAttention` node wires between the LoRA loader and
+the guider, the graph is accepted, the log says "SLA Attention applied",
+and the render is BIT-IDENTICAL to the same graph without it (PSNR inf,
+same seed, 362 frames). It patches `set_model_attn1_patch` -- the SD/DiT
+transformer-patch hook -- and H3 routes its attention through
+`optimized_attention_override`, which the node never touches. Nothing
+errored anywhere.
+
+The probe that caught it (LOSS OF SIGNAL `_probes/attn_probe.py`) shot one
+faced beat four ways on the same seed: the film's stack; lightx2v's 4-step
+SLA turbo LoRA alone; the LoRA plus the node; `ComfyUI-sol-attn`'s H3
+patch. Two controls made the numbers mean something: **the base shot twice
+is PSNR inf** (the sampler is deterministic, so any difference is the
+variant's), and **time per frame is read warm**, after the first run has
+paid the model load. What the probe found on a 4090 (SM89):
+
+- the SLA kernel node: inert (above);
+- Sol-Attn: runs (PSNR 23.9 against base), 1.9 vs 2.0 min -- within noise
+  on SM89, which its README says is unbenchmarked;
+- the 4-step SLA LoRA as a plain turbo LoRA under Sage, on the ref2va
+  hybrid: 0.25 vs 0.33 s/frame, the anchor, the face and the mouth held at
+  filmstrip scale. A real saving from fewer steps, and a different
+  distillation -- a next-season default candidate, not a mid-film switch.
+
+Rules, both already in the book and both confirmed hard: **acceptance is
+not consumption -- a speed claim is proved by a warm clock and a PSNR
+against the graph without the node**; and **a probe needs a control that
+shows zero** before its other numbers are read.
