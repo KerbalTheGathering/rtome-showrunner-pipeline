@@ -1,0 +1,243 @@
+"""THE END CREDITS: a roll, in the film's own face, joined as the last part.
+
+Everything this film was made with belongs on screen once, by name -- the
+pipeline, the models, and the people who trained the LoRAs the two painters
+ARE. The dial is the whole idea of the film and two strangers on the internet
+built both ends of it; a description-box mention is not a credit.
+
+HOW IT JOINS. It is a PART, not a tail glued onto Act III: 1920x1080, 24 fps,
+h264/yuv420p at the season CRF, with a sample-locked PCM mix beside it, so
+parts.py can hand it to feature.py like every other part and the join's
+dip-to-black lands on it too. Nothing about the films changes.
+
+THE ROLL IS COMPUTED, NOT TIMED BY HAND. The block list below decides the
+length: everything is laid out into one tall image, then scrolled past the
+frame at SPEED px/second with a beat of held black at each end. Change the
+text and the runtime follows.
+
+    python credits.py              # render out/credits.mp4 + _work/credits.wav
+    python credits.py --sheet      # one PNG of the whole roll, to proof-read
+    python credits.py --no-music   # silent (the music needs ComfyUI up)
+
+THE BLOCK LIST BELOW IS EXAMPLE CONTENT AND THIS FILE REFUSES TO RENDER WHILE
+IT SAYS SO. Credits name PEOPLE. Every other example in this repo costs a
+re-render when it ships by accident; this one credits a stranger for someone
+else's work, or fails to credit the person whose LoRA the film is made of. So
+`EXAMPLE_CONTENT = True` sits at the top, `preflight.py` refuses the season
+while it is there, and main() refuses too -- delete the line when the list is
+this film's.
+
+ATTRIBUTION IS RESEARCH, NOT RECALL. A LoRA's .safetensors carries no author
+field (checked: `ss_*` and `modelspec.*` keys have the base model, the
+trigger and the training run, never a name). Whoever made it is on the page
+you downloaded it from, and that is the only place to get it right from. A
+wrong credit is worse than no credit.
+"""
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+
+from PIL import Image, ImageDraw, ImageFont
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import season_identity as season                                   # noqa: E402
+import season_paths                                                # noqa: E402
+
+# See the docstring: this file names people, so it fails loud until the list
+# below is the film's own. Delete this line when it is.
+EXAMPLE_CONTENT = True
+
+OUT = os.path.join(HERE, "out")
+WORK = os.path.join(HERE, "_work")
+MUSIC = os.path.join(HERE, "_music")
+W, H, FPS, CRF = season.W, season.H, season.FPS, season.CRF
+
+# --- the roll -----------------------------------------------------------------
+# (heading, [lines]). A heading with no lines is a standalone title beat.
+# `None` in a line list is a blank line -- the layout's only spacer.
+AUTHOR = "<your name>"           # how it should read on screen
+
+# THE ROLL. (heading, [lines]); `None` is a blank line, the layout's only
+# spacer. The tool blocks below are true of any film this repo assembles and
+# are a reasonable default; the names are not. Replace them, credit every LoRA
+# and every voice by the name its creator publishes under, and delete
+# EXAMPLE_CONTENT above.
+CREDITS: list[tuple[str, list]] = [
+    ("", [season.SEASON_TITLE]),
+    ("WRITTEN, DIRECTED AND CUT BY", [AUTHOR]),
+    ("THE CAST", [
+        "<character>  —  <voice>",
+        "<character>  —  <voice>",
+        None,
+        "synthesised with ElevenLabs"]),
+    ("THE LOOK", [
+        "<LORA NAME> — what it does in this film",
+        "a <base model> LoRA by <creator>",
+        None,
+        "<LORA NAME> — what it does in this film",
+        "a <base model> LoRA by <creator>"]),
+    ("STILLS", ["<the image model>"]),
+    ("MOTION AND SYNC", ["<the video model>", "run locally, on one GPU"]),
+    ("SCORE", ["<the music model>", "generated locally, cue by cue"]),
+    ("FINISHING", ["Real-ESRGAN  ·  ffmpeg  ·  ComfyUI"]),
+    ("ASSEMBLED BY", [
+        "the rtome showrunner pipeline",
+        "plates, direction, edit, mix, titles and join",
+        None,
+        "github.com/KerbalTheGathering/rtome-showrunner-pipeline"]),
+    ("", ["Every likeness and every voice in this film",
+          "is the author’s own or synthetic.",
+          "No other person is depicted or cloned."]),
+    ("", [season.SEASON_TITLE, "<year>"]),
+]
+
+# --- the look of the roll ------------------------------------------------------
+INK = (238, 233, 222)            # bone, the thumbnails' ink and the card's
+DIM = (150, 146, 138)            # headings sit back from their names
+SPEED = 100                      # px/s: readable at 44px type, and 68s of
+                                 # credits on a 10-minute film is not a
+                                 # tribute, it is an exit queue
+HEAD_PX, LINE_PX = 30, 44        # type sizes
+GAP_HEAD, GAP_LINE, GAP_BLOCK = 16, 12, 62
+LEAD, TAIL = 1.6, 2.6            # seconds of black before and after the roll
+
+
+def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
+    # The film's own display face, so the credits read as part of the film and
+    # not as a different document. FONT_DISPLAY is Franklin Gothic Condensed.
+    for name in ((["FRAHV.TTF"] if bold else []) + [season.FONT_DISPLAY, "arialbd.ttf"]):
+        try:
+            return ImageFont.truetype(os.path.join(season_paths.FONT_DIR, name), size)
+        except OSError:
+            continue
+    sys.exit("FAIL: no display font for the credits")
+
+
+def build_roll() -> Image.Image:
+    """The whole crawl as one tall image, centred."""
+    fh, fl = font(HEAD_PX, bold=True), font(LINE_PX)
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+    y = 0
+    for head, lines in CREDITS:
+        if head:
+            y += HEAD_PX + GAP_HEAD
+        for ln in lines:
+            y += (LINE_PX + GAP_LINE) if ln else (LINE_PX // 2)
+        y += GAP_BLOCK
+    roll = Image.new("RGB", (W, max(y, H)), (0, 0, 0))
+    d = ImageDraw.Draw(roll)
+    y = 0
+    for head, lines in CREDITS:
+        if head:
+            tw = probe.textlength(head, font=fh)
+            d.text(((W - tw) / 2, y), head, font=fh, fill=DIM)
+            y += HEAD_PX + GAP_HEAD
+        for ln in lines:
+            if not ln:
+                y += LINE_PX // 2
+                continue
+            tw = probe.textlength(ln, font=fl)
+            d.text(((W - tw) / 2, y), ln, font=fl, fill=INK)
+            y += LINE_PX + GAP_LINE
+        y += GAP_BLOCK
+    return roll
+
+
+def seconds(roll: Image.Image) -> float:
+    return LEAD + (roll.height + H) / SPEED + TAIL
+
+
+def music(secs: float) -> str | None:
+    """A cue of its own, in the coda's key: the film ends in D major."""
+    import score
+    # In the season's key family, and slow: an end title is the film letting
+    # go, not a reprise of its loudest cue.
+    cue = {"tags": "end title music, slow, warm, unhurried, valedictory, fading "
+                   "to nothing, instrumental, no vocals",
+           "bpm": 60, "key": "D major", "ts": "4", "seed": 4307}
+    return score.render("credits", secs, cue, MUSIC, season.SEASON)
+
+
+def main() -> int:
+    if EXAMPLE_CONTENT:
+        sys.exit(
+            "FAIL: credits.py is still the template's example roll.\n"
+            "  It names <your name> and <creator> and would ship them.\n"
+            "  Fill CREDITS in with this film's real people -- look every\n"
+            "  LoRA creator up on the page you downloaded it from, the\n"
+            "  weights do not carry a name -- then delete the\n"
+            "  `EXAMPLE_CONTENT = True` line at the top.")
+    roll = build_roll()
+    n = int(round(seconds(roll) * FPS))
+    # THE PICTURE OWNS THE LENGTH AND THE MIX IS CUT TO IT, to the sample.
+    # Written the other way round first (wav = the float, picture = round(float
+    # * fps)) and `-shortest` trimmed a frame off the video: feature.py's
+    # mix-vs-picture check refused the part over 27 ms. A part's two streams
+    # come from ONE number, and it is a whole number of frames.
+    secs = n / FPS
+    print(f"  {len(CREDITS)} blocks, roll {roll.height}px, "
+          f"{secs:.1f}s at {SPEED}px/s ({n} frames)")
+
+    if "--sheet" in sys.argv:
+        os.makedirs(OUT, exist_ok=True)
+        p = os.path.join(OUT, "credits_sheet.png")
+        roll.save(p)
+        print(f"  -> {p}")
+        return 0
+
+    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(WORK, exist_ok=True)
+    frames = os.path.join(WORK, "_credits_frames")
+    subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", frames],
+                   capture_output=True) if os.path.isdir(frames) else None
+    os.makedirs(frames, exist_ok=True)
+    canvas = Image.new("RGB", (W, H), (0, 0, 0))
+    for i in range(n):
+        t = i / FPS
+        im = canvas.copy()
+        # the roll enters from the bottom edge after LEAD and leaves the top
+        top = int(round((t - LEAD) * SPEED)) - H
+        if -H < top < roll.height:
+            box = (0, max(0, top), W, min(roll.height, top + H))
+            piece = roll.crop(box)
+            im.paste(piece, (0, max(0, -top)))
+        im.save(os.path.join(frames, f"c_{i:05d}.png"))
+        if i % 240 == 0:
+            print(f"    drew {i}/{n}")
+
+    wav = os.path.join(WORK, "credits.wav")
+    mp3 = None if "--no-music" in sys.argv else music(secs)
+    ff = season_paths.ff("ffmpeg")
+    if mp3:
+        # THE MIX OWNS THE LENGTH, exactly as every part's does: the music is
+        # trimmed to the picture and faded, never the other way round.
+        subprocess.run([ff, "-y", "-v", "error", "-i", mp3,
+                        "-af", f"atrim=0:{secs:.3f},asetpts=PTS-STARTPTS,"
+                               f"afade=t=in:st=0:d=1.2,"
+                               f"afade=t=out:st={max(0.0, secs - 3.0):.3f}:d=3.0,"
+                               f"volume=0.55,apad",
+                        "-t", f"{secs:.3f}", "-ac", "2", "-ar", str(season.A_RATE),
+                        "-c:a", "pcm_s16le", wav], check=True)
+    else:
+        subprocess.run([ff, "-y", "-v", "error", "-f", "lavfi", "-i",
+                        f"anullsrc=r={season.A_RATE}:cl=stereo",
+                        "-t", f"{secs:.3f}", "-c:a", "pcm_s16le", wav], check=True)
+
+    mp4 = os.path.join(OUT, "credits.mp4")
+    subprocess.run([ff, "-y", "-v", "error", "-framerate", str(FPS),
+                    "-i", os.path.join(frames, "c_%05d.png"), "-i", wav,
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", str(CRF),
+                    "-c:a", "aac", "-b:a", "192k", "-shortest",
+                    "-movflags", "+faststart", mp4], check=True)
+    print(f"\n  {secs:.2f}s, {W}x{H} at {FPS}fps, {n} frames")
+    print(f"  MP4 {os.path.getsize(mp4) / 1e6:.2f} MB  -> {mp4}")
+    print(f"  mix {os.path.getsize(wav) / 1e6:.1f} MB  -> {wav}")
+    print("\n  feature.py picks it up as the last part; run it to rejoin.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

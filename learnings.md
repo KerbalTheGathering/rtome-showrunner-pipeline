@@ -2579,3 +2579,53 @@ Rules, both already in the book and both confirmed hard: **acceptance is
 not consumption -- a speed claim is proved by a warm clock and a PSNR
 against the graph without the node**; and **a probe needs a control that
 shows zero** before its other numbers are read.
+
+## Fault 62 -- two streams, two numbers, one lost frame
+
+The first end-credit roll wrote its audio from a float (`secs`) and its
+picture from `round(secs * fps)` frames. Those disagree by up to half a
+frame; `-shortest` then trimmed the video to the shorter one, and
+`feature.py`'s mix-vs-picture check refused the part: "mix is 42.3600s
+against 42.3333s of picture". Nothing was damaged, because the check exists
+-- but the shape is worth the number: **a part's picture and its mix must be
+derived from ONE quantity, and that quantity is a whole number of frames.**
+Everything that owns a length in this repo already does it that way; a new
+part-maker is where it gets forgotten.
+
+What landed: `credits.py` computes `n` frames first and takes `secs = n /
+FPS` for the mix. `docs/06_verification.md` gained the rule, next to the
+reminder that the answer to a tolerance failure is never a looser tolerance.
+
+## Credits name people, so they are example content with a lock
+
+`credits.py` is the only file in this repo that names PEOPLE -- the author,
+the cast, and whoever trained each LoRA the film's look IS. Every other
+example ships a wrong cue or a wrong beat and costs a re-render. This one
+credits a stranger for someone else's work, or silently drops the person
+whose weights the film is made of.
+
+So it ships with `EXAMPLE_CONTENT = True`, `preflight.py` now scans the
+SEASON ROOT as well as the folders (`ROOT_CONTENT`), and main() refuses on
+its own too. And one fact that made the lock necessary: **a LoRA's
+.safetensors carries no author field.** Checked across three of them -- the
+`ss_*` and `modelspec.*` keys hold the base model, the trigger and the
+training run, never a name. Attribution is research, from the page the file
+was downloaded from; it is not something a session can recall or infer.
+
+## Subtitles come from the edit, never from a transcript
+
+`subs.py` builds a sidecar .srt from the same tables that placed the audio:
+the text is the line the voice was GIVEN (with the delivery tags -- "[cheerful]"
+-- stripped, since those are direction, not words), and the time is the
+offset the mixer USED. A transcript drifts and mangles exactly the material
+this pipeline is fondest of: band-limited radio, voices in a character's
+head, anything under a bed. Two details that made it work across trees:
+
+- One WORKER SUBPROCESS PER TREE (the `contact.py` shape) -- every tree has
+  its own `identity`, `script` and `edit`, and two of them in one interpreter
+  gets you whichever landed on `sys.path` first. Three trees turned out to
+  have three different offset APIs.
+- WHO GETS A LABEL is `script.ON_SCREEN`, the same table the lip-sync driver
+  reads. A voice the audience cannot see is labelled; a character they can
+  see is not. Deriving it from the driver's table means the subtitles and the
+  mouths cannot disagree about who is visible.

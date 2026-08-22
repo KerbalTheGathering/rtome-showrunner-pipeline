@@ -214,3 +214,22 @@ python parts.py         # does the season describe itself consistently?
 - **Never `except: pass`.** If a check cannot run, that is a failure, not a pass.
 - Say **how decisive** the result was. "The best lag was only 1.3× better than a
   random one" is a useful sentence; presenting that as a measurement is not.
+
+## A part's two streams come from one number
+
+A part is a picture and a mix, and the number that decides how long it is
+must be the SAME number for both — a whole number of frames. Written the
+other way round on the first credit roll (the wav from a float, the picture
+from `round(float * fps)`), `-shortest` quietly trimmed a frame and
+`feature.py` refused the part over 27 ms. That refusal is the check working:
+**the mix-vs-picture comparison in `feature.py` is not a formality, and the
+answer to it is never "loosen the tolerance"** (learnings 62).
+
+## Subtitles are a check on the edit, not just an asset
+
+`subs.py` builds its cues from the same tables that placed the audio, so it
+can compare them against the delivered parts: a line that ends after the part
+it belongs to means the edit and the built picture disagree, and every later
+subtitle would be wrong too, silently, because the offsets are cumulative. It
+refuses instead. Spot-check three cues against frames of the delivered file
+before publishing — the filmstrip rule applies to text as well.

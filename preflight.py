@@ -49,6 +49,13 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 CONTENT = ("script.py", "shot.py", "motion.py", "edit.py", "make_music.py",
            "verify.py")
 
+# AND THE SEASON ROOT HAS CONTENT OF ITS OWN. `credits.py` is the only file in
+# this repo that names PEOPLE -- the author, the cast, whoever trained each
+# LoRA. Every other example ships a wrong cue or a wrong beat and costs a
+# re-render; this one credits a stranger for someone else's work. It is
+# checked here, at the root, because that is where it lives.
+ROOT_CONTENT = ("credits.py",)
+
 
 def still_example(path: str) -> bool:
     """Is `EXAMPLE_CONTENT = True` still declared at module level?
@@ -102,6 +109,18 @@ def main() -> int:
         name = os.path.basename(p)
         print(f"  {name:<20} " + (f"still the example: {', '.join(left)}"
                                   if left else "yours"))
+
+    # The root's own content, checked whenever the whole season is (naming a
+    # folder asks about that folder). credits.py is optional: a season with no
+    # credit roll has nothing to get wrong.
+    if not named:
+        root_left = [f for f in ROOT_CONTENT
+                     if os.path.exists(os.path.join(ROOT, f))
+                     and still_example(os.path.join(ROOT, f))]
+        total += len(root_left)
+        print(f"  {'(season root)':<20} " +
+              (f"still the example: {', '.join(root_left)}" if root_left
+               else "yours"))
 
     print()
     if total:

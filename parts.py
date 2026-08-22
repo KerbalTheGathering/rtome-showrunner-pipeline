@@ -181,6 +181,13 @@ def running_order() -> list[tuple[str, str, str]]:
         out.append((r["title"] or r["dir"],
                     os.path.join(r["path"], "out", f"{r['slug']}.mp4"),
                     os.path.join(r["path"], "_work", "mix.wav")))
+    # THE END CREDITS ARE A PART, AND AN OPTIONAL ONE (../credits.py). Present
+    # only if it has been rendered, so a season without credits joins exactly
+    # as it did before, and a season with them gets the same mix-vs-picture
+    # check and the same dip-to-black handover as every other part.
+    cr = os.path.join(ROOT, "out", "credits.mp4")
+    if os.path.exists(cr):
+        out.append(("CREDITS", cr, os.path.join(ROOT, "_work", "credits.wav")))
     return out
 
 
