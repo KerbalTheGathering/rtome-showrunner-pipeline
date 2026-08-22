@@ -98,6 +98,9 @@ def _stub(tree: str, session_no: int) -> dict:
             "PART_LABEL": "SESSION #{n}",
             "SHOW_NAME": "SMOKE_SHOW",
             "FONT_DISPLAY": "arialbd.ttf",
+            # the H3 shooter and the upscale read these at import
+            "UPSCALE": None, "H3_UNET": "smoke.safetensors",
+            "H3_ID_REFS": [], "H3_VOICE_REF": "", "H3_TAIL_FRAMES": 22,
         },
         "identity": {
             "NAME": "SMOKE_" + tree.upper().replace("/", "_"),

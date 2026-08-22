@@ -70,6 +70,13 @@ END_CARD = ""                    # e.g. "SEE YOU NEXT WEEK."
 # live here rather than in eight separate files.
 W, H = 1440, 1080                # 4:3. Every part bakes to exactly this.
 FPS = 24                         # every part, no exceptions
+# THE UPSCALE (../upscale.py): every H3 clip goes through this model once,
+# cached beside the clips, before it is baked. H3 renders at 864x480 and a
+# Lanczos stretch to delivery is what every season shipped until LOSS OF
+# SIGNAL A/B'd it (learnings 58). Name a model under models/upscale_models;
+# None is the plain stretch. Pick by DELIVERED scale: x2 for 480p -> 1080p
+# (0.13 s/frame); x4plus paints four times the pixels you keep (0.67 s/frame).
+UPSCALE = None                   # e.g. "RealESRGAN_x2plus.pth"
 A_RATE = 48000                   # ONE delivery rate for the whole season
 CRF = 18
 
@@ -131,6 +138,22 @@ EXTRA = ""                       # a second folder every render is copied to, or
 # season.py will not look for show/ at all.
 SHOW = True
 SHOW_NAME = ""                   # e.g. "NEWSDESK"; the show's own tree name
+
+
+
+# --- THE H3 SHOOTER'S WEIGHTS AND REFERENCES (_session_template/h3_shoot.py) ---
+# The ref2va HYBRID holds identity from reference pictures and is better at
+# audio than fl2va (LOSS OF SIGNAL, the operator's call) -- it shoots every
+# beat, dialogue or not. H3_ID_REFS are two plates of the character, paths
+# relative to ComfyUI/input, wired only when the beat has him alive in frame
+# (not "nochar", not "norefs"). H3_VOICE_REF is recorded here and NOT wired:
+# a voice reference alongside an anchored driver crashes the sampler (fault
+# 51). H3_TAIL_FRAMES is the continuation anchor -- edit.RUNUP is derived
+# from it, so they cannot disagree.
+H3_UNET = "minimax_h3_ref2va_hybrid_b20-49_pruned_w4a8_mixed.safetensors"
+H3_ID_REFS: tuple[str, ...] = ()     # e.g. ("probe/ref_hero.png", "probe/ref_visor.png")
+H3_VOICE_REF = ""                    # recorded, never wired (fault 51)
+H3_TAIL_FRAMES = 22                  # frames of the parent a continuation opens on
 
 
 def check() -> None:

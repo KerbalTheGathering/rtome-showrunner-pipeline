@@ -41,6 +41,7 @@ from __future__ import annotations
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import season_paths                                                # noqa: E402
+import upscale                                                     # noqa: E402
 
 
 import concurrent.futures as cf
@@ -303,7 +304,7 @@ def bake(sid: str, src: str | None = None,
     shutil.rmtree(frames_dir, ignore_errors=True)
     os.makedirs(frames_dir)
     subprocess.run([season_paths.ff("ffmpeg"), "-y", "-v", "error",
-                    "-i", src, os.path.join(frames_dir, "f_%05d.png")],
+                    "-i", upscale.clip(src), os.path.join(frames_dir, "f_%05d.png")],
                    check=True)
 
     got = sorted(os.listdir(frames_dir))

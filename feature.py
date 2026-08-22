@@ -73,6 +73,12 @@ FF = season_paths.FFMPEG
 
 DEST = os.path.join(OUT, f"{season.SEASON_SLUG}.mp4")
 
+# THE HANDOVER AT EVERY PART BOUNDARY -- see the join in main(). Seconds.
+# A splice between two worlds (a film's last frame, the show's first) reads
+# as an error, not a cut; a short dip is the grammar (LOSS OF SIGNAL v10).
+JOIN_DIP = 0.5       # picture: out over the last 0.5 s, in over the first 0.5 s
+JOIN_AFADE = 0.3     # sound: the same, shorter, so the dip is felt, not heard
+
 
 def probe(path: str) -> dict:
     def q(sel: str, entries: str) -> list[str]:
@@ -203,6 +209,53 @@ def main() -> int:
     ins = []
     for w in wavs:
         ins += ["-i", w]
+    # THE JOINS DIP TO BLACK (LOSS OF SIGNAL, v9 viewing: "the cuts to the
+    # control room are abrupt"). Every part boundary is a change of world --
+    # a film's set to the show's floor and back -- and a splice reads as an
+    # error, not a cut. A short dip at each boundary is the handover: each
+    # part's picture fades out over its last JOIN_DIP seconds and in over its
+    # first, and its sound does the same over a shorter JOIN_AFADE, so the
+    # loop's squelch and the room tone are not cut mid-sample.
+    #
+    # PER PART, NOT ON THE JOINED STREAM. ffmpeg's fade=t=in:st=X holds every
+    # frame BEFORE X black and t=out every frame AFTER -- a chain of them on
+    # the joined picture blacked the whole film (v10, first join: 1.7 MB, ten
+    # minutes of black). So each part is re-encoded once with its own two
+    # fades (cached by mtime), the concat copies those, and the audio fades
+    # ride each mix input inside the concat filter. Durations are untouched.
+    # JOIN_DIP = 0 restores the plain splice.
+    dip, afade = JOIN_DIP, JOIN_AFADE
+    first, last = 0, len(order) - 1
+    if dip > 0:
+        dipped = []
+        for k, ((name, p, _w), (_n, _p, i)) in enumerate(zip(order, rows)):
+            st = os.stat(p)
+            dp = os.path.join(WORK, f"dip_{k:02d}_{int(st.st_mtime)}.mp4")
+            if not (os.path.exists(dp) and os.path.getsize(dp) > 0):
+                vf = []
+                if k != first:
+                    vf.append(f"fade=t=in:st=0:d={dip:.3f}")
+                if k != last:
+                    vf.append(f"fade=t=out:st={i['secs'] - dip:.3f}:d={dip:.3f}")
+                print(f"  dip {name} ...", flush=True)
+                subprocess.run([season_paths.ff("ffmpeg"), "-y", "-v", "error",
+                                "-i", p, "-an", "-vf", ",".join(vf) or "null",
+                                "-c:v", "libx264", "-preset", "medium", "-crf", "16",
+                                "-pix_fmt", "yuv420p", "-r", str(season.FPS),
+                                dp + ".part.mp4"], check=True)
+                os.replace(dp + ".part.mp4", dp)
+            dipped.append(dp)
+        with open(lst, "w", encoding="utf-8") as fh:
+            for dp in dipped:
+                fh.write(f"file '{dp}'\n")
+    achain = []
+    for k, (_n, _p, i) in enumerate(rows):
+        f = []
+        if dip > 0 and k != first:
+            f.append(f"afade=t=in:st=0:d={afade:.3f}")
+        if dip > 0 and k != last:
+            f.append(f"afade=t=out:st={i['secs'] - afade:.3f}:d={afade:.3f}")
+        achain.append(f"[{k + 1}:a]{','.join(f) or 'anull'}[f{k}];")
     # OUT WAS NEVER CREATED. WORK gets os.makedirs() above; OUT -- where
     # DEST (the actual join) is written -- did not, so ffmpeg refused with
     # "No such file or directory" on the first season with no earlier step
@@ -211,7 +264,8 @@ def main() -> int:
     subprocess.run([season_paths.ff("ffmpeg"), "-y", "-v", "error",
                     "-f", "concat", "-safe", "0", "-i", lst] + ins +
                    ["-filter_complex",
-                    "".join(f"[{i + 1}:a]" for i in range(n))
+                    "".join(achain)
+                    + "".join(f"[f{i}]" for i in range(n))
                     + f"concat=n={n}:v=0:a=1[a]",
                     "-map", "0:v:0", "-map", "[a]",
                     "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",

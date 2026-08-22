@@ -21,6 +21,7 @@ from __future__ import annotations
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import season_paths                                                # noqa: E402
+import upscale                                                     # noqa: E402
 
 
 import concurrent.futures as cf
@@ -166,7 +167,7 @@ def frames_of(sid: str) -> list[str]:
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d)
     subprocess.run([season_paths.ff("ffmpeg"), "-y", "-v", "error",
-                    "-i", os.path.join(CLIPS, got[-1]),
+                    "-i", upscale.clip(os.path.join(CLIPS, got[-1])),
                     os.path.join(d, "f_%05d.png")], check=True)
     return [os.path.join(d, f) for f in sorted(os.listdir(d))]
 

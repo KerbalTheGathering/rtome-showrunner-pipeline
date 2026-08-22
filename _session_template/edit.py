@@ -114,6 +114,18 @@ TRANSITION_LEAD = 1.1
 # claim on the clip LENGTH, which is the same argument that put TRANSITIONS in
 # this file rather than in the assembler. motion.py's docstring points back at
 # it, because the beat that needs one is discovered while writing direction.
+# CONTINUATION BEATS ENTER AFTER THEIR ANCHOR. An NNx beat (shot.PLATE_ALIAS
+# -> its parent NN) is the same shot carried past H3's ~15 s trained range:
+# h3_shoot.py opens it on the parent's last season.H3_TAIL_FRAMES frames
+# BEFORE THE CUT (the first version anchored the clip's last frames, ~2 s
+# past the cut, and the continuation replayed them -- fault 54). Those frames
+# are already in the film, so the edit skips them: ss = runup + SS_MAX must
+# land on the first NEW frame, and table() asserts it, because a seam off
+# by eight frames is a stutter nobody can name. One link, never a chain.
+#
+#     RUNUP = {sid: _TAIL - SS_MAX for sid in ("01x", "04x")}
+#
+_TAIL = getattr(identity.season, "H3_TAIL_FRAMES", 0) / identity.season.FPS
 RUNUP: dict[str, float] = {}
 
 # THE TRANSITION TABLE LIVES HERE, WITH THE TIMELINE, NOT IN THE ASSEMBLER.
@@ -408,6 +420,10 @@ def table() -> list[dict]:
         rows.append({"sid": sid, "lines": lids, "lead": lead, "tail": tail,
                      "extra": extra, "speech": speech, "beat": beat,
                      "clip": clip, "ss": ss, "trans": trans, "runup": runup})
+        if sid.endswith("x") and sid in RUNUP:
+            assert abs(ss - _TAIL) < 1e-6, (
+                f"continuation beat {sid} enters at {ss:.3f}s, but its anchor is "
+                f"{_TAIL:.3f}s long -- the seam would repeat or skip frames")
     return rows
 
 

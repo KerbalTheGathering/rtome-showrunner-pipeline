@@ -2365,3 +2365,186 @@ OVER, and check its freshness** -- "the output exists" is not that check.
   every re-made artifact staleness-dates EVERYTHING downstream of it,
   and each generator's skip must check one link -- its own input --
   or the chain has a blind stage.
+
+# The ninth season: LOSS OF SIGNAL (2026-08-21)
+
+A 10:11 solo space film on a "sanity dial" (two style LoRAs as one
+continuum, driven by signal delay), the first season scored LOCALLY
+(ACE-Step), the first shot end to end on the ref2va hybrid with the real VO
+anchored, and ten viewing rounds of operator notes in one day. What follows
+is what those rounds cost. The season-level modules that came out of it --
+`upscale.py`, `score.py`, the rewritten `_session_template/h3_shoot.py`,
+`show/h3_chain.py`, the dip in `feature.py`, the continuation pattern in
+`edit.py` -- are in this commit; the film's own devices (a delay-counter
+OSD, shared motion blocks, a radio lane, a composite "crawl" register) stay
+with the film and are cited here by path.
+
+## Fault 50 -- the LoRA scheduler honours only its start value
+
+SCG's `LoRAScheduler` was meant to drive the style LoRA from 0 to 1.3
+across the sampler, a "crawl" between the two ends of the dial. Measured
+across a ladder of start/end pairs: the output tracked the START value and
+nothing else, on this sampler (er_sde / beta57). The end value was
+decoration.
+
+What landed: the CRAWL register became a COMPOSITE -- the SANE plate and
+its GONE twin (same seed, same latent) through a mask, in the film's
+`crawl.py`. Same seed + same latent holds composition across a style swap
+(confirmed on 60+ renders), which is what makes a composite of the two
+honest. Rule: **a scheduler is a claim; measure the output at two settings
+that should differ before building on it.**
+
+## Fault 51 -- a voice reference alongside an anchored driver kills the sampler
+
+ref2va takes `<Audio 1>` as a voice reference. Wired TOGETHER with a driver
+track anchored through `MiniMaxH3AddGuide`, the sampler died on an
+audio-row mismatch (1160 vs 2254, `model.py:605`). Either alone is fine.
+
+What landed: no voice reference is ever wired -- the driver IS his voice
+wherever he speaks. `season_identity.H3_VOICE_REF` is recorded and unused,
+with the fault number on it, so the next session does not "fix" the
+omission.
+
+## Fault 52 -- no driver is not silence; it is an invitation
+
+A beat where only the RADIO speaks (S1 04) was shot with no audio
+anchored. H3 invented a voice and mouthed the radio's line back at it.
+The beat whose driver was digital silence until his one word (S1 06) kept
+his mouth shut to the second. Confirms `docs/04_lipsync.md` "H3 invents
+dialogue" from the other side: the fix is not "no audio", it is ANCHORED
+SILENCE.
+
+What landed: `h3_shoot.driver()` always writes a driver -- the on-screen
+roles' lines at their edit offsets, `anullsrc` everywhere else, for every
+beat including the ones where nobody on screen speaks. `ON_SCREEN` names
+the roles that belong in it (`script.ON_SCREEN`, else every role).
+
+## Fault 53 -- identity references on a plate where he is a picture
+
+With the two identity plates wired, a beat where he appears only as a
+PRINTED POSTER (S3 06, a parade) animated the poster's face and then cut
+to the hero reference as a new scene -- "shot two". The references say
+"this man, alive"; a painted board wants neither.
+
+What landed: a `norefs` flag on the beat (beside `nochar`), honoured by
+the shooter. Rule: **references are for the character alive in frame;
+when the plate is itself a depiction of him, wire none.**
+
+## Fault 54 -- the continuation anchored the frames past the cut
+
+An NNx continuation beat opens on the parent's last `H3_TAIL_FRAMES`
+frames so the handoff carries velocity. The first version took the
+parent CLIP's last frames -- which are ~2 s past the edit's cut -- and the
+continuation replayed them after it: a visible repeat at every seam. A
+second, smaller fault in the same table: `("01x")` is a string, not a
+tuple, and the membership test passed silently until an assert on the
+in-point caught it.
+
+What landed: `tail_clip()` takes the frames ENDING AT THE CUT (`ss + beat
++ trans`); `edit.RUNUP = H3_TAIL_FRAMES/FPS - SS_MAX` for every NNx beat
+so the in-point lands on the first NEW frame, and `table()` asserts
+`ss == _TAIL` for those beats. One link, never a chain, in a faced film;
+`show/h3_chain.py` chains freely because its room has no faces.
+
+## Fault 55 -- "imperceptible" renders as a still
+
+Direction written as "the clouds turn imperceptibly", "a degree at most",
+"barely visible" produced clips with no motion at all -- four visions in a
+row rendered as stills (the operator: "V1 doesn't move or animate at
+all"). The model took the hedge literally. The fix was QUANTITIES: "by the
+width of the largest crater", "an eighth of a full turn", "a third of the
+frame's width". Sibling findings from the same day: "extreme close-up"
+PULLS THE FRAME IN over the clip (the plate's framing is lost); "rings"
+summons Saturn; moving hands mutate (keep hands flat and still unless the
+beat is about the hands); a surface the direction does not allocate (the
+back of a photograph turned over) gets invented, transparent.
+
+## Fault 56 -- the porthole prior, twice
+
+Any Earth in a porthole GROWS under H3 -- a coin-sized Earth in the plate
+was a full window by 5 s and two Earths by 10 s, the cabin drifting with
+it (v9). Re-plated to stars and the motion block `STARS_GLASS` ("one
+faintly blue star"): held. Then on a 12 s hold the blue star itself became
+the Earth (S3 05) -- and the beat's motion block was `EARTH_GLASS`, which
+NAMES the Earth. Two faults, one rule, the negation rule's positive twin:
+**what the direction names, the model paints; what the prior wants, the
+direction cannot hold back -- so name only what must be there, and for a
+window that must stay empty, "stars, and only stars."** The film's
+`move.STARS_ONLY` is that block.
+
+## Fault 57 -- the thesis typeset its own nouns
+
+A block of direction about the film's "PROCEDURE" rendered the word
+PROCEDURE on the panel. Printable nouns in a prompt are candidates for
+lettering, and the style LoRA's trigger leaked as literal text ~5/26
+frames at the deep registers. Corner-check every plate at those
+registers; keep the thesis out of the prompt and in the treatment.
+
+## Fault 58 -- the Lanczos stretch was the whole upscale
+
+H3 renders at 864x480; delivery is 1920x1080; every season stretched the
+frames 2.2x with Lanczos at bake and that was the picture. A one-frame
+A/B against RealESRGAN -> delivery was not close (edges, the helmet ring,
+the dial type). Two measurements decided the model: x4plus is 0.67 s/frame
+at 1024x576 because it paints 4096x2304 and we keep a quarter; x2plus is
+0.13 s/frame for the same delivered pixels. ~40 min a film.
+
+What landed: `upscale.py` -- each clip once into `<clips>/_up/` keyed on
+mtime, x264 crf 10 4:4:4, in the ComfyUI venv over ffmpeg pipes; every
+assembler's explode reads the twin; `season_identity.UPSCALE` names the
+model (None = the stretch); a named model that is not on disk FAILS rather
+than falling back. Rule: **pick an upscaler by delivered scale, not by the
+biggest number on the shelf.**
+
+## Fault 59 -- chained fades black the whole film
+
+`fade=t=in:st=X` holds every frame BEFORE X black and `t=out` every frame
+AFTER. A chain of both at every part boundary on the already-joined stream
+produced ten minutes of black at 1.7 MB, and nothing errored (a frame
+check caught it before delivery). `afade` has the same semantics.
+
+What landed: `feature.py` dips per PART -- each part re-encoded once with
+its own two fades (cached by mtime in `_work/dip_NN_*.mp4`), the concat
+copies those, the audio fades ride each mix input inside the concat
+filter. Durations untouched. Measured at the first join: luma 139 -> 0 ->
+77, RMS -27 -> -75 -> -33. `JOIN_DIP = 0` restores the splice. In
+`docs/02_traps.md` under ffmpeg.
+
+## Fault 60 -- a resident model family thrashes the next H3 pass
+
+Twice in one day: a Krea2 plate re-roll, then an ACE-Step cue, left their
+weights resident; the next H3 pass sat at sampler 0/6 with VRAM pinned at
+~23.7 GB and "0 models unloaded" in the log. Not a hang anyone can see
+from the queue -- the job is "running". Different from the canvas-budget
+thrash of fault 41 (that one is too many tokens; this one is too many
+families).
+
+What landed: the rule, by hand -- **restart ComfyUI before an H3 pass
+whenever another model family has been loaded since**, and verify the drop
+with nvidia-smi. Not yet automated in `season.py`; that is the open item.
+
+## What else landed without a number
+
+- **ACE-Step 1.5 XL as the score** (`score.py`): turbo graph, 8 steps,
+  cfg 1; `TextEncodeAceStepAudio1.5` pins bpm / key / time signature, so
+  independently generated cues are one score by KEY FAMILY. It fades ~8 s
+  before the requested end -- `PAD = 15` and measure where the music
+  stops. LRA varies by seed (17.5 -> 9.3 on a re-roll). A `{"silent":
+  True}` cue writes `anullsrc` of the right length: the mixer needs a file
+  for every span, and a span under nothing is a choice, not a gap.
+- **The delay PLAYED, not stated** (the operator: "the signal delay is
+  never felt, just stated"): the gap inside a two-voice beat is the round
+  trip -- `extra` = 2x the counter -- and the motion for that gap is THE
+  WAIT, written as a beat of its own.
+- **Silent beats** (`script.SILENT` + `edit.SILENT_SECS`) and a silent
+  cue: a wordless set piece needs no lines to exist in the tables.
+- `contract.py` wanted `PROMPTS` where the tree had `CUES` -- the contract
+  should name what it actually reads; aliased for now.
+- The show's chained pieces: a concat of pieces at different canvases
+  produced a size-mismatch join; one canvas per chain. A 0-byte join file
+  counted as a take until a size check.
+- The corner crop (2 %, for the style's painter's signature) was not
+  applied under transitions or to a card's neighbour frames -- the
+  signature came back for one second at every device. Crop at every site
+  that loads a frame, which is the same choke-point argument as
+  `fit_aspect`.

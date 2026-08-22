@@ -47,6 +47,7 @@ from __future__ import annotations
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import season_paths                                                # noqa: E402
+import upscale                                                     # noqa: E402  the clip, upscaled once
 
 
 import json
@@ -456,6 +457,7 @@ def explode(path, ss, dur, dest, tag):
         cmd += ["-ss", str(ss)]
     if dur is not None:
         cmd += ["-t", str(dur)]
+    path = upscale.clip(path)        # the cached RealESRGAN twin, or the clip itself
     cmd += ["-i", path, os.path.join(dest, "f_%05d.png")]
     subprocess.run(cmd, check=True)
     got = sorted(f for f in os.listdir(dest) if f.endswith(".png"))

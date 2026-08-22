@@ -156,6 +156,26 @@ Also check the **still** prompt. Four motion takes were faithfully conserving an
 open mouth because the plate prompt said "speaking directly out toward the
 camera". Fix it upstream, at the plate.
 
+### The ref2va shooter: anchor a driver, always, and never a voice reference
+
+`_session_template/h3_shoot.py` (ninth season) shoots every beat on the ref2va
+hybrid with the plate AND a driver track anchored at frame 0 through
+`MiniMaxH3AddGuide`. Three rules, each a fault:
+
+- **A beat where nobody on screen speaks still gets a driver -- of silence.**
+  Shot with no audio anchored, a radio-only beat invented a voice and mouthed
+  the radio's line; the beat whose driver was `anullsrc` until his one word
+  kept his mouth shut to the second (fault 52). Anchored silence is the
+  signal; absent audio is an invitation. `ON_SCREEN` (from `script.ON_SCREEN`)
+  says whose lines go in; a narrator, a radio, a voice in his head do not.
+- **No voice reference alongside the driver.** `<Audio 1>` wired together with
+  an anchored driver crashes the sampler on an audio-row mismatch (fault 51).
+  The driver is his voice wherever he speaks; `season_identity.H3_VOICE_REF`
+  is recorded, not wired.
+- **Identity references are for the character ALIVE in frame.** On a plate
+  where he is a poster, the references animated the poster and then cut to
+  the hero plate as a new scene (fault 53). `norefs` on the beat.
+
 ---
 
 ## Measuring a mouth (and why the number lied twice)

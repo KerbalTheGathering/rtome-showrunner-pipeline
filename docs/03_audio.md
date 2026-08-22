@@ -38,6 +38,28 @@ shaving transients (`QUIET_WARN` in `assemble.py`).
 
 ---
 
+## A local score: ACE-Step (`score.py`)
+
+The ninth season scored itself on ACE-Step 1.5 XL, on the same GPU, for
+nothing ($0.15/min on ElevenLabs Music). `score.render(name, secs, cue,
+out_dir)` runs the bundled turbo graph (8 steps, cfg 1) and returns an mp3 with
+at least `secs` of live music. What is not obvious:
+
+- **`TextEncodeAceStepAudio1.5` pins bpm, key and time signature.** Cues are
+  generated independently, so the KEY FAMILY is what makes them one score --
+  pick one key for the film's world and its relative for the other side.
+- **It fades out ~8 s before the requested end.** `PAD = 15` and
+  `usable_seconds()` measures where the music actually stops; the template's
+  rule that a file of the right length can still end in digital silence
+  applies.
+- **LRA varies by seed** (17.5 -> 9.3 on a re-roll of the same cue). Measure
+  before the bus fights it.
+- **A `{"silent": True}` cue writes `anullsrc` of the right length.** The mixer
+  needs a file for every span; a span under nothing is an editorial choice,
+  not a missing cue, and the tables should be able to say so.
+- **Restart ComfyUI before the next H3 pass** -- the resident weights thrash
+  it (`docs/02_traps.md`, fault 60).
+
 ## Getting the score out of the way: by signal, or by plan
 
 `identity.MIX` names one of `mixes.py`'s buses, and the choice that matters is

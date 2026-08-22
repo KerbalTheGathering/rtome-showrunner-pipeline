@@ -17,7 +17,9 @@ Most scripts take **beat ids as positional arguments** (`python gen_still.py 03
 | `season_identity.py` | **Who this season is.** Fill first. Hard-fails while blank. `python season_identity.py` prints what it thinks it is |
 | `parts.py` | Discovers the running order from the folders on disk. `python parts.py` reports what is missing or inconsistent. Never imports a session's identity (a blank one would kill it) — it regex-reads instead |
 | `season.py` | **Builds everything, in order, then joins.** `--films`, `--parts`, or name folders |
-| `feature.py` | **The join.** Verifies every part's codec/geometry/rate/pix_fmt and every mix against its picture, then stream-copies the video and rebuilds the audio once from PCM. `--check` verifies and builds nothing. Lived in `show/` until a season with `SHOW = False` could not join itself |
+| `feature.py` | **The join.** Verifies every part's codec/geometry/rate/pix_fmt and every mix against its picture, then stream-copies the video and rebuilds the audio once from PCM. Every part boundary DIPS TO BLACK (`JOIN_DIP`, `JOIN_AFADE`; each part faded once at its own ends, cached by mtime -- fault 59 says why not on the joined stream). `--check` verifies and builds nothing. Lived in `show/` until a season with `SHOW = False` could not join itself |
+| `upscale.py` | **Every H3 clip, once, through a real upscaler before the bake.** Cached beside the clips keyed on mtime, run in the ComfyUI venv over ffmpeg pipes. `season_identity.UPSCALE` names the model (x2 for 480p -> 1080p; None = the Lanczos stretch every earlier season shipped). A named model that is not on disk fails, it does not fall back |
+| `score.py` | **The local score**: ACE-Step 1.5 XL through ComfyUI, `render(name, secs, cue, out_dir)`; pinned bpm/key/time signature, `PAD` for the early fade, `usable_seconds()` to measure where the music stops, `{"silent": True}` for a span under nothing. `docs/03_audio.md` |
 | `publish.py` | Feature + share cut → the delivery folder, with the lanczos downscale that keeps scanlines from moireing. Reads where the feature is from `feature.OUT` rather than rebuilding the path |
 | `preflight.py` | Refuses to render while reference-season content survives in the files that decide what a film *is*. Parses string literals with `ast`, skipping docstrings |
 | `new_season.py` | `--to <path> --sessions N` clones the template. `--session NAME` adds one film folder. Copies scripts and docs, never data |
@@ -74,7 +76,7 @@ another. The template shipped with only the first column filled in, and
 | `vo_candidates.py` | Renders several takes of one line so you can pick |
 | `gen_still.py` | Generates the plates in ComfyUI |
 | `storyboard.py` | One film's board: every plate in story order with its runtime and the line spoken over it. Needs `edit.table()`, so it **cannot be drawn before the VO exists** — that is what `../contact.py` is for. For approval, **not for counting things** |
-| `h3_shoot.py` | Generates motion locally on MiniMax H3. Free. The default |
+| `h3_shoot.py` | Generates motion locally on MiniMax H3 -- the ref2va hybrid, the plate and a DRIVER of the real VO (silence where nobody on screen speaks) anchored at frame 0, identity references when he is alive in frame; NNx continuation beats open on the parent's tail. Free. The default. `docs/04_lipsync.md`, faults 51-54 |
 | `make_video.py` | Generates motion on a paid partner node. Resolves the current clip for a beat — **use `make_video.clip(sid)` rather than globbing** |
 | `qc_clips.py` | Inspect returned clips against the plates they came from — a filmstrip per clip, because one frame cannot see motion |
 | `qc_drift.py` | Ranks the **joins** by luma/saturation jump — drift *between* shots, which no per-clip check sees. Advisory, exits 0; says where to look first |
@@ -127,6 +129,15 @@ investigation), `cast.py`, `hosttest.py`, `glitch_scan.py`, `sync_qc.py`,
 Read one when you are about to re-litigate the decision it records.
 
 ---
+
+### `show/h3_chain.py`
+
+The show's H3 shooter for segments WITHOUT FACES: a segment longer than H3's
+~15 s trained range is shot as a chain of pieces, each opening on the last
+`H3_TAIL_FRAMES` of the piece before it, joined with the anchored frames
+dropped. One canvas per chain (a join across canvases is a size mismatch),
+every piece with a silent driver, baked `--raw`. `h3_shoot.py` stays the
+faced lane.
 
 ## The cold open (`cold_open/`)
 

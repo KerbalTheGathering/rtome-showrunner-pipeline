@@ -159,6 +159,12 @@ silently removed the end card — while the picture-vs-cut check passed, because
 measured the silent intermediate. **`apad` before `atrim`, and check the
 delivered file.**
 
+**`fade=t=in:st=X` blacks everything BEFORE X; `t=out` everything AFTER.** A
+chain of both at every part boundary on an already-joined stream produced ten
+minutes of black that encoded to 1.7 MB and exited 0 (fault 59). `afade` is the
+same. Fade each PART at its own ends before the concat -- `feature.py` does,
+cached per part -- and look at a frame from the middle of the delivered file.
+
 **A grid-search checker returns the least-bad point inside its grid, never "no
 idea".** A drift detector reported `1.000 solid` for a clip that visibly pushes,
 because the move was a zoom *plus* a translation and a centre-crop model cannot
@@ -208,6 +214,14 @@ each site is only as good as whoever added the last one.
 ---
 
 ## Long batches, guards and a shared GPU
+
+**A resident model family thrashes the next one.** A Krea2 plate re-roll or an
+ACE-Step cue leaves its weights loaded; the next H3 pass sits at sampler 0/6
+with VRAM pinned near the card's ceiling and "0 models unloaded" in the log --
+the queue says "running" and nothing errors (fault 60). **Restart ComfyUI
+before an H3 pass whenever another family has been loaded since**, and verify
+the drop with `nvidia-smi`, not `/free`. (Different from the canvas-budget
+thrash of fault 41: that one is too many tokens, this one too many families.)
 
 **A guard that prevents corruption but permits deadlock is half a guard.** Four
 copies of a batch tool ran at once, each correctly refusing to submit while the

@@ -206,6 +206,28 @@ by one of them afterwards.**
 
 ### The other motion rules
 
+- **A hedge renders as a still.** "turn imperceptibly", "a degree at most",
+  "barely visible" gave four clips with no motion at all (fault 55). Name
+  QUANTITIES: "by the width of the largest crater", "an eighth of a turn", "a
+  third of the frame's width".
+- **What the direction names, the model paints -- the negation rule's positive
+  twin.** A motion block that said "the Earth keeps its place" put an Earth in
+  a window whose plate had only stars; and any Earth a porthole is given grows
+  under the model until it fills the glass (fault 56). For a thing that must
+  stay absent, name only what IS there: "stars, and only stars." A thesis
+  block's printable nouns get lettered onto the set (fault 57) -- keep the
+  thesis in the treatment.
+- **"Extreme close-up" pulls the frame in** over the clip; the plate's framing
+  is lost. Lock the frame in words (the film's `move.LOCK`) and say what
+  moves inside it.
+- **Moving hands mutate.** Keep them flat and still unless the beat is about
+  the hands. **A surface the direction does not allocate gets invented** (the
+  back of a photograph turned over came back transparent).
+- **Shared motion blocks are the paste rule applied to direction.** A `move.py`
+  of named blocks (the cabin, the frame lock, the window, the radio) imported
+  by every `motion.py` -- one wording, stated once -- is how ten beats of the
+  same set stayed the same set.
+
 - **A thing that must match across shots is a paste, not a paraphrase.** Shared
   blocks exist for characters; the same discipline applies to any recurring
   object. One shot *described* the film's vehicle in its own words instead of
