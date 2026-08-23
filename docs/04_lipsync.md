@@ -15,10 +15,51 @@ has never been wrong. A mouth that moves under silence is the defect an audience
 reads instantly — far more than a mouth that is slightly late under speech.
 
 Everything below is in service of that.
+---
+
+## The standing rule: H3 with an anchored driver is the lip sync
+
+**Every lip-synced plate is animated on local H3, with the on-screen lines
+anchored as a driver at frame 0.** That is `_session_template/h3_shoot.py`
+(the ref2va hybrid shooter, ninth season) and it is the only path a new
+season should plan around. The operator's call, 2026-08-23: it is better and
+faster than InfiniteTalk, and it does in one pass what InfiniteTalk needed a
+base shoot, a clean bake, a sync pass and two proofs to do.
+
+Why it works, in one sentence: H3 is omni-modal, picture and sound decode
+from one latent, so **the mouth follows whatever audio is anchored** -- the
+real VO where he speaks, and digital silence where he does not. Anchored
+silence is the strongest "mouth closed" the model accepts; *absent* audio is
+an invitation to invent a voice (fault 52). Details and the three faults that
+shaped it are in "The ref2va shooter" below.
+
+What a season declares:
+
+- **`script.ON_SCREEN`** -- the set of roles whose lines go in the driver.
+  Undeclared, every role is on screen (a single-character film). A narrator,
+  a radio, a voice in his head are *not* in it: nobody in frame says them.
+- **One voice, two registers = two roles on one id.** A character who talks
+  on camera in some beats and narrates over others is `VOICES = {"gman": ID,
+  "inner": ID}` with only `"gman"` in `ON_SCREEN`. `contract.py` accepts one
+  id under two roles; what it refuses is a role with no lines.
+- **A beat with nobody speaking still gets a driver** -- of silence. The
+  shooter does this; do not turn `season.H3_DRIVER` off for a film that
+  writes its words (fault 64 is the one film where it is off: its sound *is*
+  the clips).
+
+The silence test above is still the arbiter. `check_clip.py`'s filmstrip
+lands with every clip; look at the mouth on the silent frames.
+
+**InfiniteTalk (below) is the legacy path.** It is what the `show/` tree
+still runs, because a talking desk needs 600-frame holds that H3 cannot fit
+under the latent budget in one clip (`show/edit.BASE_CAP_F`). Porting the
+show to H3 means cutting a long segment into continuation beats (`NNx`,
+anchored on the parent's tail) -- designed, not done. A season that has no
+show tree never touches it.
 
 ---
 
-## What works: WAN 2.1 InfiniteTalk (local, free)
+## The legacy path: WAN 2.1 InfiniteTalk (show tree only)
 
 InfiniteTalk is **not a patch**. It generates the shot from the plate with the
 audio as a driver, at the model's own resolution — so there is no mouth region

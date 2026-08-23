@@ -35,6 +35,9 @@ decision is to skip reading it.
   what it names, and a prompt cannot out-argue an architectural prior — the
   prompting rules are `docs/05_prompting.md` and `direction.py` enforces the
   negation rule mechanically.
+- **Lip sync is H3 with an anchored driver**, shot in the same pass as the
+  motion (`h3_shoot.py`, `docs/04_lipsync.md`). InfiniteTalk is the show
+  tree's legacy route; do not plan a new season around it.
 - **A check that does not measure the delivered artifact is not a check**,
   and a metric is a tripwire, not a verdict. `docs/06_verification.md`,
   rules 1–9. Filmstrips decide; means lie.

@@ -2775,3 +2775,20 @@ readable text. Each rewritten, each right on the next roll. The `none` title
 card, which BALLAST had added to its own clone and never sent back, is now
 in the repo's `cards.py`: a Reel has no title at its head, and the end card
 carries the name.
+
+## Fault 68 -- the manual still crowned the tool the template had already replaced
+
+`docs/04_lipsync.md` opened with "What works: InfiniteTalk" and Phase 7 of
+the process sent every on-camera mouth through `italk.py` -- while the
+session shooter had been syncing on H3's anchored driver since the ninth
+season, in one pass, with no clean bake, no sync pass and no source-proof.
+A reader following the docs would have built the slow path on a tree that
+no longer needs it. The operator's ruling (2026-08-23): **H3 with an
+anchored driver is the lip sync, everywhere a new season plans**. The doc
+now says so at the top, `CLAUDE.md` carries it as a standing rule, and
+InfiniteTalk is labelled what it is -- the show tree's legacy route, kept
+until a talking desk's 600-frame holds are cut into continuation beats.
+The pattern a single-voice film needs to go with it: two roles on one voice
+id (`gman` in `ON_SCREEN`, `inner` not), so the same clone narrates over
+the beats he is not in without the driver moving somebody else's mouth.
+

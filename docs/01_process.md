@@ -319,8 +319,14 @@ part its level, and the fix is at the source.
 ## Phase 7 — The show, if there is one (`show/`)
 
 The wraparound is built like a film with two differences: it makes N+1 short
-pieces instead of one long one, and **its host speaks on camera**, which is the
-only place in the pipeline where lip sync happens.
+pieces instead of one long one, and **its host speaks on camera** for whole
+segments at a time.
+
+**Lip sync in a session is not a phase: it is Phase 5.** `h3_shoot.py`
+anchors the on-screen lines as a driver and H3 moves the mouth in the same
+pass that makes the motion (`docs/04_lipsync.md`, the standing rule). The
+`italk.py` path below is the show tree's legacy route, kept because a talking
+desk needs holds longer than one H3 clip; nothing outside `show/` uses it.
 
 ```
 cd show

@@ -87,7 +87,7 @@ another. The template shipped with only the first column filled in, and
 | `check_clip.py` | Six evenly-spaced frames from one clip. **`h3_shoot.py` runs it for you** — motion breaks in the middle, and a review step you have to remember gets skipped |
 | `res_ladder.py` | Compare output at several resolutions |
 | `mouth_scan.py` | Ranks takes by mouth aperture inside a beat window. Read `docs/04_lipsync.md` on its limits first |
-| `italk.py` | WAN 2.1 InfiniteTalk lip sync. Opt-in per beat via `TALKING` |
+| `italk.py` | WAN 2.1 InfiniteTalk lip sync -- **legacy, show tree only**; a session's sync is `h3_shoot.py`'s anchored driver. Opt-in per beat via `TALKING` |
 | `make_music.py` | Score bed via the ElevenLabs music endpoint |
 | `assemble.py` | **Bake, mix, mux.** `--keep-frames` re-mixes against frames on disk. `--jobs=N` caps the fan-out |
 | `verify.py` / `qc.py` | Post-build checks on the finished film |

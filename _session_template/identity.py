@@ -82,6 +82,21 @@ STYLE_LORA, STYLE_W = "", 0.85
 CHAR_LORA, CHAR_W = "", 0.9
 TRIGGER = ""                     # "" if the character LoRA has no trigger token
 
+# A FILM WITH TWO LOOKS. STYLE_LORA is the look every beat gets; REGISTERS
+# names the looks a beat may take INSTEAD, and shot.REGISTER says which beat
+# takes which. The pattern is a film that cuts between a world and something
+# that is not that world -- the room he is in and the thing he is imagining
+# -- and wants the cut to be visible in the paint, not just the prompt.
+#
+#     REGISTERS = {"real": ("ApricotPaper_Krea2_V1.0.safetensors", 1.0),
+#                  "dream": ("FruityKicks_Krea2_V1.0.safetensors", 1.0)}
+#     shot.REGISTER = {"01": "real", "02": "dream", ...}
+#
+# A beat not in shot.REGISTER gets STYLE_LORA. A name in shot.REGISTER that
+# is not a key here is refused on import. One style per plate, ever: the
+# character LoRA still chains LAST, after whichever style the beat took.
+REGISTERS: dict[str, tuple[str, float]] = {}
+
 # --------------------------------------------------------------------------
 # THE VOICE
 # --------------------------------------------------------------------------

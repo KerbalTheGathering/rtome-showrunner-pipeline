@@ -54,7 +54,8 @@ HOST = season_paths.COMFY_URL
 SLOW_S = 300
 
 
-def graph(prompt: str, prefix: str, seed: int) -> dict:
+def graph(prompt: str, prefix: str, seed: int,
+          style: tuple[str, float] | None = None) -> dict:
     """Krea2-Turbo, filter bypass -> style LoRA -> [character LoRA] -> sampler.
 
     LoRA ORDER IS NOT ARBITRARY: the character LoRA sits LAST, closest to the
@@ -131,6 +132,11 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
     # rather than from a literal "51" -- the third time this file has had to
     # learn that lesson; node 59's comment is the second.
     root = (["51", 0], ["51", 1]) if not PLAIN else (["1", 0], ["13", 0])
+    # THE STYLE IS THE BEAT'S, NOT THE FILM'S, when the film has registers
+    # (identity.REGISTERS / shot.REGISTER). Resolved once here so every test
+    # below asks the same question; the sampler and the encoder cannot
+    # disagree about which look was loaded.
+    style_lora, style_w = style if style is not None else (shot.STYLE_LORA, shot.STYLE_W)
 
     def _tail(idx: int = 0) -> list:
         """Last node in the LoRA chain, whichever loaders actually exist.
@@ -144,7 +150,7 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
         """
         if shot.CHAR_LORA:
             return ["59", idx]
-        if shot.STYLE_LORA:
+        if style_lora:
             return ["52", idx]
         return list(root[idx])
 
@@ -204,11 +210,11 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
     # not there. The COWRIE copy of this file lost node 52 while its indentation
     # was being repaired -- harmless there (no style LoRA) and an immediate
     # dangling-link failure here, which is why the link check runs before submit.
-    if shot.STYLE_LORA:
+    if style_lora:
         g["52"] = {"class_type": "LoraLoader",
-                   "inputs": {"lora_name": shot.STYLE_LORA,
-                              "strength_model": shot.STYLE_W,
-                              "strength_clip": shot.STYLE_W,
+                   "inputs": {"lora_name": style_lora,
+                              "strength_model": style_w,
+                              "strength_clip": style_w,
                               "model": list(root[0]), "clip": list(root[1])}}
     if shot.CHAR_LORA:
         # WHAT THE CHARACTER LORA CHAINS FROM DEPENDS ON WHETHER THERE IS A
@@ -227,7 +233,7 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
         # AND IT IS `root` NOW, NOT "51", for the same reason one step further:
         # --plain removes node 51 as well, so the literal that replaced the
         # first literal would have had the identical fault under the new flag.
-        base = (["52", 0], ["52", 1]) if shot.STYLE_LORA else root
+        base = (["52", 0], ["52", 1]) if style_lora else root
         g["59"] = {"class_type": "LoraLoader",
                    "inputs": {"lora_name": shot.CHAR_LORA,
                               "strength_model": shot.CHAR_W,
@@ -245,7 +251,7 @@ def graph(prompt: str, prefix: str, seed: int) -> dict:
             if isinstance(_v, list) and len(_v) == 2 and isinstance(_v[0], str):
                 assert _v[0] in g, (
                     f"node {_nid}.{_k} links to node {_v[0]}, which is not in "
-                    f"this graph (style={bool(shot.STYLE_LORA)} "
+                    f"this graph (style={bool(style_lora)} "
                     f"char={bool(shot.CHAR_LORA)} plain={PLAIN})")
     return g
 
@@ -308,7 +314,8 @@ def render(sid: str, prompt: str, what: str, seed: int) -> int:
     # file. A guard present in one of three copies is not present.
     name = ((shot.OBJ_NAME if OBJ else shot.NAME)
             + ("_filtered" if FILTERED else ""))
-    body = json.dumps({"prompt": graph(prompt, f"{name}\\{sid}", seed)}).encode()
+    body = json.dumps({"prompt": graph(prompt, f"{name}\\{sid}", seed,
+                                       shot.style_for(sid))}).encode()
     req = urllib.request.Request(f"{HOST}/prompt", data=body,
                                  headers={"Content-Type": "application/json"})
     have, t0 = existing(sid), time.time()

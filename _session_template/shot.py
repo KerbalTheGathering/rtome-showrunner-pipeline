@@ -78,6 +78,28 @@ LATENT = identity.LATENT     # x2 VAE -> 2432x1664 plate
 STYLE_LORA, STYLE_W = identity.STYLE_LORA, identity.STYLE_W
 CHAR_LORA, CHAR_W = identity.CHAR_LORA, identity.CHAR_W
 
+# WHICH LOOK EACH BEAT TAKES, out of identity.REGISTERS. Empty means every
+# beat takes STYLE_LORA. A beat listed here takes its register's style LoRA
+# INSTEAD -- see identity.REGISTERS for why a film would want two.
+REGISTER: dict[str, str] = {}
+
+
+def style_for(sid: str) -> tuple[str, float]:
+    """The (style LoRA, weight) this beat is painted with."""
+    reg = REGISTER.get(sid)
+    if reg is None:
+        return STYLE_LORA, STYLE_W
+    return identity.REGISTERS[reg]
+
+
+def _check_registers() -> None:
+    bad = sorted(r for r in set(REGISTER.values()) if r not in identity.REGISTERS)
+    assert not bad, (f"shot.REGISTER names register(s) {bad} that "
+                     f"identity.REGISTERS does not define")
+
+
+_check_registers()
+
 # --- the season spine, byte-identical across all three films -----------------
 
 # --- the season's shared look ----------------------------------------------
