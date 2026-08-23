@@ -2803,3 +2803,22 @@ beats it was never asked for. Same fault class as the resolver that matches
 zero files and reports a pass: an argument that resolves to nothing must be
 refused, not ignored. `gen_still.py` now accepts bare sids the way
 `h3_shoot.py` does and refuses anything it does not recognise.
+
+## Fault 70 -- an identity reference with a scene in it becomes a shot the model cuts to
+
+The season's dream-register identity ref was a 60%-scene crop of a plate --
+a legible SUNSET TOUR sign, a Hummer hood, a sky -- and H3 CUT TO IT
+mid-clip in three beats of two other films: held the anchored plate for a
+beat, smeared through a transition, and finished the clip inside the
+reference's scene. The smear frames read exactly like an attention-kernel
+artifact, and the operator reasonably suspected the attention backend; the
+tell was the reference's own signage standing in a train station. Fault 53
+is the same failure entered through a poster; this one came in through the
+ref slot itself.
+
+Rules: **a reference is a FACE, not a scene** -- tight head crop, minimal
+background, nothing readable; and **before blaming the backend, look for
+the reference's content in the failed frames** -- a kernel cannot paint a
+sign it was never shown. The three takes were retired `_rej_refcut` and
+re-shot on face-card refs; a last-frame sheet of every strip (frame 6 of
+each filmstrip, one page) is what found the full blast radius in one look.

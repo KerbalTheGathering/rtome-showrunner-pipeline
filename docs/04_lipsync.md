@@ -216,6 +216,10 @@ hybrid with the plate AND a driver track anchored at frame 0 through
 - **Identity references are for the character ALIVE in frame.** On a plate
   where he is a poster, the references animated the poster and then cut to
   the hero plate as a new scene (fault 53). `norefs` on the beat.
+- **A reference is a FACE, not a scene.** A ref cut with 60% scene -- a
+  legible sign, a vehicle, a sky -- was CUT TO mid-clip in beats of other
+  films, and the transition frames read as attention artifacts (fault 70).
+  Tight head crop, minimal background, nothing readable in it.
 
 ---
 
