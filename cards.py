@@ -184,6 +184,30 @@ def _stack(o, n, anchor):
             for i in range(n)]
 
 
+# THE CARD THAT IS NOT THERE. grades.py has `none` -- "the picture is left
+# untouched. The default, and a real answer." There was no equivalent here, so
+# "this part is not the one that carries the title" was a thing the pipeline
+# could not express, and the only ways to say it were to edit assemble.py or to
+# give the part a title it did not want.
+#
+# IT IS AN ORDINARY REQUEST AND IT ARRIVED ON THE FIRST ONE-FILM SEASON (a cold
+# open plus one film: the open announces the work, the film is the work, and
+# nothing should say the name twice fifteen seconds apart) -- and again on the
+# first vertical Reel, where a title at the head is the scroll-killer and the
+# end card carries the name. On a six-film season the collision cannot arise,
+# which is why five seasons shipped without noticing.
+#
+# ZERO ON ALL THREE PHASES, so assemble.py's `round(TITLE_SECS * FPS)` is 0 and
+# every loop over it is empty. The layout below is never consulted; it returns
+# the centred stack so that anything which asks gets a sane answer rather than
+# an exception, and `main()` skips it on the sheet because there is nothing to
+# draw.
+@register("none", fix=0.0, hold=0.0, out=0.0, cx=0.5, cy=0.5, gap=0.13)
+def _none(o, n):
+    """Nothing is drawn. For the part of a season that does not carry the title."""
+    return _stack(o, n, "mm")
+
+
 @register("plain", hold=2.7, out=0.8, cx=0.5, cy=0.5, gap=0.13)
 def _plain(o, n):
     """Type fades up over the picture, holds, fades out. The default."""
@@ -336,7 +360,7 @@ def main() -> int:
            "flatten": lambda im: im.convert("L").convert("RGB"),
            "fit": lambda im, pw, ph: im.resize((pw, ph), Image.LANCZOS),
            "neighbour": lambda dj: base.copy()}
-    names = sorted(CARDS)
+    names = [n for n in sorted(CARDS) if n != "none"]   # nothing to draw
     steps = [0.0, 0.5, 1.0]
     sheet = Image.new("RGB", (w * len(steps), (h + 18) * len(names)),
                       (16, 16, 18))

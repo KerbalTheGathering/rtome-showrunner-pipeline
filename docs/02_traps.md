@@ -58,6 +58,15 @@ writes nothing.
 
 ---
 
+- **A ported shooter carries the last film's safest assumption.** The H3
+  shooter anchors an audio driver on every beat -- silence where nobody on
+  screen speaks -- because absent audio invites an invented voice. Port it
+  into a film whose sound *is* what H3 invents and every beat comes back with
+  a valid, silent audio track; the bake, the loudness stage and the length
+  check all pass (fault 64). `season_identity.H3_DRIVER = False` hands the
+  channel to the model. The tell was a per-beat level measurement on the
+  delivered file: −90 dB on ten beats against −50 on three.
+
 ## Caching and file resolution
 
 **A cache keyed on a filename will serve you the bug you just fixed.** Three
@@ -170,6 +179,19 @@ idea".** A drift detector reported `1.000 solid` for a clip that visibly pushes,
 because the move was a zoom *plus* a translation and a centre-crop model cannot
 represent that at any range. **Peg detection**: a winner sitting at either end
 of the grid is the search running out of room, not a measurement.
+
+**A labelled filter output nothing consumes is an ffmpeg error, not a no-op.**
+`assemble.mix()` places a clip-audio label per beat on every bus; only
+`diegetic` sums them, and the first `ducked` mix after that change died at
+the end of a bake with the whole graph as the traceback (fault 65).
+`mixes.bus()` now sinks whatever the bus leaves unconsumed. The general rule:
+a graph builder that places inputs for some consumers must terminate them
+for the rest.
+
+**libass `force_style` margins are in the subtitle's own 384x288 units.**
+`MarginV=190` on a 1920-high frame is not 190 px from the bottom, it is
+190/288 of the height — the top third. Burned captions for a vertical
+delivery: `MarginV=45`, `FontSize=12`, and look at the frame.
 
 ---
 

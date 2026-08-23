@@ -86,6 +86,20 @@ Anything that must read as empty — a board, a column, a doorway — cannot be
 requested by negation. Compose around it, or generate it filled and clear it in
 post from clean stock taken from the same plate. See `docs/02_traps.md`.
 
+**A simile summons the object.** "Amber lights scattered like votive candles"
+rendered candles on the floor. The comparison is read as a subject, the same
+way a negation is; say what the thing is ("status LEDs on the rack faces")
+and let the light do the comparing.
+
+**A shared block's setting clause wins over the beat's framing.** A rack block
+that says "in a long dark aisle" put an aisle in a shot that asked for one
+panel filling the frame. A block that travels into close-ups must describe
+the subject only; the setting belongs to the beats that can see it.
+
+**"Unreadable" is a request for text.** A wall of monitors with "soft
+unreadable glow" rendered legible screens. Ask for the blank thing — "a flat
+field of dim blue-grey light with nothing displayed" — not an illegible one.
+
 ---
 
 ## Motion
@@ -223,6 +237,19 @@ by one of them afterwards.**
 - **Moving hands mutate.** Keep them flat and still unless the beat is about
   the hands. **A surface the direction does not allocate gets invented** (the
   back of a photograph turned over came back transparent).
+- **H3 honours a small count of big events, and syncs the ones it does.**
+  Asked for five stamps at exactly 1.2 s (two takes, two seeds) it stamped
+  twice and handled paper in between; the landings that DID happen carried a
+  thud within a frame. A typed tempo is not held -- H3 keeps a pulse of its
+  own -- so a sync beat wants two or three events spaced wide, with the tail
+  fully allocated, not a click track (fault 63). And **the clip is the `buy`
+  length, not the beat**: a header that says 6.6 s over an 8.0 s clip leaves
+  1.4 s the direction never mentions. Derive it from `edit.table()`.
+- **One action per beat when the action is the point.** A direction carrying
+  the landing, the pull-back, the seal left behind, the lips under it and
+  the muffle got a hand that waved the stamp across the screen and set it
+  down -- in sync. Rewritten as "press at 2.0 s and STAY there", it pressed
+  and stayed (fault 63).
 - **Shared motion blocks are the paste rule applied to direction.** A `move.py`
   of named blocks (the cabin, the frame lock, the window, the radio) imported
   by every `motion.py` -- one wording, stated once -- is how ten beats of the
@@ -287,6 +314,13 @@ cannot take local images at all.
 **Measure what you bought before designing a move on top of it.** Four clips
 arrived carrying 1.06–1.28× of their own push; compounding a post move on top of
 that is how a shot ends up somewhere nobody chose.
+
+**Camera travel is licence to redraw; on a still life nothing may move but the
+light.** A slow push on a table of framed photographs crossfaded the
+certificate in front into translucency with a face from behind it coming
+through (fault 66). The same push had held in the 16:9 cut; it did not at
+9:16. Lock the frame, name every object as solid, opaque and in the same
+place in the last frame, and give the only motion to the lamplight.
 
 ---
 

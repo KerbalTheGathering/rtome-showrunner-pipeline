@@ -307,7 +307,9 @@ def check_cards():
     if not isinstance(shot, BaseException):
         cut = set(getattr(shot, "CUT", ()) or ())
         for sid, entry in (getattr(shot, "MID_CARDS", {}) or {}).items():
-            style, lines = entry
+            # (style, lines) or (style, lines, opts): the third is optional
+            style, lines, *rest = entry
+            mid_opt = rest[0] if rest else {}
             if sid not in cut:
                 out.append(f"MID_CARDS names beat {sid!r}, which is not in "
                           f"shot.CUT")
@@ -316,8 +318,8 @@ def check_cards():
                           f"is not in the library ({sorted(cards.CARDS)})")
                 continue
             try:
-                cards.settings(style)
-                cards.layout(style, len(lines))
+                cards.settings(style, mid_opt)
+                cards.layout(style, len(lines), mid_opt)
             except SystemExit as e:
                 out.append(str(e).splitlines()[0].removeprefix("FAIL: "))
     return out

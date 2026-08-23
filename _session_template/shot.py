@@ -273,7 +273,8 @@ for _src in PLATE_ALIAS.values():
 # machinery to draw a card anywhere but the start or the end. This is that
 # machinery, added when the gap was noticed.
 #
-# {sid: (card name, [lines])}. EMPTY BY DEFAULT -- most films need no mid-
+# {sid: (card name, [lines])} or {sid: (card name, [lines], {settings})} --
+# the settings are the card's own, as TITLE_CARD_OPTS. EMPTY BY DEFAULT -- most films need no mid-
 # film card at all. Clamped to the beat's own frame range in assemble.py, so
 # a card cannot bleed into the beat before or after it.
 #

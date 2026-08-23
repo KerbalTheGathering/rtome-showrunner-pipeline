@@ -315,6 +315,12 @@ devices.load_extra(HERE)
 TITLE_CARD = identity.TITLE_CARD
 TITLE_OPTS = identity.TITLE_CARD_OPTS
 END_STYLE = identity.END_CARD_STYLE
+# THE END CARD TAKES SETTINGS TOO. The title card had TITLE_CARD_OPTS from the
+# day cards.py existed; the end card had none, so a film that needed its last
+# line moved off the one thing in the last frame (a reel ending on a single
+# lit LED, with the card landing exactly on it) had no way to say so.
+# getattr so an identity.py written before this line still runs.
+END_OPTS = getattr(identity, "END_CARD_OPTS", {}) or {}
 TITLE_FIX = cards.settings(TITLE_CARD, TITLE_OPTS)["fix"]
 TITLE_OUT = cards.settings(TITLE_CARD, TITLE_OPTS)["out"]
 TITLE_SECS = cards.seconds(TITLE_CARD, TITLE_OPTS)
@@ -558,9 +564,11 @@ def plan():
     # as the title card (a short fixed fade-in, a hold, a fade-out sized by
     # the card's own `out` setting), so an announcement mid-film reads like
     # the same vocabulary as the one at the start rather than a new one.
-    for mid_sid, (mid_style, _mid_lines) in shot.MID_CARDS.items():
-        mid_out = cards.settings(mid_style)["out"]
-        mid_n = round(cards.seconds(mid_style) * FPS)
+    for mid_sid, mid_entry in shot.MID_CARDS.items():
+        mid_style = mid_entry[0]
+        mid_opt = (mid_entry[2] if len(mid_entry) > 2 else {}) or {}
+        mid_out = cards.settings(mid_style, mid_opt)["out"]
+        mid_n = round(cards.seconds(mid_style, mid_opt) * FPS)
         mb0 = starts[mid_sid]
         mblen = sum(1 for f in frames if f["sid"] == mid_sid)
         n = min(mid_n, mblen)
@@ -726,7 +734,7 @@ def bake(frames, w, h):
     # does not silently render its title at the eyebrow's height.
     px = (0.070, 0.105) if len(TITLE_LINES) == 2 else (0.105,)
     lay = cards.layout(TITLE_CARD, len(TITLE_LINES), TITLE_OPTS)
-    elay = cards.layout(END_STYLE, 1)
+    elay = cards.layout(END_STYLE, 1, END_OPTS)
     tfonts = [fit([t], round(h * p), cap(e), stroke)
               for t, p, e in zip(TITLE_LINES, px, lay)]
     tend = fit([END_CARD], round(h * 0.062), cap(elay[0]), stroke)
@@ -736,11 +744,17 @@ def bake(frames, w, h):
     # each line independently capped by its own anchor), keyed by beat so the
     # render loop can hand cards.draw() the right layout/fonts for whichever
     # beat it is currently on.
-    mid_lay = {sid: cards.layout(style, len(lines))
-              for sid, (style, lines) in shot.MID_CARDS.items()}
+    # A MID CARD IS (style, lines) OR (style, lines, opts). The third is the
+    # card's own settings, as TITLE_CARD_OPTS is for the title: a card that
+    # shares the lower third with burned-in captions on a vertical delivery
+    # has to be able to move, and could not.
+    mid_cards = {sid: (e[0], e[1], (e[2] if len(e) > 2 else {}) or {})
+                 for sid, e in shot.MID_CARDS.items()}
+    mid_lay = {sid: cards.layout(style, len(lines), opt)
+              for sid, (style, lines, opt) in mid_cards.items()}
     mid_fonts = {sid: [fit([ln], round(h * 0.05), cap(e), stroke)
                        for ln, e in zip(lines, mid_lay[sid])]
-                for sid, (style, lines) in shot.MID_CARDS.items()}
+                for sid, (style, lines, _opt) in mid_cards.items()}
 
     print(f"  card: {TITLE_CARD} ({TITLE_SECS:.1f}s), end {END_STYLE}; "
           f"type {'/'.join(str(f.size) for f in tfonts)}px title, "
@@ -756,7 +770,7 @@ def bake(frames, w, h):
     checks = [(f"TITLE_{i + 1}", t, f, e) for i, (t, f, e)
               in enumerate(zip(TITLE_LINES, tfonts, lay))]
     checks.append(("END_CARD", END_CARD, tend, elay[0]))
-    for sid, (_style, lines) in shot.MID_CARDS.items():
+    for sid, (_style, lines, _opt) in mid_cards.items():
         checks += [(f"MID_{sid}_{i + 1}", ln, f, e) for i, (ln, f, e)
                   in enumerate(zip(lines, mid_fonts[sid], mid_lay[sid]))]
     for label, txt, f, (cx, _cy, anch, sl) in checks:
@@ -837,7 +851,8 @@ def bake(frames, w, h):
                                     a, slip, TITLE_OPTS)
                 else:
                     im = cards.draw(END_STYLE, im, [END_CARD],
-                                    dict(ctx, fonts=[tend]), a)
+                                    dict(ctx, fonts=[tend]), a,
+                                    opt=END_OPTS)
 
         # MID-FILM CARDS. Text only -- no picture treatment, no `slip`; see
         # shot.py's note on MID_CARDS for why. A beat can carry a "card" (the
@@ -849,9 +864,10 @@ def bake(frames, w, h):
             mid_sid, a = rec["mid"]
             a = max(0.0, min(1.0, a))
             if a > 0.01:
-                mid_style, mid_lines = shot.MID_CARDS[mid_sid]
+                mid_style, mid_lines, mid_opt = mid_cards[mid_sid]
                 im = cards.draw(mid_style, im, mid_lines,
-                                dict(ctx, fonts=mid_fonts[mid_sid]), a)
+                                dict(ctx, fonts=mid_fonts[mid_sid]), a,
+                                opt=mid_opt)
 
         im.save(os.path.join(BAKED, f"b_{i:05d}.png"))
         if i % 300 == 0:
@@ -864,6 +880,23 @@ def bake(frames, w, h):
 
 # --------------------------------------------------------------------------
 # sound
+
+
+def has_audio(path: str) -> bool:
+    """Does this clip carry an audio stream? Asked before it is wired in.
+
+    An `-i` with no audio stream makes `[n:a]` an ffmpeg error at the end of
+    the bake, which is the place this file has learned not to find things
+    out. A paid vendor's clip has none; H3's has one; the upscaled twin of
+    either has none. So the assembler asks, and a beat without sound simply
+    places nothing -- a silent beat on the diegetic bus, and nothing at all
+    on every other.
+    """
+    r = subprocess.run([season_paths.ff("ffprobe"), "-v", "error",
+                        "-select_streams", "a", "-show_entries",
+                        "stream=codec_type", "-of", "csv=p=0", path],
+                       capture_output=True, text=True)
+    return "audio" in (r.stdout or "")
 
 
 def vo_offsets(rows):
@@ -1048,8 +1081,38 @@ def mix(rows, total_s, dest):
     # the two shapes it silently could not do (a film with no cues, a film with
     # no takes) are refused there by name instead of arriving as
     # `amix=inputs=0` a hundred lines into a filter graph at the end of a bake.
+    # THE CLIPS' OWN SOUND, PLACED EXACTLY WHERE THEIR FRAMES WENT. One
+    # input per beat, from the same clip `plan()` exploded (make_video.clip,
+    # NOT the upscaled twin -- RealESRGAN writes no audio stream), trimmed
+    # from the same in-point to the same length, delayed to the same start.
+    # It is placed for EVERY bus and only `diegetic` sums it; the others
+    # ignore ctx["clips"], which is how nine seasons of narrated films keep
+    # sounding the way they did. The 5 ms fades are against the click of a
+    # hard cut between two unrelated room tones; they remove no samples.
+    #
+    # THE START IS THE SAME RUNNING TOTAL vo_offsets() USES, so a clip's
+    # sound and a take over it cannot disagree about where the beat begins.
+    clabels, t = [], 0.0
+    for r in rows:
+        src = make_video.clip(r["sid"])
+        if has_audio(src):
+            idx = len(ins) // 2
+            ins += ["-i", src]
+            a, d = float(r["ss"] or 0.0), float(r["beat"])
+            ms = int(round(t * 1000))
+            parts.append(
+                f"[{idx}:a]atrim={a:.3f}:{a + d:.3f},asetpts=PTS-STARTPTS,"
+                f"afade=t=in:st=0:d=0.005,"
+                f"afade=t=out:st={max(0.0, d - 0.005):.3f}:d=0.005,"
+                f"adelay={ms}|{ms},"
+                f"aformat=sample_rates=48000:channel_layouts=stereo"
+                f"[c{len(clabels)}]")
+            clabels.append(f"[c{len(clabels)}]")
+        t += r["beat"]
+
     bus, out = mixes.bus(MIX, labels, mlabels,
-                         {"total": total_s, "spans": spans}, MIX_OPTS)
+                         {"total": total_s, "spans": spans, "clips": clabels},
+                         MIX_OPTS)
     parts += bus
     parts.append(f"{out}{LOUDNORM}[final]")
 
@@ -1069,7 +1132,7 @@ def mix(rows, total_s, dest):
                  "audio graph is bounded by a stream that ends early.")
     where = ", ".join(f"{c['name']}@{c['start']:.1f}s" for c in cues)
     print(f"  audio: {MIX} bus, {nvo} takes, {len(cues)} cue(s) [{where}], "
-          f"{got:.2f}s (picture {total_s:.2f}s)")
+          f"{len(clabels)} clip track(s), {got:.2f}s (picture {total_s:.2f}s)")
 
 
 # --------------------------------------------------------------------------

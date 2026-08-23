@@ -92,16 +92,41 @@ def settings(name: str, opt: dict | None = None) -> dict:
 def bus(name: str, vo: list[str], mus: list[str], ctx: dict,
         opt: dict | None = None) -> tuple[list[str], str]:
     """Build one bus. Refuses on a name it does not have, and on silence."""
-    if not vo and not mus:
+    # A THIRD KIND OF SOURCE, CARRIED IN ctx SO THE BUS SIGNATURE DOES NOT
+    # MOVE. `ctx["clips"]` is the list of labels carrying each beat's own
+    # audio, placed by assemble.mix() at the beat's start. Every bus that
+    # predates it ignores it; `diegetic` is built on it.
+    clips = ctx.get("clips") or []
+    if not vo and not mus and not clips:
         raise SystemExit(
-            "FAIL: the mix has neither a voice take nor a score cue in it.\n"
+            "FAIL: the mix has neither a voice take, a score cue nor a clip's "
+            "own sound in it.\n"
             "  A silent film is a real thing to want, but it is not this: it "
-            "means\n  script.LINES and edit.CUES are both empty and something "
-            "upstream lost them.")
+            "means\n  script.LINES and edit.CUES are both empty, the bus is "
+            "not `diegetic`, and\n  something upstream lost them.")
+    if not vo and not mus and name != "diegetic":
+        raise SystemExit(
+            f"FAIL: the {name!r} bus was handed only the clips' own sound.\n"
+            "  Every bus but `diegetic` ignores that track, so this film would "
+            "mix to\n  silence. A film whose sound IS its clips names MIX = "
+            "\"diegetic\" in identity.py.")
     total = float(ctx["total"])
     if total <= 0:
         raise SystemExit(f"FAIL: the mix was asked for {total}s of audio.")
-    return get(name)["fn"](list(vo), list(mus), ctx, settings(name, opt))
+    parts, out = get(name)["fn"](list(vo), list(mus), ctx, settings(name, opt))
+    # A LABEL THAT IS PLACED AND NOT CONSUMED IS AN FFMPEG ERROR, not a
+    # no-op. assemble.mix() places `[cN]` for every beat whose clip carries
+    # sound, on every bus; only `diegetic` sums them. The first ducked mix
+    # after that change -- the eleventh season's reel, eight minutes into a
+    # bake -- died on "unconnected output" with the graph printed as the
+    # error (fault 65). "Every bus that predates it ignores it" was true of
+    # the buses and false of ffmpeg. So the ones the bus left alone are sunk
+    # here, once, rather than in every bus that does not want them.
+    used = "".join(parts)
+    for c in clips:
+        if c not in used:
+            parts.append(f"{c}anullsink")
+    return parts, out
 
 
 # --------------------------------------------------------------------------
@@ -222,6 +247,56 @@ def _flat(vo, mus, ctx, o):
     return parts + [to_length("[bus]", total, "[out]")], "[out]"
 
 
+@register("diegetic", clips=1.0, voice=1.0, music=0.0)
+def _diegetic(vo, mus, ctx, o):
+    """The clips' own sound, cut with the picture. For omni-modal footage.
+
+    WHY IT EXISTS. Every bus above sums takes and cues, and h3_shoot.py's own
+    comment says what happened to the third thing H3 decodes: "the audio is
+    discarded downstream; the film's sound is VO and score." That was true of
+    nine seasons and it was a design, not an oversight -- an invented voice
+    moves a mouth, and a film that writes its words does not want a model
+    improvising over them. The tenth season inverted it: an entry for a
+    contest whose one rule is that every sound comes out of the same pass as
+    the picture (docs/treatment of that season), so the film's sound IS the
+    clips, cut at exactly the frames the picture was cut at.
+
+    WHAT IT SUMS. `ctx["clips"]` -- each beat's own track, trimmed by
+    assemble.mix() from the same in-point and to the same length as its
+    frames, delayed to the same start -- at `clips`; the voice takes, if the
+    film has any, at `voice`; the score, if any, at `music`, which defaults
+    to ZERO because a bed laid under omni-modal clips is exactly the
+    "separately-made track" that film was not allowed. Set it by hand, by
+    ear, on a film that is allowed one.
+
+    NO DUCK. Nothing here knows which clip sounds are speech, and a sidechain
+    keyed on takes the film does not have is a graph bounded by nothing.
+    """
+    total = float(ctx["total"])
+    clips = ctx.get("clips") or []
+    if not clips:
+        raise SystemExit(
+            "FAIL: the diegetic bus was handed no clip audio.\n"
+            "  assemble.mix() places one label per beat from the clip the bake "
+            "used; none\n  arrived, which means the clips have no audio "
+            "stream or the assembler is an\n  older one that does not place "
+            "them. `ffprobe` a clip for an audio stream first.")
+    parts, labels = [], []
+    parts.append(sum_to(clips, "[clraw]"))
+    parts.append(f"[clraw]volume={o['clips']}[cl]")
+    labels.append("[cl]")
+    if vo:
+        parts.append(sum_to(vo, "[voraw]"))
+        parts.append(f"[voraw]volume={o['voice']}[vo]")
+        labels.append("[vo]")
+    if mus and o["music"] > 0:
+        parts.append(sum_to(mus, "[musraw]"))
+        parts.append(f"[musraw]volume={o['music']}[mus]")
+        labels.append("[mus]")
+    parts.append(sum_to(labels, "[bus]"))
+    return parts + [to_length("[bus]", total, "[out]")], "[out]"
+
+
 @register("under", music=0.55, duck=0.30, ramp=0.40, pad=0.15)
 def _under(vo, mus, ctx, o):
     """Score ducked by automation, not by signal: the same dip every time.
@@ -311,14 +386,18 @@ def main() -> int:
     # three takes and two cues over 40s. Printed rather than described,
     # because the graph is the thing that has been wrong twice.
     ctx = {"total": 40.0, "spans": [(2.0, 6.5), (7.0, 9.0), (28.0, 33.0)]}
-    cases = [("three takes, two cues", ["[v0]", "[v1]", "[v2]"], ["[m0]", "[m1]"]),
-             ("no cues (unscored)", ["[v0]", "[v1]", "[v2]"], []),
-             ("no takes (non-narrated)", [], ["[m0]", "[m1]"])]
+    cases = [("three takes, two cues", ["[v0]", "[v1]", "[v2]"], ["[m0]", "[m1]"], []),
+             ("no cues (unscored)", ["[v0]", "[v1]", "[v2]"], [], []),
+             ("no takes (non-narrated)", [], ["[m0]", "[m1]"], []),
+             ("clips only (omni-modal)", [], [], ["[c0]", "[c1]", "[c2]"])]
     for name in sorted(MIXES):
         print(f"\n  {'=' * 68}\n  {name}")
-        for label, vo, mus in cases:
+        for label, vo, mus, clips in cases:
+            if (name == "diegetic") != (not vo and not mus):
+                continue          # refused by name; nothing to print
             parts, out = bus(name, vo, mus,
-                             dict(ctx, spans=ctx["spans"] if vo else []))
+                             dict(ctx, spans=ctx["spans"] if vo else [],
+                                  clips=clips))
             print(f"\n    -- {label} -> {out}")
             for p in parts:
                 print(f"       {p}")

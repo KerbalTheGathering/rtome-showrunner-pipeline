@@ -190,6 +190,7 @@ MIX_OPTS: dict = {}              # e.g. {"music": 0.42}
 TITLE_CARD = "plain"
 TITLE_CARD_OPTS: dict = {}       # e.g. {"cy": 0.44} -- see the card's settings
 END_CARD_STYLE = "corner"
+END_CARD_OPTS: dict = {}         # the end card's own settings, same keys as its card
 
 
 def check() -> None:

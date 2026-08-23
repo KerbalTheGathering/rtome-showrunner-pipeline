@@ -2596,6 +2596,73 @@ What landed: `credits.py` computes `n` frames first and takes `secs = n /
 FPS` for the mix. `docs/06_verification.md` gained the rule, next to the
 reminder that the answer to a tolerance failure is never a looser tolerance.
 
+## Fault 63 -- a typed tempo H3 did not keep, and a direction with too much in it
+
+The tenth season (MADE WITH, the H3 sync-sound contest entry: every sound
+must come out of the same H3 pass as the picture) probed sync before
+spending. Beat 05 asked for five rubber-stamp landings at exactly 1.2 s.
+Two takes, two seeds: the picture stamped **twice** and handled paper in
+between, and the onsets in the returned audio (0.35, 1.52, 3.04, 4.02,
+5.89 s in take 1) were the sound of whatever the picture was doing -- the
+two real landings carried a thud within ~80 ms, the rest were paper. So the
+sync engine is real and the count is not: H3 keeps a pulse of its own and
+honours a small number of big events. The tempo beats were rewritten to
+three events spaced two seconds apart, and the film's sync proofs are the
+single-event beats.
+
+Two more things from the same probe. (1) The direction header typed 6.6 s
+for a clip h3_shoot shot at 8.0 s -- it shoots edit's `buy` length, then
+grid-rounds up -- so 1.4 s went unallocated at the tail of every beat.
+`motion.SESSION_SECS` now derives from `edit.table()` through the same
+grid, and every "holds to the last frame" line runs to it. (2) Beat 09
+asked for a stamp to land on a television screen over a speaking mouth,
+pull back, leave a seal, with the lips moving under it and the voice
+muffled. Take 1: the hand waved the stamp across the screen and set it on
+the desk -- synced to the frame, and the wrong action. Rewritten as one
+action ("press at 2.0 s and stay there") it pressed and stayed. Also
+measured, for the record: H3's native English from a plate of a man at a
+lectern transcribes at Whisper no-speech 0.4-0.5 on the long policy line
+and 0.08 on a short one -- usable for a bureaucrat, not for a line that
+must be heard; and the generated room tone sat at -53 to -56 dB, near-mono
+(L/R correlation 0.99), across three beats and five takes, which is the
+first evidence that thirteen independently generated beds may cut
+together. Rules in `docs/05_prompting.md`, "The other motion rules".
+
+## Fault 64 -- the shooter anchored silence over the film's only sound
+
+The tenth season's first assembly on the diegetic bus came out 76 s long,
+-16.1 LUFS, thirteen clip tracks placed -- and ten of them were digital
+silence (-90 dB). Only the three probe takes, shot before the season was
+ported forward, carried sound. The ported shooter always writes a driver
+and anchors it (fault 52: anchored silence is how a face keeps its mouth
+shut; absent audio invites an invented voice), so every beat with no
+on-screen line was shot against a silent driver, and H3 obliged: a clean
+audio stream of nothing. Nothing failed. The bake, the loudness stage and
+the length check all passed, because a silent track is a valid track.
+
+Caught only because the verifier measured the delivered file -- onsets per
+beat and bed level 300 ms either side of every cut -- and ten beats read
+-90 dB against three at -50. `season_identity.H3_DRIVER` now says which
+kind of film this is: True (the default, and every narrated season) anchors
+a driver; False hands the audio channel to the model. Ten beats re-shot.
+
+Two rules from it. **A port carries the last film's assumptions, and the
+safest of them are the ones that never fail.** And **a measurement that
+reports a level is worth ten that report a pass** -- `assemble.py` printed
+"13 clip track(s)" and was telling the truth.
+
+## The diegetic bus: the third thing H3 decodes, finally placed
+
+`mixes.py` gained `diegetic` and `assemble.mix()` gained a third placed
+source -- each beat's own clip audio, at the picture's in-point, length and
+start -- carried as `ctx["clips"]` so the bus signature did not move and
+the three existing buses did not change. Built for the tenth season (the
+H3 sync-sound contest entry, where no other sound is allowed) and
+documented in `docs/03_audio.md`. Two details that were nearly wrong:
+the upscaled twin `explode()` reads from has no audio stream, so the audio
+input is the original clip; and an `-i` with no audio makes `[n:a]` an
+error a hundred lines into the graph, so `has_audio()` asks first.
+
 ## Credits name people, so they are example content with a lock
 
 `credits.py` is the only file in this repo that names PEOPLE -- the author,
@@ -2637,3 +2704,74 @@ head, anything under a bed. Two details that made it work across trees:
   reads. A voice the audience cannot see is labelled; a character they can
   see is not. Deriving it from the driver's table means the subtitles and the
   mouths cannot disagree about who is visible.
+
+# The reel: ADOPT A DATACENTER at 9:16 (2026-08-23, faults 65-67)
+
+`E:\Claude\Projects\ADOPT A DATACENTER` -- THE LATE BULLETIN's S3 reshot as a
+standalone 1080x1920 Reel. One film, no cold open, no show, no credits;
+95.3s against the 16:9 film's 84.8s; two beats added (the orphan asking
+itself questions; a share line, because on a Reel the ask is a share); the
+hook moved from the aerial to one amber LED, because an aerial in portrait
+is sky. Twelve H3 clips at 576x1024, $0.28 of music and two VO lines bought;
+everything else local or reused.
+
+## A second delivery of the same film is a second SEASON
+
+The geometry (`season.W, H`) is season-wide, so a vertical cut of one film
+cannot live inside the 16:9 season that made it. `new_season.py --sessions 1`,
+delete `cold_open/` and `show/`, port the four content files. What ports
+verbatim: the VO takes (same role, same voice, same text -- the mp3s were
+copied with their LINE IDS kept, and `script.REUSED` asserts the ids exist,
+because `make_vo.py` will not re-render an existing file and an edited line
+over an old take is otherwise silent). What does not port: the prompts. Every
+one was rewritten around the tall frame rather than cropped, and the subject
+turned out to be a gift to it -- a rack is tall, an aisle is deep, a pylon is
+tall. `NAME` had to change (`ADOPTREEL`): `claim_clips()` refuses the other
+season's `ADOPT_clips`, which is exactly what it is for.
+
+## Fault 65 -- every non-diegetic bus broke the day the diegetic one landed
+
+`assemble.mix()` now places `[cN]` -- each beat's own clip audio -- on every
+bus, and the comment said "every bus that predates it ignores it". The buses
+did. **ffmpeg does not: a labelled filter output nothing consumes is an
+error**, and the first `ducked` mix after the change died eight minutes into
+a bake with the whole graph printed as the traceback. The diegetic work was
+tested on the one film that uses the diegetic bus, so the other four never
+ran. Fix in `mixes.bus()`, once: any clip label the bus left out of its graph
+gets `anullsink`. Alongside it, the `--graph` demo's "clips only" case crashed
+every non-diegetic bus in `sum_to([])`; a bus handed nothing but clip sound
+is a silent film, and it is now refused by name with the fix in the sentence.
+
+## Fault 66 -- a push-in on a still life dissolves the objects into each other
+
+Beat 08 (the adoption kit on the hall table) was directed as a slow push,
+as it was in the 16:9 film, where it held. At 9:16 the same direction
+crossfaded the certificate card into translucency with a face from a frame
+behind it coming through. **Camera travel is licence to redraw; on a still
+life nothing may move but the light.** Locked frame, objects named as solid
+and opaque and in the same place in the last frame, and it held at the next
+seed. (`docs/05_prompting.md`.)
+
+## Fault 67 -- a card and a caption in the same lane
+
+A Reel is watched muted, so `captioned.py` burns `subs.py`'s sidecar into a
+second file. The `lower_third` CALL NOW card and the caption lane then
+occupied the same bottom third and overprinted each other -- and there was
+no way to move the card, because `MID_CARDS` took no settings and the end
+card had no `END_CARD_OPTS` either (the end card landed exactly on the one
+lit LED the last frame is about). Both now take the card's own settings, the
+same way `TITLE_CARD_OPTS` always did; the mid card sits at cy 0.50. And the
+libass number that bit on the way: **`MarginV` in `force_style` is in the
+subtitle's 384x288 units, not pixels** -- 190 put the line in the top third.
+
+## Three plates from one contact sheet, all prompt faults
+
+Of eleven plates, three were wrong and none by seed: the hook rendered an
+aisle because the shared `_ORPHAN` block said "long dark aisle" and that
+clause won the frame; the ward aisle grew real candles on the floor from
+"like votive candles" (a simile summons the object as surely as a negation
+does); and "soft unreadable glow" on a wall of monitors produced a wall of
+readable text. Each rewritten, each right on the next roll. The `none` title
+card, which BALLAST had added to its own clone and never sent back, is now
+in the repo's `cards.py`: a Reel has no title at its head, and the end card
+carries the name.
