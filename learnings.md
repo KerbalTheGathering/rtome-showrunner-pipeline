@@ -2792,3 +2792,14 @@ The pattern a single-voice film needs to go with it: two roles on one voice
 id (`gman` in `ON_SCREEN`, `inner` not), so the same clone narrates over
 the beats he is not in without the driver moving somebody else's mouth.
 
+
+## Fault 69 -- two tools, two spellings of "one beat", and the wrong one renders everything
+
+`h3_shoot.py` takes bare sids; `gen_still.py` took only `--beat=NN` -- and a
+bare sid matched no flag and FELL THROUGH, so `gen_still.py --force 01 08`
+re-rendered the whole film at full latent, silently, while looking exactly
+like a two-beat re-roll. Found because a re-roll batch was still printing
+beats it was never asked for. Same fault class as the resolver that matches
+zero files and reports a pass: an argument that resolves to nothing must be
+refused, not ignored. `gen_still.py` now accepts bare sids the way
+`h3_shoot.py` does and refuses anything it does not recognise.

@@ -130,7 +130,7 @@ Structure a prompt as: **medium/style block → subject → environment → ligh
 framing.** The leading block wins ties, so whatever must survive goes first.
 
 ```
-python gen_still.py 03            # one beat
+python gen_still.py 03            # one beat (or --beat=03)
 python gen_still.py               # all of them
 cd .. && python contact.py        # EVERY plate in the season, on one sheet
 ```

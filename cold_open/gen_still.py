@@ -358,6 +358,19 @@ def main() -> int:
               force="--force" in sys.argv)
     force = "--force" in sys.argv
     only = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--beat=")]
+    # BARE SIDS ARE BEATS TOO, exactly as h3_shoot.py reads them. They were
+    # silently IGNORED here: `gen_still.py --force 01 08` re-rendered the
+    # whole film, because the two sids matched no --flag and fell through --
+    # a fault class this repo already names (an argument that resolves to
+    # nothing and still reports a pass). An unknown flag is refused outright.
+    only += [a.zfill(2) for a in sys.argv[1:] if a.isdigit()]
+    known = ("--force", "--obj", "--filtered", "--no-strip")
+    bad = [a for a in sys.argv[1:]
+           if not a.isdigit() and not a.startswith(("--beat=", "--seed="))
+           and a not in known]
+    if bad:
+        sys.exit(f"FAIL: unrecognised argument(s) {bad} -- a beat is a bare "
+                 f"sid or --beat=NN; anything else here renders the WHOLE film")
     # --seed= ON THE COMMAND LINE OVERRIDES EVERYTHING; WITHOUT IT, THE
     # PER-BEAT TABLE WINS.
     #
