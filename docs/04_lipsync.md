@@ -219,7 +219,10 @@ hybrid with the plate AND a driver track anchored at frame 0 through
 - **A reference is a FACE, not a scene.** A ref cut with 60% scene -- a
   legible sign, a vehicle, a sky -- was CUT TO mid-clip in beats of other
   films, and the transition frames read as attention artifacts (fault 70).
-  Tight head crop, minimal background, nothing readable in it.
+  Tight head crop, minimal background, nothing readable in it. And on a
+  beat where the character is TINY in frame, wire no refs at all
+  (`norefs`): a big reference face against a small figure pulls a cut to
+  close-up, softer than fault 70's scene-cut and the same failure.
 
 ---
 

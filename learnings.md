@@ -2817,8 +2817,12 @@ is the same failure entered through a poster; this one came in through the
 ref slot itself.
 
 Rules: **a reference is a FACE, not a scene** -- tight head crop, minimal
-background, nothing readable; and **before blaming the backend, look for
-the reference's content in the failed frames** -- a kernel cannot paint a
-sign it was never shown. The three takes were retired `_rej_refcut` and
+background, nothing readable; **a face ref against a beat where the
+character is TINY pulls a cut to close-up** -- the model reconciles the big
+reference face with the small figure by cutting to the reference, so a
+beat where he is a speck takes `norefs` (his likeness at that size is the
+plate's job); and **before blaming the backend, look for the reference's
+content in the failed frames** -- a kernel cannot paint a sign it was
+never shown. The three takes were retired `_rej_refcut` and
 re-shot on face-card refs; a last-frame sheet of every strip (frame 6 of
 each filmstrip, one page) is what found the full blast radius in one look.
