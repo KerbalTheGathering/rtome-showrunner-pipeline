@@ -154,6 +154,11 @@ H3_UNET = "minimax_h3_ref2va_hybrid_b20-49_pruned_w4a8_mixed.safetensors"
 H3_ID_REFS: tuple[str, ...] = ()     # e.g. ("probe/ref_hero.png", "probe/ref_visor.png")
 H3_VOICE_REF = ""                    # recorded, never wired (fault 51)
 H3_TAIL_FRAMES = 22                  # frames of the parent a continuation opens on
+# H3_DRIVER: anchor an audio driver on every beat (the on-screen lines in
+# place, silence elsewhere). True for a film that writes its words. False
+# for a film whose sound is what H3 generates -- the driver would replace it
+# with anchored silence, and did (fault 64).
+H3_DRIVER = True
 
 
 def check() -> None:

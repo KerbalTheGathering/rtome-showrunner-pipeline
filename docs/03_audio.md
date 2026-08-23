@@ -99,6 +99,33 @@ behave.
 
 ---
 
+## The clips' own sound: `diegetic`
+
+Nine seasons threw H3's audio away on purpose — `h3_shoot.py` decodes it
+(the same latent through the audio VAE) and `assemble.py` built the film's
+sound from takes and cues. An invented voice moves a mouth, and a film that
+writes its words does not want a model improvising over them.
+
+The tenth season could use nothing else: a contest whose rule is that every
+sound comes out of the same pass as the picture. So `assemble.mix()` now
+**places a third class of source** — one track per beat, from the same clip
+`plan()` exploded (not the upscaled twin, which carries no audio stream),
+trimmed from the same in-point to the same length and delayed to the same
+running start `vo_offsets()` uses — and hands it to the bus as `ctx["clips"]`.
+Every bus that predates it ignores it; **`diegetic`** sums it, with `voice`
+and `music` gains beside it, and `music` defaulting to **zero** because a bed
+under omni-modal clips is exactly the track that film was not allowed.
+
+- `has_audio()` asks ffprobe per clip before wiring `[n:a]`, so a vendor clip
+  with no stream places nothing rather than failing at the end of a bake.
+- 5 ms fades at each beat's edges: the click of two unrelated room tones
+  butted together, removed without removing a sample.
+- No duck. Nothing knows which clip sounds are speech.
+- Thirteen independently generated beds cut end-to-end is the open question.
+  Measured on the tenth season's probes: −53 to −56 dB, L/R correlation 0.99,
+  in every take — the first evidence that asking every beat for the same
+  room-tone sentence, verbatim, is enough. Verify at the joins, not per clip.
+
 ## Loudness
 
 Target: **−16.0 LUFS integrated, −1.5 dBTP true peak**, ceiling −2.0 dBFS.

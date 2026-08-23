@@ -259,7 +259,13 @@ def shoot(sid: str, seed: int = SEED) -> bool:
         guide, is_clip = tail_clip(parent), True
     else:
         guide, is_clip = plate_name, False
-    drive = driver(sid, row, length)
+    # A DRIVER, OR NONE AT ALL -- season.H3_DRIVER. Anchored silence is the
+    # right default for a film that writes its words (fault 52: absent audio
+    # is an invitation to invent a voice). It is exactly wrong for a film
+    # whose sound IS what H3 invents: the tenth season shot ten beats through
+    # this line and got ten tracks of digital silence, cut into a film whose
+    # one rule was that every sound comes out of this pass (fault 64).
+    drive = driver(sid, row, length) if season.H3_DRIVER else None
     _b = shot.BEAT[shot.PLATE_ALIAS.get(sid, sid)]
     # "norefs": he is in the plate only as a PICTURE (a poster, a photograph).
     # With the identity plates wired, LOSS OF SIGNAL S3 06 animated the
