@@ -28,6 +28,14 @@ def rows() -> list[dict]:
     if "--sid" in sys.argv:
         sid = sys.argv[sys.argv.index("--sid") + 1]
 
+    # --- a WORDLESS tree: nothing speaks, so there are no rows ---------------
+    # The tenth season's cold open has neither vo.py nor script.py -- three
+    # typed-length shots and a title -- and this probe crashed on it, which
+    # took subs.py down for the whole feature. A tree with no words has an
+    # empty subtitle lane, not an error.
+    if not os.path.exists("vo.py") and not os.path.exists("script.py"):
+        return []
+
     # --- the cold open: vo.py placed the takes and knows their lengths -------
     if os.path.exists("vo.py") and not os.path.exists("script.py"):
         import vo

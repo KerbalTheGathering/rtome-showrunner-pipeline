@@ -2826,3 +2826,12 @@ content in the failed frames** -- a kernel cannot paint a sign it was
 never shown. The three takes were retired `_rej_refcut` and
 re-shot on face-card refs; a last-frame sheet of every strip (frame 6 of
 each filmstrip, one page) is what found the full blast radius in one look.
+
+## Fault 71 -- the subtitle probe could not survive a tree with no words
+
+`subs_probe.py` handled a narrated cold open (vo.py) and a scripted film
+(script.py) and crashed on a cold open that has neither -- three
+typed-length shots and a title -- which took `subs.py` down for the whole
+feature. A wordless tree has an EMPTY subtitle lane, not an error; the
+probe now says so in one early return. The subtitles machinery had only
+ever run against a season whose every tree spoke.
