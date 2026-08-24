@@ -51,7 +51,11 @@ def graph(cue: dict, secs: float, prefix: str) -> dict:
                          "type": "ace", "device": "default"}},
         "4": {"class_type": "TextEncodeAceStepAudio1.5",
               "inputs": {"clip": ["3", 0], "tags": cue["tags"],
-                         "lyrics": INSTRUMENTAL, "seed": cue.get("seed", 1),
+                         # A cue may carry its own sung lyrics ("lyrics" key); the default
+                         # stays instrumental. Added for HOW TO HAVE A DAY's
+                         # sung stings, 2026-08-23 -- ACE 1.5 takes plain lines.
+                         "lyrics": cue.get("lyrics", INSTRUMENTAL),
+                         "seed": cue.get("seed", 1),
                          "bpm": cue["bpm"], "duration": float(secs),
                          "timesignature": cue.get("ts", "4"),
                          "language": "en", "keyscale": cue["key"],

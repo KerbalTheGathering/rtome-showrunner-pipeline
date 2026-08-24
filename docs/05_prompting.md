@@ -282,6 +282,17 @@ by one of them afterwards.**
   move to what the frame was composed for; a push holds symmetry, a track
   destroys it.
 
+- **An object raised toward a face is a drinking/eating motion, and it will
+  pass through sealed glass to complete it.** Two seeds put a mug through a
+  bubble helmet to the lips. Beat the prior with geometry: name the barrier
+  as a solid sealed surface conserved first-to-last frame, aim the motion at
+  the OUTSIDE of the barrier, state the stopping distance, and give the face
+  behind it an expression that contains the closed mouth (fault 74).
+- **A hold is not an allocation -- it decays.** A 1s action followed by
+  eleven seconds of "holds that position" ended with the set dissolving and
+  the wardrobe recut. Allocate the hold in small directed events (a blink at
+  the halfway mark, another near the end, motionless between) and conserve
+  the set as ONE RIGID BODY by name (fault 75).
 - **Naming what a character LOOKS AT rotates them toward it.** Useful when you
   want it; a trap when you name scenery for atmosphere.
 - **Head turns drag the body.** If you want only the head, say the shoulders

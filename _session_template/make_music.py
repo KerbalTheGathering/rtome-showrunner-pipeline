@@ -89,6 +89,21 @@ def main() -> int:
         else:
             print(f"  [{name}] ACE {need + score.PAD:.0f}s ...", end="", flush=True)
             score.render(name, need, CUES[name], OUT, identity.NAME)
+        # A DELIBERATELY SILENT CUE CAN NEVER PASS A LIVENESS CHECK -- its
+        # whole point is that the music never starts. Found on the first film
+        # to use {"silent": True}: every room cue reported SHORT forever. For
+        # those, the only checkable fact is the file's DURATION.
+        if CUES[name].get("silent"):
+            import subprocess as _sp
+            d = float(_sp.run([score.season_paths.ff("ffprobe"), "-v",
+                               "error", "-show_entries", "format=duration",
+                               "-of", "csv=p=0", path], capture_output=True,
+                              text=True, check=True).stdout.strip())
+            print(f"   silence, {d:.1f}s on disk, needs {need:.1f}s  "
+                  f"{'ok' if d >= need else 'SHORT'}")
+            if d < need:
+                short.append(name)
+            continue
         live = score.usable_seconds(path)
         print(f"   music stops at {live:.1f}s, needs {need:.1f}s  "
               f"{'ok' if live >= need else 'SHORT'}")

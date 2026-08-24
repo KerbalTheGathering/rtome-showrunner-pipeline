@@ -136,6 +136,23 @@ def main() -> int:
           f"{100*(cold+bounty)/total:.1f}% of the running time is connective "
           "tissue")
 
+    # DEAD AIR IS A TRIPWIRE, NOT A VERDICT. A part assembled from a stale
+    # intermediate can carry 30s of silence and every other check passes --
+    # the tenth season shipped one (the last third of a film went quiet and
+    # the operator heard it before any tool did). A pause over 2s is legal;
+    # this prints where they are so somebody LISTENS there. Ears are the
+    # filmstrip of the mix.
+    for what, p_, _i in rows:
+        r = subprocess.run([season_paths.ff("ffmpeg"), "-v", "info", "-i", p_,
+                            "-af", "silencedetect=n=-50dB:d=2.0",
+                            "-f", "null", "-"], capture_output=True, text=True)
+        hits = [ln.split("silence_start: ")[1].split()[0]
+                for ln in (r.stderr or "").splitlines() if "silence_start" in ln]
+        if hits:
+            print(f"  NOTE: {what} has {len(hits)} silent stretch(es) over 2s, "
+                  f"starting at {', '.join(hits[:4])}s -- listen there "
+                  f"before publishing")
+
     if not ok:
         sys.exit("\nFAIL: the parts do not match -- fix the odd one out rather "
                  "than re-encoding the season")

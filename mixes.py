@@ -289,7 +289,13 @@ def _diegetic(vo, mus, ctx, o):
         parts.append(sum_to(vo, "[voraw]"))
         parts.append(f"[voraw]volume={o['voice']}[vo]")
         labels.append("[vo]")
-    if mus and o["music"] > 0:
+    # THE SCORE IS CONSUMED WHENEVER IT EXISTS, even at volume zero. The
+    # assembler has already BUILT one filter chain per cue by the time this
+    # bus runs, and a label this function drops is an unconnected output
+    # ffmpeg refuses with a bare EINVAL at the end of a bake (fault 76 --
+    # found by the first film to put a score through the diegetic bus).
+    # music=0 silences the bed; it must not orphan it.
+    if mus:
         parts.append(sum_to(mus, "[musraw]"))
         parts.append(f"[musraw]volume={o['music']}[mus]")
         labels.append("[mus]")

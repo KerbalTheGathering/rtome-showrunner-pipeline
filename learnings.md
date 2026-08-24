@@ -2835,3 +2835,138 @@ typed-length shots and a title -- which took `subs.py` down for the whole
 feature. A wordless tree has an EMPTY subtitle lane, not an error; the
 probe now says so in one early return. The subtitles machinery had only
 ever run against a season whose every tree spoke.
+
+
+## Fault 72 -- a deliberately silent cue can never pass a liveness check
+
+`make_music.py` measures every cue with `usable_seconds()` -- where does the
+music actually stop -- and a `{"silent": True}` room cue's music stops at
+0.0s forever, so the first film to score itself with silences (HOW TO HAVE
+A DAY, six sung stings inside six silences) reported every silence SHORT
+and refused to proceed. The check was right for music and unanswerable for
+silence: the only checkable fact about a silence is its DURATION. What
+landed: silent cues are ffprobe'd for length instead of listened to for
+liveness, in the session, the season template and the repo template.
+
+## Fault 73 -- the season's ACE graph renders lyrics as noise; the sidecar sings them
+
+Two probes, two lyric formats, two seeds: the bundled 8-step turbo graph
+(`score.py`, cfg 1.0) given a `lyrics` field returned music whose "vocal"
+Whisper heard as dots. The same lyrics through the OmniVoice ACE-Step
+plugin's sidecar -- ACE-Step 1.5's own inference stack, planner LM
+available -- sang intelligibly on the first try. The turbo graph's settings
+are tuned for instrumental beds and there is no knob in it worth arguing
+with. What landed: `score.py` takes an optional per-cue `lyrics` key (the
+default stays instrumental), and the HOW TO HAVE A DAY `make_music.py`
+routes lyric cues to `POST /api/plugins/ace-step/generate` (payload wrapped
+in `{"fields": ...}`) and everything else through `score.render` as before.
+
+## Fault 74 -- a mug raised toward a face goes through sealed glass to the lips
+
+The helmet-clink gag: raise a mug, it taps the bubble helmet, it cannot
+reach his mouth. Directed as "raises the mug toward his face... meets the
+glass with a tap and stays there", H3 put the rim on his lips THROUGH the
+dome -- twice, at two seeds, so it was the prompt. man-raises-mug is a
+drinking motion in the prior, and "toward his face" is the drinking
+phrasing. What landed: the barrier stated as the subject and the
+destination changed -- the dome is "a single solid sealed surface" that is
+sealed in the first, every, and last frame; the motion is "aimed at the
+curved OUTSIDE of the glass"; the rim "stops dead... a full hand's width of
+sealed glass and air between the rim and his lips"; and the face behind the
+glass is given an expression that contains the closed mouth. Third take
+tapped and stayed. Same family as the mouth rule: a prior is beaten by
+occupying the geometry, never by narrating the collision.
+
+## Fault 75 -- a one-second action in a twelve-second clip pays for the other eleven
+
+"He sits bolt upright, then holds that position" across a 12s clip: H3 sat
+him up in one second, held a while, then spent the unallocated tail
+standing him up, DISSOLVING THE BED under him, and re-colouring his
+trousers grey -- a whole invented scene change, coherent and unasked for.
+Unallocated motion gets invented (the ninth season's lesson), and a hold
+is not an allocation: it decays. What landed: the hold is allocated in
+small directed events ("blinks once, slowly, at the halfway mark, and once
+more near the end; between those blinks he is motionless"), the set is
+conserved as ONE RIGID BODY by name ("the bed -- frame, mattress, sheet,
+pillow and quilt together -- is one solid object"), and the palette and
+wardrobe are conserved explicitly. Take three sat up and stayed. Residue:
+H3 still warms a void's colour a little over long holds; qc_drift ranks
+whether any join cares.
+
+
+## Fault 76 -- the diegetic bus orphans the score it was told not to play
+
+`diegetic` defaults `music=0.0` and only summed the score labels when the
+level was above zero -- but `assemble.mix()` has already BUILT one placed,
+trimmed, delayed chain per cue by then, and an output label nobody consumes
+is an ffmpeg "unconnected output" refusal at the end of the bake. Fault 65
+fixed exactly this shape for CLIP labels by sinking the unconsumed ones in
+`bus()`; the music side was left uncovered because "every bus consumes vo
+and mus" -- true of every bus until the first film to run a score through
+`diegetic` (HOW TO HAVE A DAY: sung stings through the clips' own bus).
+What landed: `_diegetic` consumes the score whenever it exists -- at
+`volume=0` it is silent but connected -- in the season and the repo.
+
+
+## Fault 77 -- a dark room lights itself, and conservation does not reach the lamp
+
+Two beats shot from a near-black bedroom plate ("the frame reads as shapes
+of black on black", darkness conserved first-to-last frame in the
+direction): H3 lifted both into a fully lit pink bedroom -- one steadily
+across an 11.5s clip, one up and back down inside 3.5s -- as if someone
+walked in and hit the switch. The conservation clause was direct, the
+instruction survived, the room lit anyway: a dark interior is a prior that
+wants to be SEEN, the same family as the unoccupied face and the undressed
+deposition table. Do not re-argue it. What landed: the two beats were
+always written as "black screen" in the treatment, and black is a TRUTH,
+not a picture -- so the clips are hand-made (`color=black` + anullsrc
+audio, placed as the next take, old takes retired `_rej_lightleak`),
+which cannot drift and costs nothing. A beat that must actually be a DARK
+ROOM on screen -- shapes legible, staying dark -- should go to a
+video-only model with a real negative prompt, per the split-by-shot-type
+rule in docs/05_prompting.md.
+
+
+## Fault 78 -- the mixer's crossfades are bed assumptions, and they erased the stings
+
+`assemble.mix()` fades every cue in over 2s, out over 2s, and resolves the
+last over 3s -- right for ambient beds handing off to each other, and it
+took a 3.5s jazz sting to nothing: under a 2s rise and a fade-out that
+starts at 1.5s the cue never reaches full level, and the film's final stab
+died entirely inside the end-of-picture resolve. Nobody heard a sting in
+the delivered mix and every check passed, because no check listens. What
+landed: the fade is the CUE's fact -- make_music.CUES entries may declare
+"fade_in"/"fade_out", assemble reads them with the old defaults, and a
+sting declares 0.01 in / a declick out. The check that would have caught
+it at the bake is an open question; the operator's ear caught it first.
+
+## Fault 79 -- level-matching to a singer the source had already buried
+
+Two failures stacked in sting_swap. HDEMUCS classified ACE-Step's crooner
+as "other": the "vocal" stem was scraps, the conversion was babble, and
+the accompaniment kept the original voice -- replaced by the OmniVoice
+Manager's Mel-Band-RoFormer over HTTP (POST /api/process-clip,
+isolate=true), with the accompaniment made by phase-subtraction in mono.
+Then the remix matched the converted vocal to ACE's OWN vocal level --
+measured 23 dB under the horns, because ACE buries its singer inside a
+sting -- so even a clean conversion shipped inaudible. Fidelity to the
+source balance was the wrong brief: the film's brief is a LEAD singer, so
+the remix now targets the accompaniment's mean plus 2 dB. The general
+rule: when replacing an element, mix to the FILM's intention for it, not
+to the level the generator happened to give it.
+
+## Fault 72 -- a stale mix shipped 31 seconds of dead air, and only ears caught it
+
+The recast rebuilt VO, clips and parts across three chained sessions of
+fixes, and one film's mix was assembled somewhere in the churn against a
+stale intermediate: its last third was digital silence under moving
+picture, at target LUFS, past every check, into the published feature. The
+operator heard it at 4:05. A `--keep-frames` re-mix against the same
+inputs came out clean, so the graph was never wrong -- the ORDER was, and
+the artifact carried no trace of which build made it. Two things landed:
+`feature.py` now sweeps every part with silencedetect before the join and
+prints where any 2s+ stretch lives ("listen there"), a tripwire in the
+spirit of rule 9 -- ears are the filmstrip of the mix. And the operating
+lesson: after a multi-stage recast, re-assemble every affected part in one
+pass, in order, rather than trusting the parts that "already built" in an
+earlier round of the same churn.

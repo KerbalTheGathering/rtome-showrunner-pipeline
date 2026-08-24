@@ -72,7 +72,10 @@ def main() -> int:
     ]
     os.makedirs(OUT, exist_ok=True)
     for f in os.listdir(OUT):
-        os.remove(os.path.join(OUT, f))
+        # verify_cut.py keeps its frames in a SUBDIRECTORY here; os.remove
+        # on a directory is a PermissionError on Windows, not a skip.
+        if os.path.isfile(os.path.join(OUT, f)):
+            os.remove(os.path.join(OUT, f))
     for i, (label, t) in enumerate(shots, 1):
         subprocess.run([season_paths.ff("ffmpeg"), "-y", "-v", "error",
                         "-ss", f"{t:.2f}", "-i", MP4, "-frames:v", "1",
