@@ -2970,3 +2970,19 @@ spirit of rule 9 -- ears are the filmstrip of the mix. And the operating
 lesson: after a multi-stage recast, re-assemble every affected part in one
 pass, in order, rather than trusting the parts that "already built" in an
 earlier round of the same churn.
+
+## Fault 73 -- amix races at input EOF under ffmpeg 8's threaded filtergraph
+
+The dead air of fault 72 was not a stale intermediate. The same mix graph
+over the same files, byte-identical command, produced a mix that went
+silent at the FIRST music input's end in two assemble-driven runs and a
+correct mix in six consecutive standalone runs -- `duration=longest` is the
+default and the race intermittently fails to honour it, truncating the sum
+at the first EOF; the bus's own apad then papers the gap with silence at
+full length and target loudness. A Heisenbug in the scheduler is not a
+thing to out-stare: `mixes.sum_to()` now pads EVERY amix input to the bus
+total first (no input ever EOFs early, so there is nothing to
+mis-schedule) and says duration=longest explicitly. Three assembles in a
+row came back clean where run-to-run had flipped before. The tripwire from
+fault 72 stays: it is what turns this class of silence into a line of
+output instead of a viewer's ear.

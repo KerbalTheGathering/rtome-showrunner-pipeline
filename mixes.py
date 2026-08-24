@@ -134,21 +134,43 @@ def bus(name: str, vo: list[str], mus: list[str], ctx: dict,
 # --------------------------------------------------------------------------
 
 
-def sum_to(labels: list[str], out: str) -> str:
+def sum_to(labels: list[str], out: str, total: float | None = None) -> str:
     """One chain summing `labels` onto `out`. Handles the one-input case.
 
     `amix=inputs=1` works, and `anull` says what is happening. The case that
     matters is that neither of them is `inputs=0`, which is what the hand-built
     graph produced for a film with no cues -- an ffmpeg error at the end of a
     bake rather than a refusal before it.
+
+    WITH `total`, EVERY INPUT IS PADDED TO THE BUS LENGTH FIRST, and that is
+    a correctness fix, not tidiness. Under ffmpeg 8.0.1's threaded
+    filtergraph, an amix whose inputs end at different times RACES AT EOF:
+    the same graph over the same files produced a mix that went silent at
+    the first input's end in one run and a correct mix in the next six
+    (fault 73 -- the tenth season shipped the silent one). `duration=longest`
+    is the documented default and it is what the race intermittently fails
+    to honour, so it is both said explicitly AND made irrelevant: inputs
+    that all end at `total` have no early EOF to mis-schedule. Every bus
+    passes its total; only a caller that cannot know one may omit it.
     """
     if not labels:
         raise SystemExit("FAIL: sum_to() was given no inputs. This is a bug in "
                          "the bus, not in the film.")
     if len(labels) == 1:
         return f"{labels[0]}anull{out}"
+    if total is not None:
+        tag = out.strip("[]")
+        pads, padded = [], []
+        for i, lbl in enumerate(labels):
+            pl = f"[_p{tag}{i}]"
+            pads.append(f"{lbl}apad=whole_dur={total:.3f},"
+                        f"atrim=0:{total:.3f}{pl}")
+            padded.append(pl)
+        return (";".join(pads) + ";" + "".join(padded)
+                + f"amix=inputs={len(padded)}:normalize=0:"
+                f"dropout_transition=0:duration=longest{out}")
     return ("".join(labels) + f"amix=inputs={len(labels)}:normalize=0:"
-            f"dropout_transition=0{out}")
+            f"dropout_transition=0:duration=longest{out}")
 
 
 def to_length(src: str, total: float, out: str) -> str:
@@ -207,13 +229,13 @@ def _ducked(vo, mus, ctx, o):
     total = float(ctx["total"])
     parts = []
     if not mus:
-        parts.append(sum_to(vo, "[bus]"))
+        parts.append(sum_to(vo, "[bus]", total))
         return parts + [to_length("[bus]", total, "[out]")], "[out]"
-    parts.append(sum_to(mus, "[musraw]"))
+    parts.append(sum_to(mus, "[musraw]", total))
     parts.append(f"[musraw]volume={o['music']}[mus]")
     if not vo:
         return parts + [to_length("[mus]", total, "[out]")], "[out]"
-    parts.append(sum_to(vo, "[vo]"))
+    parts.append(sum_to(vo, "[vo]", total))
     # THE KEY IS PADDED TO THE FULL LENGTH. sidechaincompress is bounded by its
     # sidechain input; without this the score stops when the last word does.
     parts.append("[vo]asplit=2[vo1][vokeyraw]")
@@ -237,13 +259,13 @@ def _flat(vo, mus, ctx, o):
     total = float(ctx["total"])
     parts, labels = [], []
     if mus:
-        parts.append(sum_to(mus, "[musraw]"))
+        parts.append(sum_to(mus, "[musraw]", total))
         parts.append(f"[musraw]volume={o['music']}[mus]")
         labels.append("[mus]")
     if vo:
-        parts.append(sum_to(vo, "[vo]"))
+        parts.append(sum_to(vo, "[vo]", total))
         labels.append("[vo]")
-    parts.append(sum_to(labels, "[bus]"))
+    parts.append(sum_to(labels, "[bus]", total))
     return parts + [to_length("[bus]", total, "[out]")], "[out]"
 
 
@@ -282,11 +304,11 @@ def _diegetic(vo, mus, ctx, o):
             "stream or the assembler is an\n  older one that does not place "
             "them. `ffprobe` a clip for an audio stream first.")
     parts, labels = [], []
-    parts.append(sum_to(clips, "[clraw]"))
+    parts.append(sum_to(clips, "[clraw]", total))
     parts.append(f"[clraw]volume={o['clips']}[cl]")
     labels.append("[cl]")
     if vo:
-        parts.append(sum_to(vo, "[voraw]"))
+        parts.append(sum_to(vo, "[voraw]", total))
         parts.append(f"[voraw]volume={o['voice']}[vo]")
         labels.append("[vo]")
     # THE SCORE IS CONSUMED WHENEVER IT EXISTS, even at volume zero. The
@@ -296,10 +318,10 @@ def _diegetic(vo, mus, ctx, o):
     # found by the first film to put a score through the diegetic bus).
     # music=0 silences the bed; it must not orphan it.
     if mus:
-        parts.append(sum_to(mus, "[musraw]"))
+        parts.append(sum_to(mus, "[musraw]", total))
         parts.append(f"[musraw]volume={o['music']}[mus]")
         labels.append("[mus]")
-    parts.append(sum_to(labels, "[bus]"))
+    parts.append(sum_to(labels, "[bus]", total))
     return parts + [to_length("[bus]", total, "[out]")], "[out]"
 
 
@@ -323,7 +345,7 @@ def _under(vo, mus, ctx, o):
     parts, labels = [], []
     spans = merge_spans(ctx.get("spans") or [], 2.0 * (o["pad"] + o["ramp"]))
     if mus:
-        parts.append(sum_to(mus, "[musraw]"))
+        parts.append(sum_to(mus, "[musraw]", total))
         if spans:
             r = max(0.01, float(o["ramp"]))
             terms = []
@@ -342,9 +364,9 @@ def _under(vo, mus, ctx, o):
             parts.append(f"[musraw]volume={o['music']}[mus]")
         labels.append("[mus]")
     if vo:
-        parts.append(sum_to(vo, "[vo]"))
+        parts.append(sum_to(vo, "[vo]", total))
         labels.append("[vo]")
-    parts.append(sum_to(labels, "[bus]"))
+    parts.append(sum_to(labels, "[bus]", total))
     return parts + [to_length("[bus]", total, "[out]")], "[out]"
 
 
