@@ -551,7 +551,14 @@ def plan():
     for i in range(min(title_n, total)):
         frames[i]["card"] = ("title", min(1.0, i / (0.35 * FPS),
                                           (title_n - i) / (TITLE_OUT * FPS)))
-    end_n = round(3.2 * FPS)
+    # THE END CARD'S WINDOW COMES FROM THE CARD, NOT FROM A TYPED 3.2s.
+    # `cards.none` exists to say "this part carries no card", and the TITLE
+    # honoured it (TITLE_SECS is derived) while the END did not -- so a film
+    # whose whole ending is a hard cut to black and nothing else had its end
+    # card drawn over that black anyway, at full opacity, for 3.2 seconds
+    # (fault 85). Deriving it also means a season that swaps END_CARD_STYLE
+    # for a longer or shorter card gets the window it asked for.
+    end_n = round(cards.seconds(END_STYLE, END_OPTS) * FPS)
     for i in range(max(0, total - end_n), total):
         k = i - (total - end_n)
         frames[i]["card"] = ("end", min(1.0, k / (0.7 * FPS)))

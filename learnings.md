@@ -3083,3 +3083,64 @@ changes. Two sub-lessons: a card can be ALL treatment (layout returns
 claims filmstrip is the only check that would ever have caught this,
 because it is the only one that looks at the delivered artifact where
 the claim says to look.
+
+
+## Fault 85 -- the end card drew over a film whose ending is silence
+
+`END_CARD_STYLE = "none"` and the last frame still faded up
+"SOURCES IN THE DESCRIPTION." over the black, at full opacity, for 3.2
+seconds -- on the one film whose ending is explicitly a hard cut to black
+with nothing after it. The window was `end_n = round(3.2 * FPS)`, typed,
+while the TITLE card's window has always been derived (`TITLE_SECS`). So
+`cards.none` -- which exists to say "this part carries no card" and which
+the title honours -- was unreachable for the END card, and no season had
+noticed because every season before this one wanted an end card. Derived
+now, from `cards.seconds(END_STYLE, END_OPTS)`. The general shape: when
+two things that look symmetrical (title card, end card) are implemented
+one derived and one typed, the typed one is a latent bug with a date on
+it.
+
+
+## Fault 86 -- two readers of one flag, reading two different beats
+
+A continuation beat (NNx) borrows its parent's plate through PLATE_ALIAS,
+and h3_shoot read a beat's `nochar`/`norefs` off THE ALIAS TARGET. Right
+for a beat that is only reusing a picture; wrong for any beat that
+differs from the plate it borrows -- which a continuation always can.
+Two failures, one session, same root:
+
+  * A continuation wrongly marked `nochar` still got identity references
+    (`with_man` read the PARENT, which was not nochar) while its driver
+    was silenced (the driver read THE BEAT, which was). H3 was handed a
+    man to hold and no mouth to move, and it drifted -- the take inverted
+    the camera and collapsed his face upside down.
+  * `norefs`, set on a continuation that kept cutting to the identity
+    reference's own background, did NOTHING, because the parent did not
+    say it. The log printed "man" while I read the shot list expecting
+    "nochar", which is the only reason it was caught at all.
+
+`_flag(sid, key)` now answers from the beat's own entry when it has an
+opinion and from the plate it borrows when it does not, and BOTH readers
+go through it. The lesson is not about aliases: it is that one fact read
+in two places by two expressions will eventually disagree, and the
+disagreement will look like a model problem.
+
+
+## Finding 87 -- an identity reference is a SHOT, and a borrowed one is another film's shot
+
+Fault 70 said a scene-heavy identity ref becomes a shot H3 cuts to. This
+season proved the corollary: a season scaffolded with ANOTHER FILM'S refs
+still wired (the template invites this -- H3_ID_REFS is a filename, and a
+plausible one is sitting right there from last week) shipped three beats
+that cut to the OTHER FILM'S SET. The man appeared in the previous film's
+pastel void, holding the previous film's coffee mug, mid-sentence, in a
+documentary about annexation. Nothing failed; verify_cut passed 84/84,
+because every cut did open on its own clip -- the clip was simply the
+wrong film inside. Re-cutting the refs from this season's own swapped
+plates fixed two of three beats; the third (the longest room clip in the
+film, 12s) cut to the NEW ref's plain backdrop instead, and only `norefs`
+settled it. So, three rules: re-cut H3_ID_REFS as the FIRST step after
+the first face swap, never later; crop them TIGHT on the figure so the
+worst a leak can do is put him in the room he is already in; and on a
+long continuation beat, prefer no references at all -- it opens on its
+parent's tail, which already carries the likeness at full strength.

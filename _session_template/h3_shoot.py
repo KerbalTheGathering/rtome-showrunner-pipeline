@@ -115,14 +115,46 @@ def parent_of(sid: str) -> str | None:
 
 
 # --- the driver: the beat's on-screen speech, in place, silence elsewhere -------
+def _flag(sid: str, key: str):
+    """A beat's own flag ("nochar", "norefs"), else its plate's.
+
+    THE BEAT'S OWN ANSWER WINS. These were read off the ALIAS TARGET only,
+    which is right for a beat simply reusing a picture and wrong for every
+    beat that differs from the plate it borrows -- and a continuation beat
+    (NNx) always borrows. It broke twice in one session on the film that
+    found it: a continuation marked `nochar` still got identity references
+    (with_man read its parent) while its driver was silenced (the driver
+    read the beat), so H3 was handed a man to hold and no mouth to move and
+    drifted into a distorted face; then `norefs`, set on a continuation that
+    kept cutting to the reference's own background, did nothing at all
+    because the parent did not say it (fault 86).
+
+    TWO READERS OF ONE FACT MUST READ IT THE SAME WAY. That is the whole
+    lesson: `with_man` and `driver()` now both come through here.
+
+    An aliased graphics beat still inherits `nochar` from the plate it
+    borrows, exactly as before, because it states no opinion of its own.
+    """
+    own = shot.BEAT[sid]
+    if key in own:
+        return own[key]
+    return shot.BEAT[shot.PLATE_ALIAS.get(sid, sid)].get(key)
+
+
 def driver(sid: str, row: dict, length: int) -> str:
     """Write <INPUT>/h3_<name>_<sid>_drive.wav -- silence where nobody on screen speaks."""
     roles = {ln[0]: ln[2] for ln in script.LINES}
+    # A LINE OVER A "nochar" BEAT IS NARRATION, NOT SPEECH: he is not in the
+    # picture, so anchoring his voice would hand H3 a voice and no mouth --
+    # and H3 syncs faces to whatever audio it has (fault 53's poster face
+    # chewed for exactly this reason). Anchored silence keeps an
+    # illustration still; the mix lays the narration.
+    on = set() if _flag(sid, "nochar") else ON_SCREEN
     t = row["ss"] + row["lead"]
     parts = []
     for lid in row["lines"]:
         d = edit.vo_dur(lid)
-        if roles[lid] in ON_SCREEN:
+        if roles[lid] in on:
             parts.append((lid, t))
         t += d + row["extra"]
     # A BEAT WITH NOBODY SPEAKING ON SCREEN STILL GETS A DRIVER -- OF SILENCE.
@@ -266,13 +298,14 @@ def shoot(sid: str, seed: int = SEED) -> bool:
     # this line and got ten tracks of digital silence, cut into a film whose
     # one rule was that every sound comes out of this pass (fault 64).
     drive = driver(sid, row, length) if season.H3_DRIVER else None
-    _b = shot.BEAT[shot.PLATE_ALIAS.get(sid, sid)]
+    _b = None   # flags come from _flag(); see it for why
     # "norefs": he is in the plate only as a PICTURE (a poster, a photograph).
     # With the identity plates wired, LOSS OF SIGNAL S3 06 animated the
     # poster's face and then cut to the hero reference as a new scene (fault
     # 53). The references say "this man, alive"; a painted board wants
     # neither. No H3_ID_REFS declared = no references, ever.
-    with_man = bool(ID_REFS) and not _b.get("nochar") and not _b.get("norefs")
+    with_man = (bool(ID_REFS) and not _flag(sid, "nochar")
+                and not _flag(sid, "norefs"))
 
     # A SPLIT SHOT IS ONE SHOT: the parent and its NNx continuation MUST
     # render on the SAME canvas. Each table bucket carries its own aspect
