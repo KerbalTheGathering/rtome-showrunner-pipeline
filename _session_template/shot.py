@@ -304,13 +304,11 @@ for _src in PLATE_ALIAS.values():
 #         "07": ("plain", ["AND NOW, A WORD FROM OUR SPONSOR"]),
 #     }
 #
-# TEXT ONLY. It does not run the card's PICTURE treatment the way the title
-# card does over the opening beat -- that needs neighbour-frame lookback
-# (see assemble.py's `neighbour()` closure) that does not generalise to an
-# arbitrary later beat without real extra machinery, and `break_diagonal` is
-# the only card with a treatment at all, which is a season signature rather
-# than something a quick mid-film aside would want. Add it here if a season
-# ever needs one.
+# A MID CARD RUNS ITS treat() TOO (fault 84) -- progress ramps over the
+# card's own `fix` phase, so a card that is all treatment and no type (an
+# ink stamp, a flash) works from here. What it still does NOT get is the
+# title card's neighbour-frame lookback, so a treatment that samples the
+# frames around the cut (`break_diagonal`) remains the title's alone.
 #
 # IF A MID-CARD'S BEAT IS ALSO SILENT (script.SILENT / edit.SILENT_SECS),
 # DERIVE ITS LENGTH FROM THE CARD RATHER THAN TYPING ONE. A typed length

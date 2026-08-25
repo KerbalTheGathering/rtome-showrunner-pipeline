@@ -3049,3 +3049,37 @@ same bake: a chime over near-silence normalized to -16 LUFS integrated
 takes +12 dB of makeup and slams the true-peak ceiling -- give a
 mostly-silent open cue one quiet musical phrase to hold, or the
 normalizer will find the gain for you.
+
+
+## Fault 83 -- the mix graph outgrew the Windows command line
+
+An 84-beat film handed the diegetic bus 84 clip tracks, 72 takes and 18
+cues, and the assembled filter_complex -- inline on the ffmpeg command
+line, as it had been for nine seasons -- pushed the command past Windows'
+32K CreateProcess ceiling. WinError 206, after a clean 11,882-frame bake.
+No film under about sixty beats can reach this, which is why nine seasons
+never did: the fault was waiting at a scale threshold, not in a code
+path. The graph now goes to ffmpeg via -filter_complex_script, a file,
+which is the same graph with no ceiling. The lesson generalises: any
+subprocess whose argument list grows WITH THE FILM will eventually meet
+this wall, and the fix is always "put the list in a file" -- do it at the
+first sign, not the ninth season.
+
+
+## Fault 84 -- a mid-film card that is all treatment drew nothing
+
+The WANTED stamp: a card with a picture treatment (ink, multiply, a
+3-frame snap) and zero lines of type. MID_CARDS was documented "TEXT
+ONLY -- it does not run the card's PICTURE treatment... add it here if a
+season ever needs one", and this was the season. The bake ran clean,
+verify_cut passed 84/84 -- the check compares cuts to clips and a
+missing overlay is in neither -- and only the claims filmstrip
+(verify.py, looking at the delivered frame the claim names) showed a
+bare map where a stamp should be. Mid cards now run cards.treat() with
+the frame index as progress, so a treat's ramp lands inside the card's
+own fix phase; a card with no treat is identity and no prior season
+changes. Two sub-lessons: a card can be ALL treatment (layout returns
+[], draw is a no-op -- guard anything that indexes fonts[0]), and the
+claims filmstrip is the only check that would ever have caught this,
+because it is the only one that looks at the delivered artifact where
+the claim says to look.

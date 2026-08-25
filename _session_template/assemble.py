@@ -573,8 +573,10 @@ def plan():
         mblen = sum(1 for f in frames if f["sid"] == mid_sid)
         n = min(mid_n, mblen)
         for j in range(n):
+            # THE FRAME INDEX RIDES ALONG so the render can hand the card's
+            # treat() its progress within the fix phase (fault 84).
             frames[mb0 + j]["mid"] = (mid_sid, min(
-                1.0, j / (0.35 * FPS), (n - j) / max(1e-6, mid_out * FPS)))
+                1.0, j / (0.35 * FPS), (n - j) / max(1e-6, mid_out * FPS)), j)
 
     print(f"  total {total} frames ({total/FPS:.2f}s at {FPS:g}fps)")
     return frames, rows
@@ -759,8 +761,8 @@ def bake(frames, w, h):
     print(f"  card: {TITLE_CARD} ({TITLE_SECS:.1f}s), end {END_STYLE}; "
           f"type {'/'.join(str(f.size) for f in tfonts)}px title, "
           f"{tend.size}px end"
-          + (f"; mid {', '.join(f'{s}:{f[0].size}px' for s, f in mid_fonts.items())}"
-             if mid_fonts else ""))
+          + (f"; mid {', '.join(f'{s}:{f[0].size}px' if f else f'{s}:treat-only' for s, f in mid_fonts.items())}"
+             if mid_fonts else ""))   # a card with no lines has no type to report
 
     # AND THEN MEASURE WHAT WAS ACTUALLY DRAWN. cards.limit() constrains the
     # fit, but the fit and the draw are still two separate statements, and this
@@ -861,10 +863,19 @@ def bake(frames, w, h):
         # which would be an odd choice but is not refused here -- both would
         # simply draw, title first.
         if rec["mid"] is not None:
-            mid_sid, a = rec["mid"]
+            mid_sid, a, mj = rec["mid"]
             a = max(0.0, min(1.0, a))
-            if a > 0.01:
-                mid_style, mid_lines, mid_opt = mid_cards[mid_sid]
+            mid_style, mid_lines, mid_opt = mid_cards[mid_sid]
+            # THE PICTURE TREATMENT RUNS FOR MID CARDS TOO. The note in
+            # shot.py said "text only" and held for five seasons -- until
+            # the first card that is ALL treatment and no type (a season's
+            # ink stamp, fault 84). e ramps across the card's own fix
+            # phase; a card with no treat is identity here and nothing
+            # changes for any prior season.
+            _fix = cards.settings(mid_style, mid_opt)["fix"]
+            _e = 1.0 if _fix <= 0 else min(1.0, mj / max(1e-6, _fix * FPS))
+            im, _ = cards.treat(mid_style, im, _e, ctx, mid_opt)
+            if a > 0.01 and mid_lines:
                 im = cards.draw(mid_style, im, mid_lines,
                                 dict(ctx, fonts=mid_fonts[mid_sid]), a,
                                 opt=mid_opt)
@@ -1116,8 +1127,15 @@ def mix(rows, total_s, dest):
     parts += bus
     parts.append(f"{out}{LOUDNORM}[final]")
 
+    # THE GRAPH GOES IN A FILE, NOT ON THE COMMAND LINE. An 84-beat film
+    # (84 clip tracks + 72 takes + 18 cues) pushed the inline filter_complex
+    # past Windows' 32K CreateProcess limit and died with WinError 206 --
+    # a fault no film under ~60 beats can ever hit (fault 83).
+    fcs = os.path.join(WORK, "mix_graph.txt")
+    with open(fcs, "w", encoding="utf-8") as fh:
+        fh.write(";\n".join(parts))
     subprocess.run([season_paths.ff("ffmpeg"), "-y", "-v", "error"] + ins +
-                   ["-filter_complex", ";".join(parts), "-map", "[final]",
+                   ["-filter_complex_script", fcs, "-map", "[final]",
                     "-c:a", "pcm_s16le", dest], check=True)
     # Second stage on the finished bus: static gain, then the length pinned to
     # the picture in samples.
