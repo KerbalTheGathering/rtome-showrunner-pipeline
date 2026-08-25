@@ -103,9 +103,18 @@ TITLE_OPTS = identity.TITLE_CARD_OPTS
 
 
 def dims(sw: int, sh: int) -> tuple[int, int]:
-    s = max(1.0, W_MIN / sw, H_MIN / sh)
-    w, h = round(sw * s), round(sh * s)
-    return w - w % 2, h - h % 2
+    """The bake canvas: EXACTLY the season's delivery size.
+
+    This used to scale the clip to CLEAR the delivery floors and keep the
+    result -- which lands on the delivery size only when the clip is at the
+    exact delivery aspect. Every prior season's cold open happened to be;
+    the H3 16:9 size table's buckets carry small aspect residuals, so a
+    1920x1088 clip baked a 1934x1096 part and feature.py refused the join
+    (fault 82). The per-frame fit below (unsqueeze + crop) already maps any
+    clip onto any canvas correctly -- so the canvas is simply the delivery,
+    stated.
+    """
+    return W_MIN - W_MIN % 2, H_MIN - H_MIN % 2
 
 
 def fit(text: str, px: int, cap: float) -> ImageFont.FreeTypeFont:

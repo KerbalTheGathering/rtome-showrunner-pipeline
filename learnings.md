@@ -3031,3 +3031,21 @@ matched; qc_drift stopped flagging every continuation seam. Same cut also
 proved the split-beat pattern end to end: five beats split at sentence
 breaks, tails 0.2 / leads 0.15, and one alias rule -- an alias CHAIN
 (04x -> 04 -> 03) is forbidden, materialize the parent's plate instead.
+
+
+## Fault 82 -- the cold open baked 8px tall and the join refused it
+
+The cold open's bake canvas was "scale the clip until it CLEARS the
+delivery floors, keep the result" -- which equals the delivery size only
+when the clip sits at the exact delivery aspect. Every season before the
+H3 16:9 size table shot exact-aspect clips, so it held by coincidence;
+the table's buckets carry small aspect residuals, and the first season to
+shoot its cold open off the table baked a 1934x1096 part against a
+1934x1088 season. feature.py's part-match assert caught it (that guard
+paid for itself), but only after the bake. The fix deletes the cleverness:
+the per-frame fit (framing.unsqueeze + crop) already maps any clip onto
+any canvas, so dims() now returns the delivery size, stated. Same film,
+same bake: a chime over near-silence normalized to -16 LUFS integrated
+takes +12 dB of makeup and slams the true-peak ceiling -- give a
+mostly-silent open cue one quiet musical phrase to hold, or the
+normalizer will find the gain for you.
