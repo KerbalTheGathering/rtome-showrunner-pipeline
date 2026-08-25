@@ -54,8 +54,12 @@ lands with every clip; look at the mouth on the silent frames.
 still runs, because a talking desk needs 600-frame holds that H3 cannot fit
 under the latent budget in one clip (`show/edit.BASE_CAP_F`). Porting the
 show to H3 means cutting a long segment into continuation beats (`NNx`,
-anchored on the parent's tail) -- designed, not done. A season that has no
-show tree never touches it.
+anchored on the parent's tail) -- proven on a shipped film, 2026-08-24:
+split at sentence breaks, seam tails ~0.2 / leads ~0.15, RUNUP per
+continuation, and **the parent and its continuation must render on the
+same canvas** (fault 81 -- the shooter enforces this; an alias *chain* is
+forbidden, materialize the parent's plate). A season that has no show
+tree never touches it.
 
 ---
 

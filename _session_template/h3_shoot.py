@@ -274,7 +274,24 @@ def shoot(sid: str, seed: int = SEED) -> bool:
     # neither. No H3_ID_REFS declared = no references, ever.
     with_man = bool(ID_REFS) and not _b.get("nochar") and not _b.get("norefs")
 
-    size = pick_canvas(length)
+    # A SPLIT SHOT IS ONE SHOT: the parent and its NNx continuation MUST
+    # render on the SAME canvas. Each table bucket carries its own aspect
+    # error, and a continuation is conditioned on the parent's TAIL CLIP --
+    # so a pair on different buckets compounds two squashes and the seam
+    # ships a visible width jump that unsqueeze() cannot see (found by the
+    # operator on the first split cut, 2026-08-24). The pair takes the
+    # canvas of its LONGER member -- the one the budget actually constrains.
+    pair = [length]
+    if sid.endswith("x") and parent:
+        prow = next(r for r in edit.table() if r["sid"] == parent)
+        pair.append(grid(prow["clip"]))
+    else:
+        _cont = next((d for d, p in shot.PLATE_ALIAS.items()
+                      if p == sid and d.endswith("x")), None)
+        if _cont:
+            crow = next(r for r in edit.table() if r["sid"] == _cont)
+            pair.append(grid(crow["clip"]))
+    size = pick_canvas(max(pair))
     tok = season_paths.latent_m(length, size)
     print(f"  [{sid}] {os.path.basename(src):16s} {secs}s -> {length}f "
           f"({length / FPS:.2f}s) {size[0]}x{size[1]} {tok:.2f}M "

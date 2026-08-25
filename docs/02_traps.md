@@ -145,6 +145,14 @@ measuring the render, not the test still.**
 statistic that diagnoses it is measuring the **centre separately**: a darkening
 that spares the centre and eats the edges is a vignette, not a level error.
 
+**A split shot rendered on two canvas buckets ships an aspect jump at the
+seam.** Each canvas bucket carries its own small aspect error and the bake
+corrects it per clip — but an `NNx` continuation is conditioned on its
+parent's tail clip, so a pair on different buckets compounds two different
+squashes that no per-clip correction can see. Every clip is individually
+right; the cut is wrong; everything renders clean (fault 81). `h3_shoot`
+picks one canvas per parent/continuation pair, sized by the longer member.
+
 ---
 
 ## ffmpeg specifics
