@@ -116,11 +116,21 @@ DELIVER = _env("SEASON_DELIVER", os.path.join(os.path.expanduser("~"), "Videos")
 #     set SEASON_LATENT_BUDGET_M=4.5
 BUDGET_M = float(_env("SEASON_LATENT_BUDGET_M", "2.80"))
 
-# H3's short edge caps at 768 and its long edge at 1024 on this stack. BOTH
-# EDGES MUST BE MULTIPLES OF 32: 832x624 is true 4:3 with both edges multiples
-# of 16 and dies instantly on a tensor-shape error.
-SHORT_CAP, LONG_CAP = 768, 1024
-CANVAS_LADDER = (1.0, 0.875, 0.75)
+# H3's short edge caps at 768 on this stack. BOTH EDGES MUST BE MULTIPLES OF
+# 32: 832x624 is true 4:3 with both edges multiples of 16 and dies instantly
+# on a tensor-shape error.
+# LONG_CAP RAISED 1024 -> 1376 (learnings finding 80): the documented 1024 was
+# conservative -- probed 2026-08-24, H3 renders 1376x768 clean on this stack,
+# at ~2.2 s/f (attention cost, not contention). The token budget still
+# governs: only short clips reach the top rung; pick_canvas steps down
+# exactly as before, so long beats land on the same proven canvases they
+# always did.
+SHORT_CAP, LONG_CAP = 768, 1376
+# FIVE RUNGS TO GO WITH THE RAISED CAP (finding 80): with rung 0 at the new
+# top, three rungs lost the proven 1024x576 and 864x480 -- a 16s monologue
+# landed on a rung over the token budget, which is the thrash trap with a new
+# hat. The two extra fractions put the proven rungs back under the new top.
+CANVAS_LADDER = (1.0, 0.875, 0.82, 0.75, 0.69)
 
 
 def _snap32(n: float) -> int:
@@ -184,6 +194,17 @@ def _fit_grid(long_target: float, ratio: float) -> tuple[int, int]:
     if best is None:                      # an aspect so extreme the caps cross
         return max(32, l0), SHORT_CAP
     return best[1]
+
+
+# H3'S OWN 16:9 SIZE TABLE (the operator's reference card, 2026-08-24):
+# the model's documented output buckets on the 32-grid, 0.2 to 2.0 MP. For a
+# 16:9 season these replace the derived ladder -- adherence to the trained
+# buckets beats aspect purity, and framing.unsqueeze() absorbs the residual
+# at the bake. pick_canvas walks it largest-first under the token budget.
+H3_SIZES_16x9 = ((1920, 1088), (1824, 1024), (1664, 928), (1504, 832),
+                 (1376, 768), (1344, 768), (1280, 736), (1216, 672),
+                 (1152, 640), (1056, 608), (960, 544), (864, 480),
+                 (736, 416), (608, 352))
 
 
 def canvases(w: int, h: int) -> tuple[tuple[int, int], ...]:
@@ -250,6 +271,10 @@ def canvases(w: int, h: int) -> tuple[tuple[int, int], ...]:
     aspect the grid handles badly can see it before it shoots anything.
     """
     ratio = max(w, h) / min(w, h)
+    # A 16:9 DELIVERY USES THE MODEL'S OWN TABLE (see H3_SIZES_16x9 above).
+    if abs(ratio - 16 / 9) < 0.01:
+        return H3_SIZES_16x9 if w >= h else tuple(
+            (b, a) for a, b in H3_SIZES_16x9)
     long0, _ = _fit_grid(min(LONG_CAP, _snap32(SHORT_CAP * ratio)), ratio)
     out = []
     for r in CANVAS_LADDER:

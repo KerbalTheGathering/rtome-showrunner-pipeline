@@ -2986,3 +2986,48 @@ mis-schedule) and says duration=longest explicitly. Three assembles in a
 row came back clean where run-to-run had flipped before. The tripwire from
 fault 72 stays: it is what turns this class of silence into a line of
 output instead of a viewer's ear.
+
+
+## Finding 80 -- the canvas caps were conservative: H3 renders 1376x768 clean
+
+`season_paths` caps H3 at LONG_CAP=1024 / SHORT_CAP=768 and the operator
+asked the obvious question: what about 1376x768? Probed (one 5s beat,
+forced canvas, grid-clean edges): it RENDERS, coherent, direction honoured,
+visibly more real face pixels -- at 2.18 s/f against 1024x576's ~0.45,
+which is attention scaling with sequence length, not contention. At the
+measured 2.80M budget it fits clips up to ~169 frames (~7s); anything
+longer is the thrash trap. The caps stay as defaults (most beats are
+longer than 7s), but a short face-critical beat can take the big canvas
+deliberately -- on the film that found this, the helmet-clink close-up
+shipped at 1376x768 and everything else stayed on the ladder. If a future
+card raises SEASON_LATENT_BUDGET_M, revisit the caps properly.
+
+ADDENDUM, same day: the caps ARE now the defaults. The finding's film
+went on to ship an entire cut on the raised caps -- LONG_CAP 1376, a
+five-rung ladder so the proven 1024x576 / 864x480 rungs stay reachable,
+and, for 16:9 seasons, H3's own documented size table (H3_SIZES_16x9 in
+season_paths, ceiling 1920x1088) in place of the derived ladder: the
+trained buckets beat aspect purity, and framing.unsqueeze() absorbs each
+rung's residual at the bake. The token budget still governs everything;
+long beats land exactly where they always did.
+
+
+## Fault 81 -- a split shot on two canvas buckets ships a width jump at the seam
+
+Long beats split into NNx continuations so each half could render on a
+bigger canvas -- and the operator saw the aspect ratio SHIFT at every
+parent-to-continuation cut. Each rung of the 16:9 table carries its own
+small aspect error (that is the price of the trained buckets, and
+framing.unsqueeze() absorbs it per clip); but a continuation is
+conditioned on the parent's TAIL CLIP, so a pair on different buckets
+compounds two different squashes and the seam ships a width jump that no
+per-clip correction can see -- each clip is individually right against
+its own canvas. Rendered clean; verify_cut passed; only an eye on the cut
+caught it. The fix is structural, not corrective: A SPLIT SHOT IS ONE
+SHOT, and h3_shoot now picks ONE canvas per parent/continuation pair,
+sized by the longer member (the one the token budget actually
+constrains), looking the partner up in both directions. Re-shot pairs
+matched; qc_drift stopped flagging every continuation seam. Same cut also
+proved the split-beat pattern end to end: five beats split at sentence
+breaks, tails 0.2 / leads 0.15, and one alias rule -- an alias CHAIN
+(04x -> 04 -> 03) is forbidden, materialize the parent's plate instead.
