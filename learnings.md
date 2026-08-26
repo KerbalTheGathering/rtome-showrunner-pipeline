@@ -3220,3 +3220,33 @@ ramp: 3.6 -> 1.1/2.1/1.9 across three frames. NOTE THE ORDER: adding the
 transition changes `trans`, which moves the cut point tail_clip()
 conditions on, so the continuations must be RE-SHOT after the dissolve is
 declared, never before.
+
+
+## Finding 90 -- generate the picture, DRAW the furniture
+
+The modern half of a two-era film asked its plates for "a modern
+broadcast news graphic" and got what stock imagery means by that phrase:
+glassy floating rounded rectangles, drop-shadowed panels, empty screens
+waiting for content. It rendered beautifully and it was wrong twice over
+-- the furniture belonged to neither era of the film, and the DRAWN
+labels then had nowhere to sit, so they read as text laid on top of
+somebody else's design (the operator: "the ui elements seem off with the
+overall style", and before that, "the text on screen could actually line
+up with the blank elements").
+
+Chasing the generated panels is a losing game. They move on every
+re-roll, a detector cannot tell a UI panel from a big flat region of map,
+and a label placed inside one is one seed away from floating again.
+
+THE SPLIT THAT WORKS: the plate carries THE SCENE and only the scene,
+full bleed; every piece of graphic furniture -- the lower-third slab, its
+accent edge, its type -- is DRAWN AT BAKE. One layer generated, one layer
+drawn, and the drawn one is the one that has to be crisp and consistent.
+The slab also solves contrast, which no placement can: cream type on a
+generated white panel is unreadable, cream type on a slab you drew is
+readable by construction.
+
+The card that does it (`news_third`) sizes its slab to the text it
+carries and takes the type's own alpha, so the furniture fades WITH the
+words instead of snapping on -- a card that draws behind its type needs
+that alpha passed into treat(), which is the one plumbing change it cost.
