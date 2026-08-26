@@ -3184,3 +3184,39 @@ of Greenland rotating on a pedestal morphed its coastline over ten
 seconds until the "one rigid carved object that keeps its exact shape,
 its exact size and every notch of its coastline at every angle of the
 turn" clause pinned it.
+
+
+## Finding 89 -- a continuation seam is a NEAR-match, not a match
+
+The operator, watching a split shot: "the continuation clips should use
+the last used frame of the preceding clip as the initial frame so the
+animation doesn't jump. I thought this was already in the repo?" It is,
+and it works -- and it still jumps a little, for a reason worth writing
+down.
+
+`tail_clip()` anchors the parent's last TAIL_FRAMES ENDING AT THE CUT
+(ss + beat + trans -- an earlier version took the clip's true end, ~2 s
+past the cut, and the continuation replayed them; that was fixed long
+ago). `edit.RUNUP` then skips exactly those frames so nothing repeats. So
+composition and velocity do carry across the seam.
+
+BUT H3 REGENERATES THOSE FRAMES RATHER THAN COPYING THEM, and its
+reconstruction is never pixel-identical -- grain, micro-pose, a hair of
+exposure. Measured on the delivered film: ~3.0 mean absolute difference
+across a continuation seam, against ~0.2 between ordinary neighbouring
+frames and 78-90 at a real hard cut. So it is 25x better than a cut and
+15x worse than motion, which is exactly the size of thing an editor
+notices and a checker does not.
+
+RE-ALIGNING THE IN-POINT DOES NOT FIX IT. Scanning every candidate frame
+either side of the nominal one improved the worst seam from 3.47 to 3.06:
+the error is in the pixels, not the alignment, and no frame in the clip
+is the parent's frame.
+
+WHAT FIXES IT IS THREE FRAMES OF DISSOLVE, on those seams only. Shorter
+than a blink, invisible as a device (it is not a transition between
+shots; it is a splice inside ONE shot), and it turns the step into a
+ramp: 3.6 -> 1.1/2.1/1.9 across three frames. NOTE THE ORDER: adding the
+transition changes `trans`, which moves the cut point tail_clip()
+conditions on, so the continuations must be RE-SHOT after the dissolve is
+declared, never before.
