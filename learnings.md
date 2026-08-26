@@ -3144,3 +3144,43 @@ the first face swap, never later; crop them TIGHT on the figure so the
 worst a leak can do is put him in the room he is already in; and on a
 long continuation beat, prefer no references at all -- it opens on its
 parent's tail, which already carries the likeness at full strength.
+
+
+## Fault 88 -- a shot the film returns to changed size at every return
+
+The operator: "there's aspect ratio popping in and out of sync." The
+quantity was wrong and the complaint was exactly right. H3 RECOMPOSES PER
+CANVAS -- hand it the same plate at 1664x928 and at 1152x640 and the
+picture comes back at visibly different scale, the figure closer or
+further, the framing shifted. Canvases are chosen per beat from the token
+budget, i.e. from that beat's LENGTH, so a shot the film cuts back to
+lands on a different canvas every time its line happens to be a different
+length. On this film the refrain shot returned seven times across three
+canvases and the step-card frame eight times across three: the room
+breathed in and out for eight minutes, and every automated check passed,
+because each clip was individually correct and verify_cut only asks
+whether a cut opens on its own clip.
+
+FAULT 81 WAS THIS FAULT SEEN THROUGH A KEYHOLE. That one fixed a parent
+and its NNx continuation, which is simply the commonest picture-group of
+two, and it fixed it because a seam makes the mismatch obvious in one
+frame. The general rule: EVERY BEAT THAT RENDERS FROM THE SAME PICTURE
+SHARES ONE CANVAS, sized for the group's longest member (the one the
+budget actually constrains). Grouping is by the plate's CONTENT HASH, not
+its name, so PLATE_ALIAS and materialized copies both land in one group.
+
+The trade is real and it is the right way round: a four-second cutaway
+gives up some resolution, and nobody has ever noticed the pixels of a
+four-second cutaway. Everybody notices the room changing size.
+
+Two more from the same pass. A DRAWN FACE PLUS AN AUDIO TRACK IS A
+TALKING-HEAD SETUP however empty the track is: two illustrated history
+beats worked their statesmen's mouths through ANCHORED SILENCE, which
+fault 52 had established as the way to keep a mouth shut. Silence works
+on a photographed man and does not work on an illustration -- those beats
+need no driver at all (`nodriver`), and the mix drops the clip lane
+anyway. And a RIGID OBJECT THAT TURNS must be told it is rigid: a model
+of Greenland rotating on a pedestal morphed its coastline over ten
+seconds until the "one rigid carved object that keeps its exact shape,
+its exact size and every notch of its coastline at every angle of the
+turn" clause pinned it.

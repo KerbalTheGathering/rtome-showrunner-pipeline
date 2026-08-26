@@ -274,6 +274,69 @@ def build(prompt: str, guide: str, guide_is_clip: bool, plate_name: str,
     return g
 
 
+def _plate_hash(sid: str) -> str:
+    """What picture this beat renders from, by CONTENT.
+
+    Hashing the file rather than naming the beat catches both ways one
+    picture reaches several beats: PLATE_ALIAS, and a MATERIALIZED copy (a
+    beat whose plate is a byte-identical copy of another's -- which is how
+    a continuation's parent escapes the forbidden alias chain).
+    """
+    import hashlib
+    with open(gen_still.plate(sid), "rb") as fh:
+        return hashlib.sha1(fh.read()).hexdigest()
+
+
+def _canvas_groups() -> dict:
+    """sid -> the canvas its whole picture-group renders on.
+
+    A FILM CUTS BACK TO THE SAME SHOT AND THE AUDIENCE READS IT AS THE SAME
+    SHOT. H3 RECOMPOSES PER CANVAS: the same plate at 1664x928 and at
+    1152x640 comes back at visibly different scale and framing. So a
+    repeated shot, rendered on whatever canvas each beat's own length could
+    afford, BREATHES -- it sits closer, then further, then closer again, at
+    every return. On the film that found this (fault 88) the refrain shot
+    came back seven times across three canvases and the step card eight
+    times across three; the operator saw it as "aspect ratio popping in and
+    out of sync", which is the right complaint about the wrong quantity.
+
+    THIS SUPERSEDES THE PAIR RULE OF FAULT 81. A parent and its NNx
+    continuation are simply the commonest picture-group, and fixing only
+    that pair was the same fault seen through a keyhole.
+
+    THE GROUP TAKES THE CANVAS ITS LONGEST MEMBER CAN AFFORD, because that
+    is the member the token budget constrains. Short beats give up some
+    resolution and the film stops breathing -- the right way round: nobody
+    sees the pixels of a four-second cutaway, and everybody sees the room
+    change size.
+    """
+    rows = {r["sid"]: r for r in edit.table()}
+    groups = {}
+    for sid in rows:
+        try:
+            groups.setdefault(_plate_hash(sid), []).append(sid)
+        except (FileNotFoundError, SystemExit):
+            continue                      # no plate yet; shoot() will say so
+    out = {}
+    for members in groups.values():
+        longest = max(grid(rows[m]["clip"]) for m in members)
+        size = pick_canvas(longest)
+        for m in members:
+            out[m] = size
+    return out
+
+
+_GROUP_CANVAS = None
+
+
+def group_canvas(sid: str, length: int) -> tuple[int, int]:
+    """The canvas for this beat, decided by its picture-group."""
+    global _GROUP_CANVAS
+    if _GROUP_CANVAS is None:
+        _GROUP_CANVAS = _canvas_groups()
+    return _GROUP_CANVAS.get(sid) or pick_canvas(length)
+
+
 def shoot(sid: str, seed: int = SEED) -> bool:
     row = next(r for r in edit.table() if r["sid"] == sid)
     secs = edit.SECS[sid]
@@ -297,7 +360,15 @@ def shoot(sid: str, seed: int = SEED) -> bool:
     # whose sound IS what H3 invents: the tenth season shot ten beats through
     # this line and got ten tracks of digital silence, cut into a film whose
     # one rule was that every sound comes out of this pass (fault 64).
-    drive = driver(sid, row, length) if season.H3_DRIVER else None
+    # "nodriver": HAND THIS BEAT NO AUDIO AT ALL. Anchored silence is the
+    # right default for a face that must stay shut (fault 52) -- but it did
+    # not hold on an ILLUSTRATED beat: drawn statesmen worked their mouths
+    # through a silent driver, because a face plus an audio track is a
+    # talking-head setup to this model however empty the track is. With no
+    # driver H3 invents its own sound, which costs nothing on a film whose
+    # mix drops the clip lane (identity.MIX_OPTS clips 0.0).
+    drive = (driver(sid, row, length)
+             if season.H3_DRIVER and not _flag(sid, "nodriver") else None)
     _b = None   # flags come from _flag(); see it for why
     # "norefs": he is in the plate only as a PICTURE (a poster, a photograph).
     # With the identity plates wired, LOSS OF SIGNAL S3 06 animated the
@@ -307,24 +378,11 @@ def shoot(sid: str, seed: int = SEED) -> bool:
     with_man = (bool(ID_REFS) and not _flag(sid, "nochar")
                 and not _flag(sid, "norefs"))
 
-    # A SPLIT SHOT IS ONE SHOT: the parent and its NNx continuation MUST
-    # render on the SAME canvas. Each table bucket carries its own aspect
-    # error, and a continuation is conditioned on the parent's TAIL CLIP --
-    # so a pair on different buckets compounds two squashes and the seam
-    # ships a visible width jump that unsqueeze() cannot see (found by the
-    # operator on the first split cut, 2026-08-24). The pair takes the
-    # canvas of its LONGER member -- the one the budget actually constrains.
-    pair = [length]
-    if sid.endswith("x") and parent:
-        prow = next(r for r in edit.table() if r["sid"] == parent)
-        pair.append(grid(prow["clip"]))
-    else:
-        _cont = next((d for d, p in shot.PLATE_ALIAS.items()
-                      if p == sid and d.endswith("x")), None)
-        if _cont:
-            crow = next(r for r in edit.table() if r["sid"] == _cont)
-            pair.append(grid(crow["clip"]))
-    size = pick_canvas(max(pair))
+    # ONE CANVAS PER PICTURE-GROUP -- see _canvas_groups(). Every beat that
+    # renders from the same picture shares a canvas, which keeps a split
+    # shot's seam clean (fault 81, the pair case) AND keeps a shot the film
+    # returns to from changing size between returns (fault 88).
+    size = group_canvas(sid, length)
     tok = season_paths.latent_m(length, size)
     print(f"  [{sid}] {os.path.basename(src):16s} {secs}s -> {length}f "
           f"({length / FPS:.2f}s) {size[0]}x{size[1]} {tok:.2f}M "
