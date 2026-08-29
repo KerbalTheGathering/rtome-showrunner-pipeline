@@ -1,76 +1,26 @@
-"""Contact sheet of the six plates AS THE PIPELINE RESOLVES THEM.
-
-READS THROUGH gen_still.plate(), NOT OFF THE DIRECTORY. That is the whole point:
-two of these six are mirrored by PLATE_FLIP, and a sheet built by listing PNGs
-would show the unflipped originals and report a consistency problem that has
-already been fixed -- or hide one that has not. What is on screen here is what
-the shoot and the assembler will actually use.
-
-    python sheet.py             # the six plates, resolved
-    python sheet.py --raw       # the output directory, probes and rejects too
+"""A shim, not a copy (finding 140). The logic lives in ../sheet.py --
+this was byte-identical in every tree, and a template copy multiplies per
+film, so a fix in one of the copies was not a fix (direction.py set the
+precedent). This file keeps `python sheet.py ...` and `import sheet`
+working unchanged inside this tree: the season file resolves the tree
+through the modules this shim puts first on sys.path.
 """
 from __future__ import annotations
 
-import os as _os, sys as _sys
-_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
-import season_paths                                                # noqa: E402
+import importlib.util as _ilu
+import os as _os
+import sys as _sys
 
+_TREE = _os.path.dirname(_os.path.abspath(__file__))
+_sys.path.insert(0, _os.path.dirname(_TREE))   # the season root
+_sys.path.insert(0, _TREE)                     # this tree wins the imports
 
-import os
-import sys
-
-from PIL import Image, ImageDraw
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import gen_still  # noqa: E402
-import shot       # noqa: E402
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "out")
-SRC = os.path.join(season_paths.COMFY_OUTPUT, shot.NAME)
-CELL_W = 840
-
-
-def main() -> int:
-    raw = "--raw" in sys.argv
-    want = [a for a in sys.argv[1:] if not a.startswith("-")]
-
-    if raw:
-        files = sorted(f for f in os.listdir(SRC) if f.endswith(".png"))
-        if want:
-            files = [f for f in files if f.rsplit("_", 1)[0] in want]
-        ims = [(f, Image.open(os.path.join(SRC, f)).convert("RGB"))
-               for f in files]
-    else:
-        sids = want or list(shot.CUT)
-        ims = []
-        for sid in sids:
-            p = gen_still.plate(sid)
-            tag = "  [flipped]" if sid in shot.PLATE_FLIP else ""
-            ims.append((f"{sid}  {os.path.basename(p)}{tag}",
-                        Image.open(p).convert("RGB")))
-    if not ims:
-        sys.exit(f"FAIL: nothing to show in {SRC}")
-
-    w, h = ims[0][1].size
-    cw = CELL_W
-    ch = round(cw * h / w)
-    cols = 2 if len(ims) > 1 else 1
-    rows = (len(ims) + cols - 1) // cols
-
-    sheet = Image.new("RGB", (cw * cols, (ch + 20) * rows), "black")
-    d = ImageDraw.Draw(sheet)
-    for i, (name, im) in enumerate(ims):
-        x, y = (i % cols) * cw, (i // cols) * (ch + 20)
-        sheet.paste(im.resize((cw, ch), Image.LANCZOS), (x, y + 20))
-        d.text((x + 6, y + 5), name, fill="#ffdd99")
-
-    os.makedirs(OUT, exist_ok=True)
-    dst = os.path.join(OUT, "sheet_raw.png" if raw else "sheet.png")
-    sheet.save(dst)
-    print(f"  {len(ims)} plate(s) -> {dst}  ({sheet.size[0]}x{sheet.size[1]})")
-    return 0
-
+_p = _os.path.join(_os.path.dirname(_TREE), "sheet.py")
+_spec = _ilu.spec_from_file_location("_season_sheet", _p)
+_mod = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+globals().update({k: v for k, v in vars(_mod).items()
+                  if not k.startswith("__")})
 
 if __name__ == "__main__":
-    sys.exit(main())
+    _sys.exit(_mod.main())
