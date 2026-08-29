@@ -137,6 +137,10 @@ duplicate number pairs, 72 and 73; they are disambiguated by wording here.)
 - mouth_scan crashes: "cannot reshape array" on a well-formed clip -- 150
   (predicted ffmpeg's -2 height with different rounding; 16:9 canvases
   exposed it).
+- credits.py NameError on EXAMPLE_CONTENT after following its own "delete
+  this line" instruction -- 151.
+- the credits rolled in another film's key -- 152 (the cue's D major was
+  welded inside music(); it is CREDITS_CUE beside the roll now).
 
 **Maintaining this table**: when you log a new fault below, add its symptom
 line here in the words an operator would actually say -- the table is only
@@ -3908,3 +3912,31 @@ Fixed: compute the even height once and pass `scale=960:{sh}` explicitly
 derives a value that another program also derives, one of them must be
 told the answer.** Two derivations of one number is the same disease as
 two declarations of one fact (fault 16), wearing arithmetic.
+
+## 151. credits.py's instruction and its code disagreed about the sentinel
+
+The docstring and the sentinel's own comment both say: delete the
+`EXAMPLE_CONTENT = True` line when the roll is the film's. main() then
+read the bare name -- so the first season to follow the instruction
+crashed with NameError while rendering its credits. Three locks on one
+door, and turning the key correctly jammed the second lock. Fixed:
+main() looks the sentinel up with `globals().get(...)`, so deleted
+counts as done and a declared True still refuses. The rule: **an
+instruction the file gives about itself is an input its own code must
+accept.** vo_candidates.py sidesteps the same trap by setting False
+instead of deleting; either convention is fine -- code that only
+survives one of them is not.
+
+## 152. The credits rolled in another film's key
+
+credits.py's music() carried its cue dict inline with the reference
+season's `"key": "D major"` -- and a docstring asserting "the film ends
+in D major" as though it were true of every film. A filled-in roll (the
+part the sentinel guards) rendered its end title in a stranger's key
+with nothing complaining: the cue is as much this-film content as the
+names, but it did not look like content, so no lock covered it -- the
+same blind spot that once kept verify.py off preflight's list (its own
+sentinel's history). Fixed: the cue is `CREDITS_CUE`, hoisted beside
+the roll it belongs to, with the key line marked as the season's to
+set. STILL JOURNEYING's roll resolves A minor to C major -- the
+relative major, letting go upward.

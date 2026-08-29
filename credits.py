@@ -200,9 +200,15 @@ def example_lines() -> list[str]:
 
 def main() -> int:
     left = example_lines()
-    if EXAMPLE_CONTENT or left:
+    # LOOKED UP, NOT NAMED: the docstring's own instruction is to DELETE
+    # the `EXAMPLE_CONTENT = True` line once the roll is real, and a bare
+    # name here made following that instruction a NameError -- the first
+    # filled-in season crashed rendering its credits (fault 151). The
+    # sentinel still refuses while declared True; deleted counts as done.
+    _example = globals().get("EXAMPLE_CONTENT", False)
+    if _example or left:
         why = ("`EXAMPLE_CONTENT = True` is still declared"
-               if EXAMPLE_CONTENT else
+               if _example else
                f"{len(left)} line(s) still say EXAMPLE")
         sys.exit(
             f"FAIL: credits.py is still the template's example roll -- {why}.\n"
