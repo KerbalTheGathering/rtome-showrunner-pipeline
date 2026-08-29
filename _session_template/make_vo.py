@@ -138,7 +138,7 @@ def main() -> int:
     k = key()
     os.makedirs(dest, exist_ok=True)
 
-    total, rows = 0.0, []
+    total, rows, absent = 0.0, [], []
     for lid, sid, role, style, text in script.LINES:
         # THE ROLE IS THE LABEL AND THE LOOKUP IS THE ID. The old version
         # printed "narrator" or "guest" -- two names for a model that could
@@ -149,6 +149,11 @@ def main() -> int:
         if only and lid not in only:
             if os.path.exists(path):
                 total += dur(path)
+            else:
+                # SAID, NOT SKIPPED (fault 134): a --line= run used to fold
+                # missing takes into the total silently, and "N lines,
+                # Xs of speech" understated the film with no warning.
+                absent.append(lid)
             continue
         if os.path.exists(path) and not force:
             d = dur(path)
@@ -190,6 +195,9 @@ def main() -> int:
         return 0
 
     n = len(script.LINES)
+    if absent:
+        print(f"\n  !! {len(absent)} line(s) have no take on disk and are NOT "
+              f"in the total: {', '.join(absent)}")
     print(f"\n  {n} lines, {total:.1f}s of speech ({total/n:.1f}s average)")
     # The film also carries a ~3s cold open, a silent standoff and the tail
     # under the card, so picture runs ~20% over speech.
