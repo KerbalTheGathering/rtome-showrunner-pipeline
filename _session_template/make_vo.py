@@ -134,7 +134,25 @@ def dur(path: str) -> float:
 def main() -> int:
     force = "--force" in sys.argv
     dest = ALT if "--alt" in sys.argv else VO
+    # BARE LINE IDS COUNT, GHOSTS AND UNKNOWN FLAGS ARE REFUSED (fault 141).
+    # This read only --force/--alt/--line=, so `make_vo.py 03` -- the
+    # spelling every sibling tool teaches -- was silently ignored and the
+    # WHOLE script rendered at API cost, and a ghost --line=999 rendered
+    # everything a filtered run should have skipped... nothing, and exited 0.
     only = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--line=")]
+    only += [a for a in sys.argv[1:] if a.isdigit()]
+    known = ("--force", "--alt")
+    bad = [a for a in sys.argv[1:]
+           if not a.isdigit() and not a.startswith("--line=")
+           and a not in known]
+    if bad:
+        sys.exit(f"FAIL: unrecognised argument(s) {bad} -- a line is a bare "
+                 f"id or --line=NN; anything else here renders the whole "
+                 f"script at API cost")
+    ghost = [l for l in only if l not in script.BY_ID]
+    if ghost:
+        sys.exit(f"FAIL: {ghost} are not lines of this film. It has "
+                 f"{[ln[0] for ln in script.LINES]}")
     k = key()
     os.makedirs(dest, exist_ok=True)
 

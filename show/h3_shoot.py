@@ -266,13 +266,15 @@ def main() -> int:
     # is no longer one hand-picked canvas for the whole run.
     small = "--small" in sys.argv
     force = "--force" in sys.argv or rej is not None
-    want = [a for a in sys.argv[1:] if not a.startswith("--")] or list(shot.CUT)
+    want = ([a for a in sys.argv[1:] if not a.startswith("--")]
+            + [a.split("=", 1)[1] for a in sys.argv[1:]
+               if a.startswith("--beat=")]) or list(shot.CUT)   # both spellings, fault 141
 
     # AN UNKNOWN FLAG IS A TYPO THAT CHANGED NOTHING AND SAID NOTHING.
     # _session_template/h3_shoot.py has had this guard for a while; these two
     # copies did not, so `--sm4ll` would have shot the whole reel at full
     # canvas and reported success.
-    known = ("--slow", "--force", "--rej=", "--seed=", "--small", "--no-strip")
+    known = ("--slow", "--force", "--rej=", "--seed=", "--small", "--no-strip", "--beat=")
     junk = [a for a in sys.argv[1:]
             if a.startswith("--") and not a.startswith(known)]
     if junk:

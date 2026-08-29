@@ -209,7 +209,27 @@ def main() -> int:
     # correct queue guard, at 0% GPU, with nothing in any log.
     solo.solo("clips", where=os.path.dirname(os.path.abspath(__file__)),
               force="--force" in sys.argv)
+    # THE ARGUMENT DISCIPLINE THE FREE TOOLS ALREADY HAD (fault 141).
+    # gen_still and h3_shoot refuse unknown flags, bare-sid typos and ghost
+    # beat ids -- and the one tool that spends REAL MONEY read only --beat=
+    # and --force. A bare sid matched nothing and BOUGHT every missing beat
+    # in the film; a ghost --beat=99 filtered todo to empty and printed
+    # "nothing to buy", exit 0 -- the fault-131 vacuous pass, on the paid
+    # path.
     only = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--beat=")]
+    only += [a.zfill(2) for a in sys.argv[1:] if a.isdigit()]
+    known = ("--force",)
+    bad = [a for a in sys.argv[1:]
+           if not a.isdigit() and not a.startswith("--beat=")
+           and a not in known]
+    if bad:
+        sys.exit(f"FAIL: unrecognised argument(s) {bad} -- a beat is a bare "
+                 f"sid or --beat=NN; anything else here BUYS every missing "
+                 f"beat in the film")
+    ghost = [s for s in only if s not in shot.CUT]
+    if ghost:
+        sys.exit(f"FAIL: {ghost} are not beats of this film "
+                 f"({list(shot.CUT)})")
     todo = [s for s in shot.CUT
             if (not only or s in only)
             and (not existing(s) or "--force" in sys.argv)]

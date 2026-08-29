@@ -112,6 +112,13 @@ def render(path: str, k: str) -> None:
 
 
 def main() -> int:
+    # Unknown arguments are refused, not ignored (fault 141): a typo like
+    # --forc silently meant "reuse everything on disk", which reads as a
+    # successful re-render.
+    _bad = [a for a in sys.argv[1:] if a != "--force"]
+    if _bad:
+        sys.exit(f"FAIL: unrecognised argument(s) {_bad} -- this tool takes "
+                 f"only --force (re-render existing cues)")
     os.makedirs(MUSIC, exist_ok=True)
     path = os.path.join(MUSIC, "sting.mp3")
     if "--force" in sys.argv or not os.path.exists(path):

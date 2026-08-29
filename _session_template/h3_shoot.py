@@ -436,7 +436,11 @@ def main() -> int:
     seed = int(next((a.split("=", 1)[1] for a in sys.argv[1:]
                      if a.startswith("--seed=")), SEED))
     force = "--force" in sys.argv or rej is not None
+    # Both spellings, like gen_still (fault 141's unification): an agent
+    # moving between stages should not have to re-learn per tool.
     named = [a for a in sys.argv[1:] if not a.startswith("--")]
+    named += [a.split("=", 1)[1] for a in sys.argv[1:]
+              if a.startswith("--beat=")]
     want = named or list(shot.CUT)
     # A REJECTION NAMES ITS BEAT. `want` defaults to the whole film, which
     # is right for a shoot and catastrophic for --rej: a forgotten sid
@@ -448,7 +452,7 @@ def main() -> int:
                  f"take in the film.\n  Name the beat(s): h3_shoot.py 05 "
                  f"--rej={rej}")
 
-    known = ("--force", "--rej=", "--seed=", "--no-strip")
+    known = ("--force", "--rej=", "--seed=", "--no-strip", "--beat=")
     junk = [a for a in sys.argv[1:]
             if a.startswith("--") and not a.startswith(known)]
     if junk:
