@@ -39,6 +39,9 @@ Most scripts take **beat ids as positional arguments** (`python gen_still.py 03
 | `direction.py` | **The negation rule, as a check.** Every `motion.py` calls `direction.check(MOTION)` at import and is refused if a prompt tells the model what NOT to do. Run it bare and it prints the banned list and then checks itself against seven phrasings it must catch and five it must not. It is one file, not three copies, because a rule enforced in one of three trees is not enforced |
 | `contact.py` | **Every plate in the season on one sheet**, in running order, one subprocess per part. Drawable before any narration exists — `storyboard.py` is not. `--cols=N`, `--open` |
 | `contact_probe.py` | The worker half of `contact.py`. Runs with the cwd set to one part and emits that part's resolved plates as JSON. Not usually run by hand |
+| `check_clip.py` | **Six evenly-spaced frames from one clip** — the filmstrip motion is judged on. Season-level since finding 140 (it was byte-identical in three trees); each tree keeps a same-name shim, so run it from inside a film folder as always |
+| `find_voice.py` | Voice lookup by name — your ElevenLabs library first, then the shared one — and the `key()` helper every VO tool imports. Season-level, shimmed per tree (finding 140) |
+| `sheet.py` | Contact sheet of one tree's plates AS THE PIPELINE RESOLVES THEM (through `gen_still.plate()`, flips applied). Season-level, shimmed in `show/` and `cold_open/` (finding 140) |
 
 ### The four checks and what each can see
 
@@ -73,7 +76,7 @@ another. The template shipped with only the first column filled in, and
 |---|---|
 | `make_vo.py` | Renders every line to `_vo/` via ElevenLabs. **Run before any video** |
 | `measure_vo.py` | Prints measured take durations — the numbers everything else derives from |
-| `find_voice.py` | Cache key helper for VO takes; imported, not usually run |
+| `find_voice.py` | A shim of the season-level file (finding 140): voice lookup, and the `key()` that make_vo imports |
 | `audition.py` | Renders candidate voices on real lines for casting. **Do not rank on its pitch-spread column** — see `docs/06_verification.md` |
 | `vo_candidates.py` | Renders several takes of one line so you can pick |
 | `gen_still.py` | Generates the plates in ComfyUI |
@@ -84,7 +87,7 @@ another. The template shipped with only the first column filled in, and
 | `qc_drift.py` | Ranks the **joins** by luma/saturation jump — drift *between* shots, which no per-clip check sees. Advisory, exits 0; says where to look first |
 | `verify_cut.py` | Proves the assembled film **is the cut**: the frame after every join against the clip that should be there *and against a wrong one*, so the test is shown able to fail |
 | `track.py` | The fixed-recording mode: `analyze` measures a song (tempo **candidates**, sung spans off a Demucs stem), `beats --bpm` derives a shootable beat sheet and prints paste-ready `SILENT`/`SILENT_SECS`. Refuses to guess the tempo octave |
-| `check_clip.py` | Six evenly-spaced frames from one clip. **`h3_shoot.py` runs it for you** — motion breaks in the middle, and a review step you have to remember gets skipped |
+| `check_clip.py` | Six evenly-spaced frames from one clip. **`h3_shoot.py` runs it for you** — motion breaks in the middle, and a review step you have to remember gets skipped. A shim of the season-level file (finding 140) |
 | `res_ladder.py` | Compare output at several resolutions |
 | `mouth_scan.py` | Ranks takes by mouth aperture inside a beat window. Read `docs/04_lipsync.md` on its limits first |
 | `italk.py` | WAN 2.1 InfiniteTalk lip sync -- **legacy, show tree only**; a session's sync is `h3_shoot.py`'s anchored driver. Opt-in per beat via `TALKING` |
@@ -107,7 +110,7 @@ Everything above minus `make_video.py`, plus:
 | `board_rect.py` | THIS show's board: a two-setting configuration of `../surface.py` (which colour, which half of the frame). The detector itself is season-level |
 | `sheet.py` | Detail sheet, cropped at 1:1 |
 | `italk.py` | The lip sync. Writes `synced_XX.mp4` **and** `synced_XX.wav` in one call |
-| `italk_multi.py` | **TWO speakers in one shot, on the InfiniteTalk Multi patch. UNPROVEN — nothing in it has been run.** Refuses to submit a graph whose node contract it has not checked against the live `/object_info`; writes `synced_multi_XX.mp4` so it can never reach a bake by accident. `--check`, `--dry` |
+| `italk_multi.py` | **TWO speakers in one shot, on the InfiniteTalk Multi patch.** The node contract is no longer guessed: a port of this file ran the Multi patch on a later season and proved it by eye (its docstring has the findings). Still refuses to submit a graph it has not checked against the live `/object_info`, and still writes `synced_multi_XX.mp4` so it can never reach a bake by accident. `--check`, `--dry` |
 | `mouth_open.py` | Aperture metric (insightface `buffalo_l`, `landmark_2d_106`, mouth 52–71) |
 | `sync_probe.py` | **Lag between the driver and what actually shipped.** Passing value is zero |
 | `which_source.py` | Did the bake use the synced render or the raw take? Read its docstring on its own limits |
