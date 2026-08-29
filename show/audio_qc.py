@@ -41,24 +41,34 @@ import sys
 
 import numpy as np
 
+import parts as season_parts                                       # noqa: E402
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 KREA = os.path.dirname(HERE)
 FF = season_paths.FFMPEG
 OUT = os.path.join(HERE, "out")
 
-SEASON: list[tuple] = [
-    # Filled from parts.py rather than typed -- see feature.py for why a
-    # second list of what the season is turns into two lists that disagree.
-]
-COLD_OPEN = os.path.join(KREA, "INTRO_src", "out", "cold_open.mp4")
 
+def part_files() -> list[tuple[str, str]]:
+    """The season's delivered parts, from parts.py's discovery.
 
-def parts() -> list[tuple[str, str]]:
-    got = [("COLD OPEN", COLD_OPEN)]
-    for sid, src, film, title in SEASON:
-        got.append((f"bounty {sid}", os.path.join(OUT, f"bounty_{sid}.mp4")))
-        got.append((title, os.path.join(KREA, src, "out", film)))
-    return [(n, p) for n, p in got if os.path.exists(p)]
+    DISCOVERED, NOT TYPED -- AND MISSING IS SAID, NOT SKIPPED. The first
+    version of this file carried its own SEASON list (never filled) and a
+    cold-open path from another season's tree, then filtered on existence:
+    the one part it always claimed to measure vanished from QC without a
+    word, and an empty season died in a bare max() (fault 108). A checker
+    that silently matches fewer things than it names is this repo's oldest
+    fault class.
+    """
+    order = [(label, mp4) for label, mp4, _ in season_parts.running_order()]
+    missing = [(n, p) for n, p in order if not os.path.exists(p)]
+    for n, p in missing:
+        print(f"  (not built, not measured: {n} -- {p})")
+    got = [(n, p) for n, p in order if os.path.exists(p)]
+    if not got:
+        sys.exit("FAIL: no delivered part exists yet -- nothing to measure.\n"
+                 "  python parts.py says what the season is waiting on.")
+    return got
 
 
 def ebur128(path: str) -> dict:
@@ -130,9 +140,9 @@ def spectrum(x: np.ndarray, sr: int = 48000) -> dict[str, float]:
             for lo, hi, name in BANDS}
 
 
-def vo_concat(src: str) -> np.ndarray:
+def vo_concat(tree: str) -> np.ndarray:
     """Every VO take of one film, end to end, as the model rendered it."""
-    d = os.path.join(KREA, src, "_vo")
+    d = os.path.join(tree, "_vo")
     if not os.path.isdir(d):
         return np.array([])
     got = sorted(f for f in os.listdir(d) if f.endswith(".mp3"))
@@ -141,7 +151,7 @@ def vo_concat(src: str) -> np.ndarray:
 
 
 def main() -> int:
-    ps = parts()
+    ps = part_files()
     print(f"  {'part':<20} {'LUFS-I':>7} {'LRA':>6} {'TP dB':>7} "
           f"{'loud 3s':>8} {'quiet 3s':>9}")
     rows = []
@@ -154,6 +164,10 @@ def main() -> int:
 
     ints = [r[1] for r in rows if not np.isnan(r[1])]
     tps = [r[3] for r in rows if not np.isnan(r[3])]
+    if not ints or not tps:
+        sys.exit("FAIL: the meter returned no numbers for any part -- that is "
+                 "a broken\n  measurement, not a quiet season. Look at the "
+                 "rows above.")
     print(f"\n  integrated spread: {max(ints) - min(ints):.1f} LU "
           f"({min(ints):.1f} .. {max(ints):.1f})")
     print(f"  worst true peak:   {max(tps):+.1f} dBTP")
@@ -165,13 +179,14 @@ def main() -> int:
               f"(loud half only)")
         print(f"  {'film':<16}" + "".join(f"{n:>11}" for _, _, n in BANDS))
         ref = None
-        for sid, src, film, title in SEASON:
-            x = vo_concat(src)
+        for r in season_parts.sessions():
+            x = vo_concat(r["path"])
             if not len(x):
                 continue
             s = spectrum(x)
             if ref is None:
                 ref = s
+            title = r["title"] or r["dir"]
             print(f"  {title:<16}" + "".join(f"{s[n]:>11.1f}"
                                              for _, _, n in BANDS))
         print("\n  These are the RAW ElevenLabs takes -- one voice, one model, "
