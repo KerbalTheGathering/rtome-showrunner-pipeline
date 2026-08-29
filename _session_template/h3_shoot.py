@@ -436,7 +436,17 @@ def main() -> int:
     seed = int(next((a.split("=", 1)[1] for a in sys.argv[1:]
                      if a.startswith("--seed=")), SEED))
     force = "--force" in sys.argv or rej is not None
-    want = [a for a in sys.argv[1:] if not a.startswith("--")] or list(shot.CUT)
+    named = [a for a in sys.argv[1:] if not a.startswith("--")]
+    want = named or list(shot.CUT)
+    # A REJECTION NAMES ITS BEAT. `want` defaults to the whole film, which
+    # is right for a shoot and catastrophic for --rej: a forgotten sid
+    # retired every live take of every beat and queued hours of re-renders
+    # (fault 126). Recoverable -- renames, not deletes -- but a whole-film
+    # reshoot must be asked for in words, not implied by an omission.
+    if rej is not None and not named:
+        sys.exit(f"FAIL: --rej={rej} with no beat named would retire EVERY "
+                 f"take in the film.\n  Name the beat(s): h3_shoot.py 05 "
+                 f"--rej={rej}")
 
     known = ("--force", "--rej=", "--seed=", "--no-strip")
     junk = [a for a in sys.argv[1:]
