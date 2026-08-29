@@ -19,6 +19,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import assemble   # noqa: E402
+import crt        # noqa: E402
 import gen_still  # noqa: E402
 import shot       # noqa: E402
 
@@ -33,7 +34,13 @@ def main() -> int:
         w, h = assemble.dims(*im.size)
         im = im.resize((w, h), Image.LANCZOS)
         im = assemble.draw_board(im, sid, len(shot.BOARD_TYPE[sid]))
-        im = assemble.tv(im)
+        # THE SAME PASS THE BAKE RUNS. This called assemble.tv(), a function
+        # that has never existed -- assemble.TV is the DIAL and crt.tube()
+        # is the pass -- so every run of this tool died on its first segment
+        # (fault 110). Frame 0 is right for a still; an empty dial skips the
+        # tube, exactly as _bake_one does.
+        if assemble.TV:
+            im = crt.tube(im, assemble.TV, 0)
         n = len(shot.BOARD_TYPE[sid])
         cells.append((f"{sid}   {n} line(s)" + ("   EMPTY BOARD" if not n else ""),
                       im))
