@@ -92,7 +92,13 @@ VOICE_REF = season.H3_VOICE_REF      # 14.5 s of the clone, input-relative
 TAIL_FRAMES = season.H3_TAIL_FRAMES  # the continuation's anchor; edit.RUNUP matches
 # ROLES WHOSE LINES GO IN THE DRIVER: the people on screen. script.ON_SCREEN
 # if the script declares it; otherwise every role (a single-character film).
-ON_SCREEN = getattr(script, "ON_SCREEN", None) or {ln[2] for ln in script.LINES}
+# `is None`, NOT `or`: a script that declares ON_SCREEN = set() -- a fully
+# narrated film, nobody's mouth moves -- is a DECLARATION, and `or` threw
+# it away and drove every narrator line into the mouths anyway, the exact
+# fault-52 invented-speech failure this set exists to prevent (fault 107).
+_declared = getattr(script, "ON_SCREEN", None)
+ON_SCREEN = (_declared if _declared is not None
+             else {ln[2] for ln in script.LINES})
 
 
 def grid(seconds: float) -> int:
