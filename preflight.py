@@ -136,7 +136,13 @@ def main() -> int:
               f"  the guards exist, and they cost nothing to carry.")
         return 1
     print("  no example content left in the files that define the films.")
-    return 1 if bad else 0
+    # THE EXIT CODE SAYS ONLY WHAT WAS SAID. Naming a folder asks about that
+    # folder, and the season-level findings are suppressed above -- but the
+    # return still counted them, so `preflight.py S3_X` on a clean folder
+    # printed success and exited 1 with no stated reason (fault 118). A
+    # guard that fails without saying why is half a guard; the season-wide
+    # run is where those findings print, so it is where they fail.
+    return 1 if (bad and not named) else 0
 
 
 if __name__ == "__main__":
