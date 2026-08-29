@@ -93,8 +93,17 @@ def main() -> int:
         for j, fr in enumerate(AT):
             t = dur * fr
             im = Image.open(frame(c, t, os.path.join(TMP, f"{sid}_{j}.png")))
-            sheet.paste(im.convert("RGB").resize((TW, TH), Image.LANCZOS),
-                        (TW * (j + 1), y + 20))
+            # THE CLIP THROUGH THE SAME FIT AS THE PLATE (fault 136). The
+            # plate side was fixed to framing.apply and the clip side kept
+            # a bare resize into the season-aspect cell -- on any season
+            # whose clips are not already that shape (Seedance is pinned
+            # 4:3) that is the docstring's own fault reintroduced on the
+            # right-hand columns: a distortion of my sheet, not the clip.
+            im = framing.apply(
+                identity.FIT, im.convert("RGB"), TW, TH,
+                dict(identity.FIT_OPTS,
+                     **getattr(shot, "FIT_BEATS", {}).get(sid, {})))
+            sheet.paste(im, (TW * (j + 1), y + 20))
             d.text((TW * (j + 1) + 6, y + 5), f"{sid}  CLIP {t:.1f}s of {dur}s",
                    fill="#ffdd99")
 
