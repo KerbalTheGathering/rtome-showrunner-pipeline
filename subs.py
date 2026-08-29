@@ -170,11 +170,21 @@ def shape(cues: list[dict]) -> list[dict]:
             out.append({"start": c["start"] + k * span,
                         "end": c["start"] + (k + 1) * span,
                         "text": "\n".join(ch), "part": c["part"], "lid": c["lid"]})
+    # FLOORS FIRST, THE DE-OVERLAP LAST -- the order is the fix (fault 114).
+    # This used to clamp to the next cue's start and THEN apply a 0.4s
+    # readability floor, so whenever two cues began within ~0.42s -- which
+    # chunk-splitting a wordy take guarantees -- the floor pushed the end
+    # straight back over the start it had just been pulled off, and the
+    # overlapping cues were written to the file. The docstring's contract is
+    # "the last stop before the file"; the last operation must be the one
+    # the file cannot ship without.
     for i, c in enumerate(out):
         c["end"] = max(c["end"], c["start"] + MIN_SECS) + PAD
         if i + 1 < len(out):
             c["end"] = min(c["end"], out[i + 1]["start"] - 0.02)
-        c["end"] = max(c["end"], c["start"] + 0.4)
+            # A cue squeezed to nothing means the chunk arithmetic gave two
+            # cues one instant -- keep it visible, never past its successor.
+            c["end"] = max(c["end"], c["start"] + 0.05)
     return out
 
 
