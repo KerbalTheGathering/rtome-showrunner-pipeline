@@ -60,8 +60,15 @@ def register(name: str, **defaults):
             raise ValueError(
                 f"two devices are called {name!r}. A name is how edit.py asks "
                 f"for one, so the second would silently win.")
-        DEVICES[name] = {"fn": fn, "defaults": defaults,
-                         "doc": (fn.__doc__ or "").strip().splitlines()[0]}
+        # A bare IndexError from inside the registry explained nothing
+        # (fault 125). The first docstring line IS what the sheet prints,
+        # so an entry without one is refused in a sentence.
+        doc = (fn.__doc__ or "").strip().splitlines()
+        if not doc:
+            raise SystemExit(
+                f"FAIL: device {name!r} has no docstring. The first line is "
+                f"what the library prints for it -- write one sentence.")
+        DEVICES[name] = {"fn": fn, "defaults": defaults, "doc": doc[0]}
         return fn
     return wrap
 

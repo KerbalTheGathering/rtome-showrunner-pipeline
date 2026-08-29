@@ -72,9 +72,17 @@ def register(name: str, fix: float = 0.0, hold: float = 2.7,
     def wrap(fn):
         if name in CARDS:
             raise ValueError(f"two cards are called {name!r}")
+        # A bare IndexError from inside the registry explained nothing
+        # (fault 125). The first docstring line IS what the sheet prints,
+        # so an entry without one is refused in a sentence.
+        doc = (fn.__doc__ or "").strip().splitlines()
+        if not doc:
+            raise SystemExit(
+                f"FAIL: card {name!r} has no docstring. The first line is "
+                f"what the library prints for it -- write one sentence.")
         CARDS[name] = {"layout": fn, "treat": treat,
                        "defaults": dict(defaults, fix=fix, hold=hold, out=out),
-                       "doc": (fn.__doc__ or "").strip().splitlines()[0]}
+                       "doc": doc[0]}
         return fn
     return wrap
 
