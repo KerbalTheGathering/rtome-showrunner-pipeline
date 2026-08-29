@@ -58,7 +58,8 @@ def raw(sid: str, i: int) -> Image.Image:
     """One upscaled, type-stamped frame from the synced segment."""
     src = os.path.join(WORK, f"synced_{sid}.mp4")
     if not os.path.exists(src):
-        sys.exit(f"FAIL: {src} missing -- run lipsync.py")
+        sys.exit(f"FAIL: {src} missing -- run italk.py")   # fault 129: the
+        # old advice named lipsync.py, an archived probe, not the generator
     png = os.path.join(WORK, f"tvtest_{sid}_{i}.png")
     if not os.path.exists(png):
         subprocess.run([season_paths.ff("ffmpeg"), "-y", "-v", "error",

@@ -82,9 +82,14 @@ def main() -> int:
             bad.append(sid)
         print(f"  {sid:>4} {rs[0]:>12.3f} {rh[0]:>12.3f}  {verdict}")
     if bad:
+        # fault 129: the old advice said `assemble.py --synced`, a flag the
+        # assembler announces it ignores -- synced_XX.mp4 on disk IS the
+        # picture by default, so a bake from the H3 take means the synced
+        # render is missing or was bypassed with --raw.
         print(f"\n  FAIL: {', '.join(bad)} were baked from the H3 take.\n"
-              f"  Rebuild with: python assemble.py --synced "
-              f"{' '.join(bad)}")
+              f"  synced_XX.mp4 is the default picture when it exists -- run "
+              f"italk.py for these\n  segments if the render is missing, then "
+              f"rebuild: python assemble.py {' '.join(bad)}")
         return 1
     print("\n  all six came from the InfiniteTalk render")
     return 0

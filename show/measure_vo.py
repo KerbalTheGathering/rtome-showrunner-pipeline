@@ -105,8 +105,10 @@ def main() -> int:
     if tight:
         print(f"\n  !! {len(tight)} take(s) end on a word with no room for the "
               f"fade: {', '.join(tight)}")
-        print("     port vo_tail() from a film folder's assemble.py into this tree's "
-              "mix, or re-roll those lines for a take that has a pad")
+        # fault 129: this used to say "port vo_tail() from a film folder's
+        # assemble.py" -- it was ported long ago and lives in this tree.
+        print("     assemble.py's vo_tail() already measures and trims these "
+              "at mix time; re-roll only if the WORD itself is clipped")
     else:
         print("\n  every take has room for the mix's tail fade")
 
