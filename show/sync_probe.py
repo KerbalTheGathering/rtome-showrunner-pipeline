@@ -89,22 +89,55 @@ def lag_ms(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
 
 def main() -> int:
     rate = SR * 16
+    # --feature: THE DELIVERED ARTIFACT ITSELF, at each segment's own offset
+    # inside it. The usage block promised this mode for a season and the
+    # flag was accepted and silently did nothing -- the argument that
+    # resolves to nothing (fault 128). The offsets are the probed durations
+    # of the parts ahead of each interstitial, the same arithmetic the
+    # concat performs.
+    feat_at: dict[str, tuple[str, float]] = {}
+    if "--feature" in sys.argv:
+        sys.path.insert(0, os.path.dirname(HERE))
+        import parts                                           # noqa: E402
+        import season_identity as season                       # noqa: E402
+        feat = os.path.join(os.path.dirname(HERE), "out",
+                            f"{season.SEASON_SLUG}.mp4")
+        if not os.path.exists(feat):
+            sys.exit(f"FAIL: --feature: {feat} missing -- run feature.py")
+        t = 0.0
+        for label, mp4, _wav in parts.running_order():
+            if not os.path.exists(mp4):
+                sys.exit(f"FAIL: --feature: {mp4} missing -- the feature on "
+                         f"disk cannot be the join of these parts")
+            d = float(subprocess.run(
+                [season_paths.ff("ffprobe"), "-v", "error", "-show_entries",
+                 "format=duration", "-of", "csv=p=0", mp4],
+                capture_output=True, text=True, check=True).stdout.strip())
+            if label.startswith("interstitial"):
+                feat_at[label.split()[-1]] = (feat, t)
+            t += d
+
     print(f"  {'seg':>4} {'target':>28} {'lag':>9} {'r':>6}")
     worst = 0.0
+    fps = float(edit.FPS)
     for sid in shot.CUT:
         drv = os.path.join(WORK, f"vo_{sid}.wav")
         if not os.path.exists(drv):
             print(f"  {sid:>4}  no driver")
             continue
-        secs = edit.FRAMES[sid] / 24.0
+        secs = edit.FRAMES[sid] / fps
         a = envelope(pcm(drv, SKIP_HEAD, secs - SKIP_HEAD), rate)
-        for label, path, ss in (
+        targets = [
                 ("synced_XX.mp4 (render)",
                  os.path.join(WORK, f"synced_{sid}.mp4"), SKIP_HEAD),
                 ("mix_XX.wav (normalised)",
                  os.path.join(WORK, f"mix_{sid}.wav"), SKIP_HEAD),
                 ("bounty_XX.mp4 (shipped)",
-                 os.path.join(OUT, f"bounty_{sid}.mp4"), SKIP_HEAD)):
+                 os.path.join(OUT, f"bounty_{sid}.mp4"), SKIP_HEAD)]
+        if sid in feat_at:
+            fpath, off = feat_at[sid]
+            targets.append(("feature (delivered)", fpath, off + SKIP_HEAD))
+        for label, path, ss in targets:
             if not os.path.exists(path):
                 continue
             has_a = subprocess.run(
@@ -121,7 +154,7 @@ def main() -> int:
             print(f"  {sid:>4} {label:>28} {ms:>+8.1f}ms {r:>6.2f}{note}")
         print()
     print(f"  worst trusted lag: {worst:+.1f} ms "
-          f"({worst * 24 / 1000:.2f} frames at 24fps)")
+          f"({worst * fps / 1000:.2f} frames at {fps:g}fps)")
     return 0
 
 
