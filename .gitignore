@@ -72,3 +72,6 @@ desktop.ini
 
 # devices.py --sheet and cards.py --sheet write their contact sheets here.
 /out/
+
+# Local agent state, never the skills themselves
+.claude/scheduled_tasks.lock
