@@ -247,7 +247,17 @@ def main() -> int:
         dipped = []
         for k, ((name, p, _w), (_n, _p, i)) in enumerate(zip(order, rows)):
             st = os.stat(p)
-            dp = os.path.join(WORK, f"dip_{k:02d}_{int(st.st_mtime)}.mp4")
+            # THE KEY CARRIES EVERYTHING THE OUTPUT DEPENDS ON (fault 120).
+            # It was (index, mtime): change JOIN_DIP and every join silently
+            # shipped the old fades out of the cache; insert a part earlier
+            # in the order and only luck (two parts rarely share an mtime
+            # second) kept an old dip from answering for the wrong film. The
+            # part's own name, its mtime, the dip length and which edges
+            # fade -- a part that is first fades only out -- are the facts.
+            edges = ("i" if k != first else "") + ("o" if k != last else "")
+            src_tag = os.path.splitext(os.path.basename(p))[0]
+            dp = os.path.join(
+                WORK, f"dip_{src_tag}_{int(st.st_mtime)}_{dip:.3f}{edges}.mp4")
             if not (os.path.exists(dp) and os.path.getsize(dp) > 0):
                 vf = []
                 if k != first:
