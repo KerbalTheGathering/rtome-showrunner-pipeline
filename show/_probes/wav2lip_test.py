@@ -49,8 +49,8 @@ import time
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-WORK = os.path.join(HERE, "_work")
-OUT = os.path.join(HERE, "out")
+WORK = os.path.join(os.path.dirname(HERE), "_work")   # the SHOW tree's, not _probes' (fault 122)
+OUT = os.path.join(os.path.dirname(HERE), "out")      # the SHOW tree's, not _probes' (fault 122)
 FF = season_paths.FFMPEG
 HOST = season_paths.COMFY_URL
 INPUT = season_paths.COMFY_INPUT

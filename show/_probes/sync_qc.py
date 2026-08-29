@@ -51,8 +51,8 @@ import shot
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FF = season_paths.FFMPEG
-WORK = os.path.join(HERE, "_work")
-OUT = os.path.join(HERE, "out")
+WORK = os.path.join(os.path.dirname(HERE), "_work")   # the SHOW tree's, not _probes' (fault 122)
+OUT = os.path.join(os.path.dirname(HERE), "out")      # the SHOW tree's, not _probes' (fault 122)
 
 FPS = 24.0
 SMALL_W, SMALL_H = 360, 270          # for the difference map; plenty for a box

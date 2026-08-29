@@ -67,8 +67,8 @@ import script
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FF = season_paths.FFMPEG
-WORK = os.path.join(HERE, "_work")
-OUT = os.path.join(HERE, "out")
+WORK = os.path.join(os.path.dirname(HERE), "_work")   # the SHOW tree's, not _probes' (fault 122)
+OUT = os.path.join(os.path.dirname(HERE), "out")      # the SHOW tree's, not _probes' (fault 122)
 FONT = season_paths.font("arialbd.ttf")
 
 BLOCK = 16

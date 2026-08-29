@@ -39,8 +39,8 @@ import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "out")
-WORK = os.path.join(HERE, "_work")
+OUT = os.path.join(os.path.dirname(HERE), "out")      # the SHOW tree's, not _probes' (fault 122)
+WORK = os.path.join(os.path.dirname(HERE), "_work")   # the SHOW tree's, not _probes' (fault 122)
 FF = season_paths.FFMPEG
 HOST = season_paths.COMFY_URL
 ENV = season_paths.ENV_FILE

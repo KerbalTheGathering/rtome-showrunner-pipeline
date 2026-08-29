@@ -33,7 +33,7 @@ import script      # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 W = os.path.join(HERE, "_work")
-OUT = os.path.join(HERE, "out")
+OUT = os.path.join(os.path.dirname(HERE), "out")      # the SHOW tree's, not _probes' (fault 122)
 CW, CH = 150, 120
 N = 10
 
