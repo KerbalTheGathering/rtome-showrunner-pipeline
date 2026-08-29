@@ -3566,3 +3566,102 @@ Two lessons, one old and one newer:
 What landed: both verify.py copies (template + the season's clone) now build the
 lookup by slicing (`row[1]: (row[0], row[2], row[3])`), with a comment
 pointing at edit.py's TRANS_EXTRA as the precedent.
+
+
+---
+
+# The static review (2026-08-29, faults 102-136 and findings 137-140)
+
+The first sweep done by READING instead of shipping: four parallel review
+passes over the whole tree, every finding re-verified against the code
+before it was believed, one commit per fault. Thirty-five landed; one was
+refuted in verification (a suspected substring false-positive in the mix
+bus's orphan sink -- bracketed labels make it exact) and is recorded here
+so nobody re-litigates it. The striking thing about the list is how little
+of it is new CLASSES: most entries are named fault families from this log,
+found standing in one more doorway.
+
+## The checks that lied (the repo's first rule, violated at home)
+
+- **102** verify_cut/qc_drift cached extracted frames on `exists`, so the
+  verifier measured the PREVIOUS bake after a re-shoot. Frames are now
+  always pulled fresh: a check measures what is on disk NOW.
+- **108** audio_qc carried a SEASON list nothing filled and a cold-open
+  path from another season's tree, and dropped missing parts silently.
+  Now discovered through parts.py, and missing is said.
+- **111** identity.py promised "make_vo.py asserts the category" and
+  nothing did -- the comment-claiming-a-check class, on the licence term
+  that matters most. The assert now exists: a cloned/professional voice id
+  refuses to render while VOICE_IS_CLONE is False.
+- **116** fault 100's two credits fixes (probe the delivered frame count;
+  reuse an on-disk cue) were in the log and not in the code. The log is
+  not the fix; the commit is. Same story as **113**, fault 97's 192k AAC
+  literal, still present in six encoders (now 320k).
+- **128** sync_probe accepted --feature and did nothing; it now measures
+  the driver against the DELIVERED feature at each segment's offset.
+- **118** preflight exited 1 for findings it deliberately did not print.
+- **131** a --beat= value from another film matched nothing, rendered
+  nothing, and reported PASS -- and a partial run FAILed over beats it was
+  never asked for. All three gen_still copies.
+
+## The machinery that could break the delivered artifact
+
+- **104** the two-speaker driver placed raw takes at speech offsets
+  without cutting their leading air -- every line landed late by its own
+  take's silence. The single-speaker mix had the discipline; the multi
+  file did not.
+- **105** h3_chain's tail extraction was wrong twice (first-frames-after-
+  seek, and -sseof measuring a container half a second longer than its
+  video), so every chain seam repeated or dropped frames, cleanly.
+- **106** sum_to()'s one-input shortcut skipped the padding `total`
+  guarantees -- fault 73's EOF race, reopened for one-cue films.
+- **107** `ON_SCREEN = set()` was thrown away by `or`; a declared empty
+  set is a declaration (a fully narrated film) -- sentinel is None now.
+- **112** both italk copies typed 24 in the rate conversion four lines
+  under the comment about deriving FPS. **114** subs' readability floor
+  re-created the overlaps the previous line removed -- order of
+  operations IS the contract in a last-stop function.
+- **103** solo.py's lock was check-then-act and its cleanup deleted
+  without checking ownership; O_EXCL and owner-only release, tested.
+- **120** feature's dip cache was keyed on (index, mtime) -- not the dip
+  parameters, not the part's identity. A cache key carries everything the
+  output depends on.
+
+## Guards missing in one copy of N
+
+109 (publish looked for a storyboard name storyboard.py stopped writing),
+110 (typetest called a function that never existed), 115 (credits cleaned
+via cmd.exe on a POSIX-clean tree), 117 (show's gen_still ignored bare
+sids), 119 (smoke crashed on `sys.exit()`), 121 (cold_open advertised
+PLATE_FLIP and never flipped), 122 (nine probes pointing one directory
+too deep), 123/124 (clip resolvers without the .mp4/size filters their
+siblings had), 125 (five registries crashing bare on a docstring-less
+entry), 126 (--rej with no sid retiring the whole film), 127 (a skip
+REPORT dying on a bystander's plate), 129 (three failure messages
+pointing at tools that no longer exist), 130 (the one content file that
+spends money carried no EXAMPLE_CONTENT sentinel), 132 (a take counter
+slicing fixed columns), 133 (a share computed over the wrong
+denominator), 134 (a filtered run understating the total silently),
+135 (a documented dial wired to nothing -- now an enforced rule),
+136 (the qc sheet squashing clips into the season cell).
+
+## The efficiency findings (137-140)
+
+- **137** vo_dur() memoized on take mtime: table() runs in main, plan,
+  vo_offsets, mix and every slice child -- hundreds to ~2,000 ffprobe
+  spawns per bake, gone.
+- **138** the audio tripwires decoded the full 1080p picture into the
+  null muxer for want of -vn. Six sites.
+- **139** the clip explode fans out -- each beat writes its own directory,
+  the property the slice children already relied on. ~30s -> ~5s per
+  film; the upscale pass inside stays serial (it is the GPU).
+- **140** check_clip/find_voice/sheet were byte-identical eight times
+  over; now one file each at the season root plus thin same-name shims,
+  so in-tree habits and imports are unchanged and a fix is a fix.
+
+Deliberately NOT done: extracting the ~9 ComfyUI submit/poll transports
+and the triplicated loudness chain into season modules. Both are real
+(the transport has shipped the same bug into all copies twice), but both
+sit inside GPU paths this review could not render-test -- they are for
+the next session that touches those files with a season to prove the
+change on.
