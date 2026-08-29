@@ -62,7 +62,12 @@ def main() -> int:
         copied += 1
         print(f"  {sid}  {os.path.basename(src):24s} -> {name}")
 
-    for name in (f"storyboard_s{shot.SESSION_NO:02d}.png",
+    # THE NAME THE BOARD IS ACTUALLY WRITTEN UNDER. storyboard.py derives
+    # its output as storyboard_{SLUG}.png (its own comment says why the
+    # typed s03 name went); this file kept looking for the old spelling and
+    # printed NOT BUILT YET forever while the board sat beside it (fault
+    # 109) -- the delivery-folder drift this script exists to prevent.
+    for name in (f"storyboard_{shot.SLUG}.png",
                  f"{shot.SLUG}.mp4"):
         p = os.path.join(OUT, name)
         if os.path.exists(p):
