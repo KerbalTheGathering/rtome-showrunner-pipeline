@@ -22,6 +22,44 @@ The wraparound was a cheap local television show: a presenter behind a desk in
 front of a felt letterboard, announcing the job you were about to watch fail.
 One interstitial in front of every film.
 
+## Development — the same phases, before they had names
+
+This season predates `docs/12_development.md` and `PLAN.md`; the gates in
+that doc are distilled from what this season did right and what it paid for
+when a phase was skipped. Read this section as the worked example of that
+loop:
+
+- **Premise and register came first, as structure.** The format — a
+  recurring character, a job per film, registers alternating so the running
+  order has a shape, the last film breaking the format the first five
+  establish — was decided before any words existed. Every one of those is a
+  premise-gate decision; none could have been retrofitted onto finished
+  films.
+- **The words were the budget.** Every duration in the season derives from
+  the measured narration — the pipeline's founding rule, and it was learned
+  here, not imported. Scripts were drafted, rendered, measured, and cut as
+  WORDS before any picture was bought.
+- **Casting was a development decision**: one narrator doing every voice,
+  making the show's host a deliberate exception. Cheap, coherent, chosen
+  before the first film rendered — recasting later would have re-timed
+  every beat of the season.
+- **The type surfaces were designed in, not discovered.** The letterboard
+  was decided as a DRAWN surface from the start: plates generated with the
+  board deliberately blank, type placed by PIL at bake resolution. That is
+  the "anything true is drawn, not generated" rule being chosen at premise
+  time, when it is free.
+- **The expensive choices were probed, not assumed.** Local H3 was measured
+  against the paid vendor and won on quality as well as price; the lip-sync
+  route was auditioned across three approaches and two of them rejected on
+  evidence (`04_lipsync.md`). Where this season did NOT probe, it paid: the
+  plates shipped through two graph nodes that were degrading Krea2, found
+  only when a later fork rendered without them (learnings 25) — which is
+  why `gen_still.py --filtered` and the one-beat probe discipline exist.
+
+What this season had no need of — and yours might — is the proof cut: its
+format grew from a known register. A season entering an unfamiliar shape
+builds the smallest thing that proves it first (`docs/12_development.md`).
+
 ## Stack
 
 | Job | What was used |
