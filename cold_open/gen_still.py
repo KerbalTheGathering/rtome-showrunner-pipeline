@@ -257,12 +257,18 @@ def busy() -> int:
 
 
 def existing(sid: str) -> list[str]:
-    """Takes on disk for one beat, EXCLUDING rejects."""
+    """Takes on disk for one beat, EXCLUDING rejects and DERIVED files.
+
+    `_flip` MUST BE EXCLUDED OR THE RESOLVER EATS ITS OWN OUTPUT: plate()
+    writes the mirrored copy back into this directory, and a bare listing
+    would pick it up as the newest take and mirror it AGAIN. See the show
+    copy, where that happened.
+    """
     if not os.path.isdir(OUT):
         return []
     return sorted(f for f in os.listdir(OUT)
                   if f.startswith(sid + "_") and f.endswith(".png")
-                  and "_rej_" not in f)
+                  and "_rej_" not in f and "_flip" not in f)
 
 
 def plate(sid: str) -> str:
@@ -280,7 +286,20 @@ def plate(sid: str) -> str:
     have = existing(sid)
     if not have:
         sys.exit(f"FAIL: no plate for beat {sid!r} in {OUT} -- run gen_still.py")
-    return os.path.join(OUT, have[-1])
+    src = os.path.join(OUT, have[-1])
+    # THE MIRROR shot.py ADVERTISES, RESOLVED HERE (fault 121). shot.py
+    # instructs "flip it rather than writing LEFT into the prompt" and
+    # sheet.py labels the beat [flipped] -- but this copy never had the
+    # branch, so a filled PLATE_FLIP flipped nothing while the sheet said
+    # it had: the contact sheet's one job is "as the pipeline resolves
+    # them". Ported from the show copy, mtime-fresh like the original.
+    if sid in getattr(shot, "PLATE_FLIP", set()):
+        dst = src[:-4] + "_flip.png"
+        if not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(src):
+            from PIL import Image, ImageOps
+            ImageOps.mirror(Image.open(src)).save(dst)
+        return dst
+    return src
 
 
 def render(sid: str, prompt: str, what: str, seed: int) -> int:
