@@ -446,29 +446,48 @@ def draw_text(im, text, font, cx, cy, stroke, anchor="mm", alpha=1.0):
 # plan
 
 
-def explode(path, ss, dur, dest, tag):
+def extract_all(rows) -> None:
+    """Every beat's frame extraction, fanned out (finding 139).
+
+    THIS WAS A SERIAL LOOP -- one ffmpeg per beat, ~30s of the bake --
+    and the race that forced serialisation elsewhere does not apply:
+    each beat writes its OWN directory, the exact property the slice
+    children already rely on. Two things stay serial on purpose: the
+    upscale pass (it is the GPU), and nothing else. Batched at JOBS so
+    a long film does not thrash the disk with 84 PNG writers at once.
+    """
+    jobs = []
+    for r in rows:
+        dest = os.path.join(WORK, r["sid"])
+        shutil.rmtree(dest, ignore_errors=True)
+        os.makedirs(dest)
+        # the cached RealESRGAN twin, or the clip itself -- SERIAL, the GPU
+        src = upscale.clip(make_video.clip(r["sid"]))
+        cmd = [season_paths.ff("ffmpeg"), "-v", "error",
+               "-ss", str(r["ss"]), "-t", str(r["beat"] + r["trans"]),
+               "-i", src, os.path.join(dest, "f_%05d.png")]
+        jobs.append((r["sid"], cmd))
+    for i in range(0, len(jobs), JOBS):
+        live = [(sid, subprocess.Popen(cmd, stderr=subprocess.PIPE, text=True))
+                for sid, cmd in jobs[i:i + JOBS]]
+        for sid, pr in live:
+            _, err = pr.communicate()
+            if pr.returncode:
+                sys.exit(f"FAIL: frame extraction for beat {sid} failed:\n"
+                         f"{(err or '')[-800:]}")
+
+
+def frames_of(dest, tag):
     # A SLICE CHILD READS; IT DOES NOT EXTRACT. Sixteen processes each wiping
-    # and re-filling this directory delete each other's source frames mid-read.
-    # The parent has already done this work by the time any child starts.
-    if SLICE is not None:
-        got = sorted(f for f in os.listdir(dest) if f.endswith(".png"))
-        if not got:
-            sys.exit(f"FAIL: {tag}: no frames in {dest} for a slice child to "
-                     f"read -- the parent never extracted them")
-        return [os.path.join(dest, f) for f in got]
-    shutil.rmtree(dest, ignore_errors=True)
-    os.makedirs(dest)
-    cmd = [season_paths.ff("ffmpeg"), "-v", "error"]
-    if ss is not None:
-        cmd += ["-ss", str(ss)]
-    if dur is not None:
-        cmd += ["-t", str(dur)]
-    path = upscale.clip(path)        # the cached RealESRGAN twin, or the clip itself
-    cmd += ["-i", path, os.path.join(dest, "f_%05d.png")]
-    subprocess.run(cmd, check=True)
-    got = sorted(f for f in os.listdir(dest) if f.endswith(".png"))
+    # and re-filling this directory delete each other's source frames
+    # mid-read. The parent extracts everything in extract_all() before the
+    # first child starts, so by here everyone only reads.
+    got = sorted(f for f in os.listdir(dest) if f.endswith(".png")) \
+        if os.path.isdir(dest) else []
     if not got:
-        sys.exit(f"FAIL: {tag} yielded no frames -- in-point past the clip end?")
+        sys.exit(f"FAIL: {tag}: no frames in {dest} -- either the parent "
+                 f"never extracted them, or the in-point runs past the "
+                 f"clip end")
     return [os.path.join(dest, f) for f in got]
 
 
@@ -482,12 +501,14 @@ def plan():
     src_of = {r[0]: (r[1], r[2], r[3]) for r in TRANSITIONS}
     dst_of = {r[1]: (r[0], r[2], r[3]) for r in TRANSITIONS}
 
+    if SLICE is None:
+        extract_all(rows)
+
     frames, tails, starts = [], {}, {}
     for r in rows:
         sid, want = r["sid"], round(r["beat"] * FPS)
         extra = r["trans"]
-        got = explode(make_video.clip(sid), r["ss"], r["beat"] + extra,
-                      os.path.join(WORK, sid), f"beat {sid}")
+        got = frames_of(os.path.join(WORK, sid), f"beat {sid}")
         # A RUN-UP MAKES THIS EXACT RATHER THAN APPROXIMATE, and it has to.
         # h3_shoot.py SKIPS a beat that already has a clip, so adding a run-up
         # to a beat that was already shot moves the in-point later into a clip

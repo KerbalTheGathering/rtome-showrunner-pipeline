@@ -99,8 +99,11 @@ read its output.
 
 ## What is still serial, and what it would take
 
-- **The clip explode** (ffmpeg PNG extraction) is one ffmpeg process per beat,
-  run serially in the parent. It is I/O-bound and takes ~30 s for a film.
+- **The clip explode** (ffmpeg PNG extraction) fans out in `extract_all()`
+  since finding 139 — each beat writes its own directory, the exact property
+  the slice children already rely on, so the race that forces serialisation
+  elsewhere does not apply. Batched at JOBS; ~30 s serial became ~5 s. The
+  **upscale pass inside it stays serial**: it is the GPU.
 - **Generation** is GPU-bound and inherently serial on one card. A six-chunk
   InfiniteTalk segment is 5–15 minutes; a film's worth of H3 beats is longer.
   This is where the wall clock actually goes on a fresh season — the bake being
