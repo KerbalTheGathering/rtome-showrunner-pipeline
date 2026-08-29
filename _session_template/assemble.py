@@ -37,7 +37,7 @@ that runs every device is a device demo and none of them mean anything.
   function in this file and so was one season's only possible answer.
 
 TRANSITIONS ARE PAID FOR OUT OF THE INCOMING BEAT'S LEAD, so a device always
-plays over silence and never covers a word -- see TRANSITION_LEAD in edit.py.
+plays over silence and never covers a word -- edit.py enforces it at import.
 The outgoing beat supplies live frames for the duration (not a freeze), which is
 why plan() extracts beat + transition seconds for a source beat: the clip has
 that margin already and a frozen under-layer reads as a hitch.

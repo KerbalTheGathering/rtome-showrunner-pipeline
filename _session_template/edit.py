@@ -72,9 +72,12 @@ SS_MAX = 0.35
 SS_GUARD = 0.08              # frames left spare at the tail of every clip
 
 # TRANSITIONS COST RUNTIME AND IT COMES OUT OF THE INCOMING BEAT'S LEAD, so the
-# device plays over silence and never covers a word. These three beats are the
-# receiving end of a transition and carry a widened lead to pay for it.
-TRANSITION_LEAD = 1.1
+# device plays over silence and never covers a word. A `TRANSITION_LEAD`
+# constant used to sit here that NOTHING READ (fault 135) -- a clone that
+# widened it expected effect and got none. The rule it described is now
+# enforced below, where TRANSITIONS and BEATS both exist: a receiving
+# beat's lead must be at least as long as the device that plays over it
+# (~1.1s reads well).
 
 # --------------------------------------------------------------------------
 # THE RUN-UP: SHOOT LONGER THAN THE BEAT AND THROW THE OPENING AWAY.
@@ -204,6 +207,19 @@ BEATS = [
     ("02", ["02"], 0.5, 0.90, 0.0),
     ("03", ["03"], 0.5, 1.20, 0.0),
 ]
+
+# THE TRANSITION-LEAD RULE, ENFORCED (fault 135; the prose is above
+# TRANSITIONS). The device plays over the receiving beat's lead; a lead
+# shorter than the device puts it over the first word.
+_LEADS = {b[0]: b[2] for b in BEATS}
+for _row in TRANSITIONS:
+    _to, _sec = _row[1], _row[3]
+    assert _to in _LEADS, f"transition lands on unknown beat {_to!r}"
+    assert _LEADS[_to] >= _sec, (
+        f"beat {_to} receives a {_sec:.2f}s transition inside a "
+        f"{_LEADS[_to]:.2f}s lead -- the device would play over the first "
+        f"word. Widen the beat's lead past {_sec:.2f}s (~1.1s reads well) "
+        f"or shorten the device.")
 
 # --------------------------------------------------------------------------
 # THE OTHER MODE: A BEAT WITH NO VOICE.
