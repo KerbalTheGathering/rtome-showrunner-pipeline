@@ -53,12 +53,19 @@ RATE = 8.0               # samples per second; a syllable is longer than 125 ms
 
 def apertures(path: str) -> list[tuple[float, float | None]]:
     w, h = mouth_open.size_of(path)
-    raw = subprocess.run(
-        [season_paths.ff("ffmpeg"), "-v", "error", "-i", path,
-         "-vf", f"fps={RATE},scale=960:-2", "-f", "rawvideo",
-         "-pix_fmt", "bgr24", "-"], capture_output=True, check=True).stdout
+    # THE HEIGHT IS COMPUTED ONCE AND HANDED TO FFMPEG, never predicted.
+    # This asked for `scale=960:-2` and then re-derived the height with
+    # round()+parity -- two implementations of one rounding rule, which
+    # agreed on the 4:3 canvases the reference season shot and disagreed
+    # on the first 16:9 season (554 predicted, 552 produced), so reshape
+    # threw on a well-formed clip (fault 150; the fault-119 rule again --
+    # the checker itself must not crash).
     sh = int(round(960 * h / w))
     sh += sh % 2
+    raw = subprocess.run(
+        [season_paths.ff("ffmpeg"), "-v", "error", "-i", path,
+         "-vf", f"fps={RATE},scale=960:{sh}", "-f", "rawvideo",
+         "-pix_fmt", "bgr24", "-"], capture_output=True, check=True).stdout
     ims = np.frombuffer(raw, np.uint8).reshape(-1, sh, 960, 3)
     return [(i / RATE, mouth_open.openness(im)) for i, im in enumerate(ims)]
 
