@@ -34,7 +34,8 @@ grade. It does what a limiter does, minus the bug.
 Tried and rejected. One driver peaks at 0.0 dBFS, so fitting the raw sample peak
 put that part at **−18.6 LUFS against −16.0** for the five around it. Clip the
 handful of samples that poke through; warn if the clip is doing more than
-shaving transients (`QUIET_WARN` in `assemble.py`).
+shaving transients (`QUIET_WARN` in `show/assemble.py` — the show tree is
+where the fault happened and the only tree that carries the constant).
 
 ---
 
@@ -249,8 +250,10 @@ believing any single band. Tools: `show/audio_qc.py`, `show/_probes/audio_tone.p
 - **`/v1/music` resolves when it feels finished and pads the rest of the
   requested length with digital silence.** The mp3 is then exactly as long as
   you asked for, every duration check passes, and the end of the film plays
-  under nothing. `make_music.usable_seconds()` measures where the music
+  under nothing. `score.usable_seconds()` measures where the music
   *stops*, which is the artifact-not-intent rule pointed at a file length.
+  (It lived in `make_music.py` before the score moved to `../score.py`;
+  every tree's `make_music.py` calls it through `score.` now.)
 - **Mono → stereo upmix costs ~3.4 dB** out of ffmpeg
   (`aformat=channel_layouts=stereo`). Compensate at the source, not with a
   second correction after the encode.

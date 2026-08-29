@@ -7,7 +7,11 @@ and expensive after it, and two of them cost real money in the wrong order.
 
 ## Phase 0 — Decide what the season is (no code)
 
-Write down, in one place, before anything:
+**This phase now has a workspace and a manual of its own**: the season's
+`PLAN.md` is where the thinking and the approvals land, and
+[`12_development.md`](12_development.md) is the full loop — premise →
+words → look → cast → boards, with the gates. The short version, before
+anything:
 
 - **How many films, and what each one is about.** One sentence each.
 - **What runs through all of them.** A refrain, a recurring composition, a
@@ -308,9 +312,10 @@ python assemble.py                # bake, mix, mux
 python assemble.py --keep-frames  # re-mix against frames already on disk
 ```
 
-This does, in order: explode clips to PNG → bake (upscale, type, cards,
-transitions, grade) → build the mix → mux → assert. It uses every core; see
-`docs/07_performance.md`.
+This does, in order: extract every clip to PNG (`extract_all()`, fanned
+out; the upscale inside it stays GPU-serial) → bake (type, cards,
+transitions, grade) → build the mix → mux → assert. It uses every core;
+see `docs/07_performance.md`.
 
 Read the loudness output. `-16.0 LUFS` and a true peak under `-1.5 dBTP` is the
 target; a warning about the ceiling means a transient in the VO is costing the
@@ -354,6 +359,12 @@ python S1_.../publish.py    # per-film folders
 joining, and verifies every PCM mix against its own part's picture duration.
 **Neither check is optional** — a concat demuxer handed a mismatch does not
 fail, it produces a file that plays wrong somewhere in the middle.
+
+The optional parts and the final QC belong to this phase too: `credits.py`
+(the roll is a PART; parts.py appends it once rendered), `subs.py` (the
+sidecar .srt/.vtt, cut from the edit rather than transcribed), and the
+delivered-file checks — `show/qc_feature.py`, `show/audio_qc.py`,
+`show/sync_probe.py`. The publish-and-deliver skill walks the order.
 
 `feature.py` also prints what fraction of the running time is connective tissue,
 and it is worth reading. **The cold open and the wraparound do not shrink when
