@@ -97,8 +97,12 @@ duplicate number pairs, 72 and 73; they are disambiguated by wording here.)
 - Bake dies on Windows command-line length -- 83.
 - A card drew nothing / drew over a silent ending / collides with a caption
   -- 84, 85, 67, 19, 20.
-- One beat asked for, everything re-rendered -- 69, 117, 126, 131 (bare
-  sids, --rej without a beat, ghost beat ids).
+- One beat asked for, everything re-rendered -- or BOUGHT -- 69, 117, 126,
+  131, 141 (the guard finally reaching make_video and make_vo).
+- What would this run cost? -- 142 (--check on the money tools, before
+  any key is read).
+- A long render prints nothing; rendering or wedged? -- 147 (the
+  heartbeat tick); `supervise.py` for when it actually is wedged.
 - 0% GPU, no output, no errors, forever -- 30, 103; `solo.py`'s docstring.
 - ComfyUI crashes or thrashes between passes -- 60 (a resident model family
   thrashes the next pass), `supervise.py` (alternate the attention backend).
@@ -3783,3 +3787,49 @@ and the triplicated loudness chain into season modules. Both are real
 sit inside GPU paths this review could not render-test -- they are for
 the next session that touches those files with a season to prove the
 change on.
+
+
+---
+
+# The usability pass (2026-08-29, faults 141 + 144, findings 142-147)
+
+A second review sweep, asking one question: what does an AGENT operating
+this repo still trip over? One scan agent, findings verified, one commit
+each. What it cleared is as useful as what it found: exit-code discipline
+is clean across the tree (nothing prints FAIL and exits 0), nothing blocks
+on input, and docs/04 survives a full symbol-by-symbol staleness check.
+
+- **141** the fault-131 argument guard had never reached the tools that
+  SPEND: make_video bought every missing beat off a bare-sid typo and
+  printed "nothing to buy" for a ghost id; make_vo rendered the whole
+  script. Both now guard, make_music refuses unknown args in all three
+  copies, and the beat spelling is unified (bare sids AND --beat=,
+  everywhere the unit is a beat).
+- **142** --check on the money tools: what would render/be bought and what
+  it meters, before any key is read. feature.py and publish.py already
+  spoke the flag; now the spenders do.
+- **143** season_paths --json -- the env half of session re-entry as data,
+  the same reason parts.py --json exists.
+- **144** the template never got the sheet.py shim finding 140 promised
+  and docs/01 pointed at; a cloned film could not follow the manual's own
+  sentence.
+- **145** selftest.py: seven fast regression tests, each pinned to the
+  fault it guards (73/106, 103, 114, 125, 132, 133, and direction.py's
+  self-check). smoke asks whether modules execute; this asks whether the
+  shared functions still behave.
+- **146** every entry point answers -h/--help with its docstring, handled
+  before main() so no lock is taken and no guard fires. 102 files.
+- **147** the long polls print a once-a-minute heartbeat: at 99% GPU a
+  thrash looks exactly like work, and "rendering" and "wedged" printed
+  identically.
+
+Doc staleness the scan caught: usable_seconds() attributed to make_music
+two moves after it left; QUIET_WARN described as if every tree had it;
+Phase 0 predating PLAN.md; the retired explode() still named in Phase 6;
+Phase 8 missing credits/subs/final QC. All corrected in place.
+
+Deferred, deliberately: --json on audio_qc and feature --check (worth it
+the first time an agent actually re-parses those tables), and selftest
+coverage for vo_dur's cache and feature's dip key (the first needs
+ffprobe, the second wants a small extraction first -- both say so in
+selftest.py's docstring).
