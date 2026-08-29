@@ -346,8 +346,14 @@ def submit(g: dict, label: str) -> str:
 
 
 def next_take(sid: str) -> str:
+    # THE SLICE IS DERIVED FROM THE SID, not typed as [4:9]: a fixed slice
+    # assumed a two-character sid, so a continuation beat ("01x") parsed
+    # its take number out of the wrong columns, defaulted to 0, and take 1
+    # was OVERWRITTEN by its own successor (fault 132).
+    lead = len(f"s{sid}_")
     have = [f for f in os.listdir(CLIPS) if f.startswith(f"s{sid}_")]
-    n = max((int(f[4:9]) for f in have if f[4:9].isdigit()), default=0) + 1
+    n = max((int(f[lead:lead + 5]) for f in have
+             if f[lead:lead + 5].isdigit()), default=0) + 1
     return os.path.join(CLIPS, f"s{sid}_{n:05d}_.mp4")
 
 
