@@ -349,15 +349,33 @@ assert len(set(n for n, _s in CUES)) == len(CUES), \
     "two score cues have the same name -- they share a filename"
 
 
+# MEMOIZED, KEYED ON THE TAKE'S MTIME (finding 137). One ffprobe per call
+# was fine until everything called it: table() probes every line, and
+# table() runs in main(), in plan(), in vo_offsets(), in mix(), and again
+# in EVERY slice child of the self-slicing bake -- a 20-line film at 14
+# jobs was ~560 process spawns per bake, the 84-beat film ~2,000, minutes
+# of pure spawn overhead under a bake docs/07 celebrates in seconds. The
+# same pattern show/edit.py already uses for speech(); mtime in the key so
+# an installed re-take (vo_candidates --install) is re-measured, and the
+# cache never violates patch_parbake's determinism rule -- probing an
+# unchanged file is a pure function.
+_DUR: dict[str, tuple[float, float]] = {}
+
+
 def vo_dur(lid: str) -> float:
     path = os.path.join(VO, f"{lid}.mp3")
     if not os.path.exists(path):
         sys.exit(f"FAIL: VO take {lid} missing -- run make_vo.py")
+    m = os.path.getmtime(path)
+    hit = _DUR.get(lid)
+    if hit is not None and hit[0] == m:
+        return hit[1]
     out = subprocess.run(
         [season_paths.ff("ffprobe"), "-v", "error", "-show_entries",
          "format=duration", "-of", "csv=p=0", path],
         capture_output=True, text=True, check=True).stdout.strip()
-    return float(out)
+    _DUR[lid] = (m, float(out))
+    return _DUR[lid][1]
 
 
 def table() -> list[dict]:
