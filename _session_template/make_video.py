@@ -145,11 +145,17 @@ def busy() -> int:
 
 
 def existing(sid: str) -> list[str]:
+    # `.mp4` and non-empty, like h3_shoot.existing() and check_clip's: any
+    # other file that lands in the clips folder matching s{sid}_* (a
+    # sidecar, a zero-byte failed mux) sorted last and became "the clip"
+    # for assemble, italk and mouth_scan (fault 123).
     d = outdir()
     if not os.path.isdir(d):
         return []
     return sorted(f for f in os.listdir(d)
-                  if f.startswith(f"s{sid}_") and "_rej_" not in f)
+                  if f.startswith(f"s{sid}_") and f.endswith(".mp4")
+                  and "_rej_" not in f
+                  and os.path.getsize(os.path.join(d, f)) > 0)
 
 
 def clip(sid: str) -> str:
