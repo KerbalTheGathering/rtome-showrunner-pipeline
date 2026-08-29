@@ -50,6 +50,7 @@ import sys
 import urllib.error
 import urllib.request
 
+import identity
 import script
 from find_voice import key
 
@@ -57,6 +58,45 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 VO = os.path.join(HERE, "_vo")
 ALT = os.path.join(HERE, "_vo_alt")
 FF = season_paths.FFMPEG
+
+
+# ElevenLabs categories that mean "this is somebody's actual voice".
+_CLONE_CATEGORIES = {"cloned", "professional"}
+_CATEGORY_OK: set[str] = set()
+
+
+def ensure_category(voice_id: str, role: str, k: str) -> None:
+    """The check identity.py PROMISES, made real.
+
+    identity's VOICE note has said "make_vo.py asserts the category" since
+    the table replaced the two slots, and nothing ever did -- a comment
+    claiming a check that does not exist, this repo's own named class
+    (fault 111). VOICE_IS_CLONE is a licensing statement: a deliverable
+    declared clone-free must not carry a cloned voice, and the API knows
+    which kind an id is. Checked once per id, only on runs that render --
+    a disk-only rerun stays offline.
+    """
+    if voice_id in _CATEGORY_OK:
+        return
+    req = urllib.request.Request(
+        f"https://api.elevenlabs.io/v1/voices/{voice_id}",
+        headers={"xi-api-key": k})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            cat = json.load(r).get("category", "")
+    except (urllib.error.URLError, OSError) as e:
+        sys.exit(f"FAIL: could not read the category of voice {voice_id} "
+                 f"({e}).\n  The clone assert cannot run, so nothing renders "
+                 f"-- a check that cannot run\n  has never disagreed with "
+                 f"anything.")
+    if cat in _CLONE_CATEGORIES and not identity.VOICE_IS_CLONE:
+        sys.exit(
+            f"FAIL: role {role!r} is cast on a {cat} voice ({voice_id}) and "
+            f"identity.VOICE_IS_CLONE is False.\n"
+            f"  A film going to anyone who holds no licence to the voice uses "
+            f"a PREMADE id.\n  Recast the role, or -- for personal work only "
+            f"-- set VOICE_IS_CLONE = True.")
+    _CATEGORY_OK.add(voice_id)
 
 
 def render(voice_id: str, text: str, style: float, path: str, k: str) -> None:
@@ -115,6 +155,7 @@ def main() -> int:
             total += d
             rows.append((lid, sid, role, style, d, text, "on disk"))
             continue
+        ensure_category(voice, role, k)
         render(voice, text, style, path, k)
         d = dur(path)
         total += d
