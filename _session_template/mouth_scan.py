@@ -39,12 +39,13 @@ import numpy as np
 import edit                                          # noqa: E402
 import make_video                                    # noqa: E402
 
-# The aperture metric lives with the show layer, because that is the only
-# part whose mouths are driven by audio. Resolved from the season root so
-# this file does not depend on where anything is checked out.
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "show"))
-import mouth_open                                    # noqa: E402
+# The aperture metric is season-level (../mouth.py, fault 149). It lived
+# in show/ and was resolved by appending that folder to sys.path -- which
+# crashed every film tree's scan on a SHOW = False season (no show/ at
+# all), and on seasons WITH one, importing show/mouth_open.py from here
+# bound THIS tree's shot.py where the show's was meant. The root is
+# already first on sys.path.
+import mouth as mouth_open                           # noqa: E402
 
 FF = season_paths.FFMPEG
 RATE = 8.0               # samples per second; a syllable is longer than 125 ms

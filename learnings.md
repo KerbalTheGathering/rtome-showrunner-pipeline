@@ -131,6 +131,12 @@ duplicate number pairs, 72 and 73; they are disambiguated by wording here.)
   "checks that lie" entries.
 - smoke.py fails a fresh season on check_clip/sheet "REFUSE" at the root --
   148 (the designed tree-scoped refusal counted as an import failure).
+- mouth_scan crashes: "No module named mouth_open" on a SHOW = False
+  season -- 149 (the aperture metric lived in show/; it is season-root
+  mouth.py now).
+- mouth_scan crashes: "cannot reshape array" on a well-formed clip -- 150
+  (predicted ffmpeg's -2 height with different rounding; 16:9 canvases
+  exposed it).
 
 **Maintaining this table**: when you log a new fault below, add its symptom
 line here in the words an operator would actually say -- the table is only
@@ -3857,3 +3863,48 @@ at fault 119 -- a checker must not crash on the shapes of refusal -- and
 this is its sibling: **a checker must re-learn what "refusal" means when
 the architecture changes underneath it.** A tool that outlives a refactor
 is asserting the old architecture until someone re-reads it.
+
+## 149. The mouth metric was welded to the show layer, and worse
+
+`python mouth_scan.py 02` on the first SHOW = False season:
+`ModuleNotFoundError: No module named 'mouth_open'`. The film tree's scan
+resolved the aperture metric by appending `<season>/show` to sys.path --
+and a season with no show layer deletes that folder, as parts.py itself
+instructs. The scan could never have run on any no-show season.
+
+The second fault was hiding under the first: `show/mouth_open.py` does
+`import shot` at module level (correct in its own tree), so a film tree
+importing it bound the FILM's shot.py where the show's was meant -- the
+exact cross-tree resolution class the motion.py SESSION assert refuses,
+passing silently because every tree has a shot.py. It never bit only
+because the film-tree consumer touches nothing that reads shot.
+
+Fixed the way finding 140 fixed check_clip/find_voice/sheet: the
+measurement core (`app`, `size_of`, `head`, `grab`, `openness`, the
+MOUTH cluster) is season-root `mouth.py` -- it reads nothing from any
+tree -- and `show/mouth_open.py` keeps its show-specific work (--check
+ground truth, anchor picking) and re-exports the moved names for its own
+probes. mouth_scan imports the root module. **"Resolved from the season
+root so this file does not depend on where anything is checked out" was
+the comment on the broken line: it named the right principle and
+implemented a path append.** insightface note: the landmark model lives
+in the ComfyUI venv, not the season python -- mouth.py says so when the
+import fails, instead of tracebacking.
+
+## 150. mouth_scan predicted ffmpeg's rounding instead of instructing it
+
+Fixed 149 and the scan then crashed on a well-formed clip:
+`cannot reshape array of size 146257920 into shape (554,960,3)`.
+`apertures()` asked ffmpeg for `scale=960:-2` and then re-derived the
+resulting height itself as `round(960*h/w)` plus parity -- two
+implementations of one rounding rule. Every 4:3 canvas the reference
+season shot divided evenly, so they agreed; the first 16:9 season's
+960x544 canvas gave 553.6, which the code rounded UP to 554 and ffmpeg
+floored to 552. The scanner crashed on the clip it was supposed to judge
+(fault 119's rule again).
+
+Fixed: compute the even height once and pass `scale=960:{sh}` explicitly
+-- ffmpeg is INSTRUCTED, not predicted. The general rule: **when a tool
+derives a value that another program also derives, one of them must be
+told the answer.** Two derivations of one number is the same disease as
+two declarations of one fact (fault 16), wearing arithmetic.

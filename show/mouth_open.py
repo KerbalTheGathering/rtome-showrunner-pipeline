@@ -43,64 +43,15 @@ WORK = os.path.join(HERE, "_work")
 OUT = os.path.join(HERE, "out")
 FONT = season_paths.font("arialbd.ttf")
 
-MOUTH = list(range(52, 72))     # the mouth cluster, confirmed by drawing it
+# THE MEASUREMENT LIVES AT THE SEASON ROOT NOW (../mouth.py, fault 149):
+# a film tree's mouth_scan.py needs it and a SHOW = False season has no
+# show/ folder to find it in. What stays here is the show-specific work --
+# the ground-truth --check gate and the anchor picking, which read THIS
+# tree's clips and shot.py. The names are re-exported so this module's
+# consumers (it_articulate.py) keep working unchanged.
+from mouth import MOUTH, app, size_of, head, grab, openness  # noqa: F401,E402
+
 SEARCH = 60                     # anchor must sit inside the lead-in, not later
-_APP = None
-
-
-def app():
-    global _APP
-    if _APP is None:
-        from insightface.app import FaceAnalysis
-        a = FaceAnalysis(name="buffalo_l",
-                         allowed_modules=["detection", "landmark_2d_106"],
-                         providers=["CPUExecutionProvider"])
-        a.prepare(ctx_id=-1, det_size=(640, 640))
-        _APP = a
-    return _APP
-
-
-def size_of(path: str) -> tuple[int, int]:
-    o = subprocess.run(
-        [season_paths.ff("ffprobe"), "-v", "error", "-select_streams",
-         "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0",
-         path], capture_output=True, text=True, check=True).stdout.strip()
-    w, h = o.split(",")[:2]
-    return int(w), int(h)
-
-
-def head(path: str, n: int) -> np.ndarray:
-    """First n frames, BGR, decoded in one pass."""
-    w, h = size_of(path)
-    raw = subprocess.run(
-        [season_paths.ff("ffmpeg"), "-v", "error", "-i", path,
-         "-frames:v", str(n), "-f", "rawvideo", "-pix_fmt", "bgr24", "-"],
-        capture_output=True, check=True).stdout
-    return np.frombuffer(raw, np.uint8).reshape(-1, h, w, 3)
-
-
-def grab(path: str, i: int) -> np.ndarray:
-    w, h = size_of(path)
-    raw = subprocess.run(
-        [season_paths.ff("ffmpeg"), "-v", "error", "-i", path,
-         "-vf", f"select=eq(n\\,{i})", "-frames:v", "1", "-f", "rawvideo",
-         "-pix_fmt", "bgr24", "-"], capture_output=True, check=True).stdout
-    return np.frombuffer(raw, np.uint8).reshape(h, w, 3)
-
-
-def openness(im: np.ndarray) -> float | None:
-    """Vertical spread of the mouth landmarks over face height. None = no face."""
-    fs = app().get(im)
-    if not fs:
-        return None
-    f = max(fs, key=lambda x: (x.bbox[2] - x.bbox[0]) * (x.bbox[3] - x.bbox[1]))
-    lm = f.landmark_2d_106
-    if lm is None:
-        return None
-    pts = lm[MOUTH]
-    fh = float(f.bbox[3] - f.bbox[1])
-    return float(pts[:, 1].max() - pts[:, 1].min()) / max(1e-6, fh)
-
 
 # Frames already LOOKED at, in it_sync_mouths.png and it_open_strip.png.
 # (clip, frame, "open" | "shut")
