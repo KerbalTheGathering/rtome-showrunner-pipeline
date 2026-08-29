@@ -1,9 +1,11 @@
 """Contact sheet of a tree's plates AS THE PIPELINE RESOLVES THEM.
 
-ONE FILE, NOT TWO COPIES (finding 140). This was byte-identical in `show/`
-and `cold_open/`; each keeps a thin shim so `python sheet.py` works
-unchanged inside the tree. The tree is resolved through the `shot` and
-`gen_still` modules the shim puts first on sys.path.
+ONE FILE, NOT COPIES (finding 140). This was byte-identical in `show/` and
+`cold_open/`; every tree -- the film template included, which finding 140
+missed and docs/01 had been promising all along (fault 144) -- keeps a
+thin shim so `python sheet.py` works unchanged inside the tree. The tree
+is resolved through the `shot` and `gen_still` modules the shim puts
+first on sys.path.
 
 READS THROUGH gen_still.plate(), NOT OFF THE DIRECTORY. That is the whole point:
 plates may be mirrored by PLATE_FLIP, and a sheet built by listing PNGs
