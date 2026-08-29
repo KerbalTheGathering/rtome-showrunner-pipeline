@@ -75,6 +75,12 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 # by giving the probe a main().
 NO_IMPORT: dict[str, str] = {}
 
+# SEASON-ROOT FILES THAT ARE TREE-SCOPED: they live once at the root, each
+# tree carries an importlib shim, and imported AT the root they refuse by
+# design (findings 140/144). Their refusal there is a pass, not a fault --
+# the real import is exercised through every tree's shim in the same run.
+TREE_SCOPED = {"check_clip", "sheet"}
+
 
 # --------------------------------------------------------------------------
 # The stub, for --template mode
@@ -274,9 +280,20 @@ def run(label: str, folder: str, mode: str, verbose: bool) -> tuple[int, int]:
         verdict = (r.stdout or "").strip().splitlines()
         line = verdict[-1] if verdict else f"FAIL   no output (rc={r.returncode})"
         # A refusal is what a blank identity is SUPPOSED to do on a fresh clone,
-        # and a fault everywhere else.
+        # and what a TREE-SCOPED season-root file does outside a tree -- and a
+        # fault everywhere else. check_clip.py and sheet.py live once at the
+        # season root and refuse when imported THERE (findings 140/144, by
+        # design: they read a tree's shot.py); their import is genuinely
+        # exercised through every tree's shim, which this tool also runs. The
+        # first season shot on the shim layout had this tally count the two
+        # designed refusals as import failures -- the label said REFUSE, the
+        # verdict said FAIL, and the label was right (fault 148).
         if r.returncode == 3 and mode == "template" and this_mode == "real":
             line = "BLANK  " + line[7:]
+        elif (r.returncode == 3 and mode != "template"
+                and folder == ROOT and mod in TREE_SCOPED):
+            line = "SCOPED " + line[7:]
+            ok += 1
         elif r.returncode == 3 and mode != "template":
             bad += 1
         elif r.returncode in (0, 3, 4):

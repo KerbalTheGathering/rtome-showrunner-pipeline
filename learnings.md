@@ -129,6 +129,8 @@ duplicate number pairs, 72 and 73; they are disambiguated by wording here.)
 - A check that passes on an empty set / zero matches -- 27 (printed "all
   present" over nothing), 71 (the subtitle-probe one), 108; docs/02's
   "checks that lie" entries.
+- smoke.py fails a fresh season on check_clip/sheet "REFUSE" at the root --
+  148 (the designed tree-scoped refusal counted as an import failure).
 
 **Maintaining this table**: when you log a new fault below, add its symptom
 line here in the words an operator would actually say -- the table is only
@@ -3833,3 +3835,25 @@ the first time an agent actually re-parses those tables), and selftest
 coverage for vo_dur's cache and feature's dip key (the first needs
 ffprobe, the second wants a small extraction first -- both say so in
 selftest.py's docstring).
+
+## 148. smoke.py counted the shim layout's designed refusals as failures
+
+Found by the first season scaffolded on the finding-140/144 layout: a
+fully-filled clone, every tree importing 28/28, and `python smoke.py`
+exited "FAIL: 2 module(s) cannot be imported". The two were the season
+root's `check_clip.py` and `sheet.py` -- which REFUSE when imported at the
+root **by design** (they read a tree's shot.py; each tree's shim imports
+them with the tree first on sys.path, and those shims pass in the same
+smoke run). The tally predates the shim layout: rc==3 outside --template
+mode was always a fault when every root module was root-runnable, and
+nobody re-read that assumption when two of them stopped being so. The
+label printed REFUSE while the verdict said FAIL; the label was right.
+
+Fixed: a `TREE_SCOPED = {"check_clip", "sheet"}` set beside NO_IMPORT
+(same doctrine: a special case is printed, never silent), and the tally
+counts an rc-3 from one of those AT THE ROOT as a pass, printed `SCOPED`.
+Everywhere else rc-3 stays a fault. The general rule was already written
+at fault 119 -- a checker must not crash on the shapes of refusal -- and
+this is its sibling: **a checker must re-learn what "refusal" means when
+the architecture changes underneath it.** A tool that outlives a refactor
+is asserting the old architecture until someone re-reads it.
