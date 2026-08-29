@@ -169,8 +169,13 @@ try:
     __import__(mod)
 except SystemExit as e:
     # A guard that says no. `sys.exit("FAIL: ...")` is this repo's refusal
-    # idiom, and refusing is not the same as breaking.
-    print("REFUSE " + str(e.code or "").splitlines()[0][:110])
+    # idiom, and refusing is not the same as breaking. The first line is
+    # taken defensively: `"".splitlines()` is [] -- so a bare sys.exit(),
+    # sys.exit(0) or sys.exit("") used to raise IndexError inside THIS
+    # handler, and a clean early exit was reported as "FAIL no output"
+    # (fault 119). A checker must not crash on the shapes of refusal.
+    first = (str(e.code or "").splitlines() or ["(no message)"])[0]
+    print("REFUSE " + first[:110])
     sys.exit(3)
 except ModuleNotFoundError as e:
     # A third-party package that is not installed is a fact about this box.
