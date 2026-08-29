@@ -22,6 +22,23 @@ If your project does not have that shape, take the parts you want. `crt.py`,
 `italk.py`, the audio chain in `assemble.py` and `feature.py` are independently
 useful.
 
+## What to do right now
+
+| Situation | Do this |
+|---|---|
+| Starting a new season | `python new_season.py --to <path> --sessions <N>`, then read on |
+| Inside a season, adding a film | `python new_season.py --session S7_NAME` |
+| Don't know what state this season is in | `python parts.py` (`--json` for the machine-readable version) |
+| Fresh clone, before writing anything | `python smoke.py --template`, then `python residue.py` |
+| Plates exist and you want to look at them | `python contact.py` — every plate in the season, in running order |
+| About to render for the first time | `python preflight.py` and `python contract.py` |
+| Building everything | `python season.py` |
+| Something is out of sync | `docs/03_audio.md`, then `docs/04_lipsync.md` |
+| Output is wrong but nothing crashed | `docs/02_traps.md` first |
+
+The scripts **refuse to run** until the identity files are filled in. That
+is deliberate — see `season_identity.py`.
+
 ## The vocabulary
 
 | Word | Means |
@@ -140,3 +157,13 @@ comment is usually the reason you should not.
 
 If you delete a guard, delete its comment too, so the next reader does not
 believe a protection is present that is not.
+
+## Where the money is
+
+Local (free): plates (Krea2), motion (MiniMax H3), lip sync (H3's anchored
+driver), the score (ACE-Step), all assembly. Paid: ElevenLabs narration
+(~1% of a Pro month per film), partner video nodes (Seedance ~$0.30/clip,
+Ray, Kling ~$0.14/call) if used at all. **Read `price_badge` from the node
+registry rather than spending to measure a price.** A failed submission
+costs nothing — it bounces before reaching the vendor — but a 401 *during
+polling* bills for a result you never receive.
