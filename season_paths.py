@@ -433,6 +433,22 @@ def check() -> list[str]:
 
 
 if __name__ == "__main__":
+    # --json: THE SAME FACTS AS DATA (finding 143). parts.py --json exists
+    # because agents were burning context parsing prose; the OTHER half of
+    # re-entering a season -- does this machine resolve the right tools, and
+    # is the ComfyUI answering the one configured -- was prose only. Same
+    # exit code as the human run: 1 if anything is missing.
+    if "--json" in sys.argv:
+        import json as _json
+        _problems = check() + check_instance()
+        print(_json.dumps({
+            "ffmpeg": FFMPEG, "comfyui": COMFY, "comfy_url": COMFY_URL,
+            "comfy_input": COMFY_INPUT, "comfy_output": COMFY_OUTPUT,
+            "env_file": ENV_FILE, "fonts": FONT_DIR, "deliver": DELIVER,
+            "latent_budget_m": BUDGET_M,
+            "problems": _problems,
+        }, indent=1))
+        sys.exit(1 if _problems else 0)
     print(f"  ffmpeg    {FFMPEG}")
     print(f"  comfyui   {COMFY}")
     print(f"  comfy url {COMFY_URL}")

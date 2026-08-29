@@ -34,10 +34,11 @@ order and runs `smoke` + `contract` first.
 
 ## Two facts to confirm before trusting anything
 
-- `python season_paths.py` — does this machine resolve the right tools, and
-  is the ComfyUI that answers the one that is configured (`check_instance()`
-  tests the second)? `SEASON_COMFYUI`/`SEASON_ENV` unset means defaults, and
-  the defaults have pointed at a stale empty tree before.
+- `python season_paths.py --json` — does this machine resolve the right
+  tools, and is the ComfyUI that answers the one that is configured?
+  `problems` empty means yes to both. `SEASON_COMFYUI`/`SEASON_ENV` unset
+  means defaults, and the defaults have pointed at a stale empty tree
+  before.
 - `curl $SEASON_COMFY_URL/system_stats` — is a ComfyUI already up? Prefer
   the instance that exists; if you start one, you own its teardown
   (CLAUDE.md, "The GPU is shared").
