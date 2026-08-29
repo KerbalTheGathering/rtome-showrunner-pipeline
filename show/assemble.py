@@ -217,9 +217,15 @@ def draw_board(im: Image.Image, sid: str, shown: int) -> Image.Image:
 
 
 def clip_for(sid: str) -> str:
+    # SIZE > 0: h3_chain.existing() filters zero-byte leftovers because "a
+    # failed join once left one behind" -- this resolver did not, so that
+    # same leftover outranked the good take lexicographically and the bake
+    # died later inside frame extraction with an unrelated-looking error
+    # (fault 124).
     got = sorted(f for f in os.listdir(CLIPS)
                  if f.startswith(f"s{sid}_") and f.endswith(".mp4")
-                 and "_rej_" not in f)
+                 and "_rej_" not in f
+                 and os.path.getsize(os.path.join(CLIPS, f)) > 0)
     if not got:
         sys.exit(f"FAIL: no clip for segment {sid} in {CLIPS} -- run h3_shoot.py")
     return os.path.join(CLIPS, got[-1])

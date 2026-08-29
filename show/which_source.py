@@ -52,7 +52,8 @@ def motion(path: str) -> np.ndarray:
 def h3_clip(sid: str) -> str | None:
     got = sorted(f for f in os.listdir(CLIPS)
                  if f.startswith(f"s{sid}_") and f.endswith(".mp4")
-                 and "rej" not in f)
+                 and "rej" not in f
+                 and os.path.getsize(os.path.join(CLIPS, f)) > 0)  # fault 124
     return os.path.join(CLIPS, got[-1]) if got else None
 
 
