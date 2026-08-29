@@ -157,6 +157,13 @@ def sum_to(labels: list[str], out: str, total: float | None = None) -> str:
         raise SystemExit("FAIL: sum_to() was given no inputs. This is a bug in "
                          "the bus, not in the film.")
     if len(labels) == 1:
+        # PADDED LIKE THE REST. This returned the lone label through a bare
+        # anull even when `total` was passed, so a one-cue score or a
+        # one-take film entered the downstream amix ending early -- the
+        # fault-73 EOF race this parameter exists to close, reopened for
+        # exactly the films small enough not to notice (fault 106).
+        if total is not None:
+            return f"{labels[0]}apad=whole_dur={total:.3f},atrim=0:{total:.3f}{out}"
         return f"{labels[0]}anull{out}"
     if total is not None:
         tag = out.strip("[]")
