@@ -74,10 +74,19 @@ def pick_lid() -> str:
 # invoked -- so `import vo_candidates` from any other tool picks up that
 # tool's arguments and refuses. smoke.py caught it immediately.
 
-# THE WORDS DO NOT CHANGE. "Say it again." is the last line of the film and it
-# is the bird's. What varies is the DELIVERY DIRECTION and the punctuation that
-# shapes the tail -- an ellipsis makes eleven_v3 trail off rather than stop
-# dead, which is exactly the trailing room the mix needs.
+# THE WORDS DO NOT CHANGE -- they are THIS FILM'S line, verbatim. What varies
+# is the DELIVERY DIRECTION and the punctuation that shapes the tail -- an
+# ellipsis makes eleven_v3 trail off rather than stop dead, which is exactly
+# the trailing room the mix needs.
+#
+# EXAMPLE CONTENT, AND THE ONLY CONTENT FILE THAT SPENDS MONEY ON ITS OWN.
+# These candidates are the source film's closing line ("Say it again", the
+# bird's). Every other content-bearing template file carries the sentinel so
+# preflight can refuse; this one did not (fault 130) -- so a clone rendered
+# ANOTHER film's words as candidates for its own last line, at ElevenLabs
+# prices, and `--install b` would overwrite the clone's real closing take
+# with them. Write this film's line here, then delete the sentinel.
+EXAMPLE_CONTENT = True
 CANDIDATES = {
     "a": ("[dry] Say it again.", 0.40),               # the current take, for reference
     "b": ("[dry] Say it again...", 0.40),             # trail off
@@ -107,6 +116,14 @@ def measure(path: str) -> tuple[float, float, float]:
 
 
 def main() -> int:
+    # REFUSED HERE AS WELL AS IN preflight: this tool spends money the
+    # moment it runs, so it cannot wait for a render gate to notice.
+    if EXAMPLE_CONTENT:
+        sys.exit("FAIL: CANDIDATES is still the template's example -- another "
+                 "film's closing line.\n  Rendering it costs real ElevenLabs "
+                 "credit and --install would overwrite THIS\n  film's take "
+                 "with it. Write this film's line into CANDIDATES and delete "
+                 "the\n  `EXAMPLE_CONTENT = True` line above it.")
     LID = pick_lid()
     # THE VOICE COMES FROM THE LINE, not from a film-wide constant. A film with
     # two people in it has two voices, and re-rolling one character's line in

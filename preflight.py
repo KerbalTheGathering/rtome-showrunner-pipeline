@@ -46,8 +46,11 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 # `verify.py` IS ON THIS LIST. It names beats, devices and the moments they
 # are expected to fire -- one film's claims about one film -- and it was left
 # off because a verifier did not look like content. See learnings.md 37.
+# `vo_candidates.py` joined the list with fault 130: its CANDIDATES are one
+# film's closing line, it spends ElevenLabs credit the moment it runs, and
+# --install overwrites a real take -- content by any measure.
 CONTENT = ("script.py", "shot.py", "motion.py", "edit.py", "make_music.py",
-           "verify.py")
+           "verify.py", "vo_candidates.py")
 
 # AND THE SEASON ROOT HAS CONTENT OF ITS OWN. `credits.py` is the only file in
 # this repo that names PEOPLE -- the author, the cast, whoever trained each
