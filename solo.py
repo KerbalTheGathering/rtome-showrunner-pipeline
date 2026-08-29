@@ -68,21 +68,64 @@ def solo(name: str, where: str | None = None, force: bool = False) -> None:
     os.makedirs(d, exist_ok=True)
     path = os.path.join(d, f"{name}.lock")
 
-    if os.path.exists(path) and not force:
-        try:
-            old = int(open(path, encoding="utf-8").read().strip() or 0)
-        except Exception:                                    # noqa: BLE001
-            old = 0
-        if _alive(old):
-            sys.exit(
-                f"FAIL: {name} is already running as PID {old}.\n"
-                f"  Two copies of a stage share one GPU and one ComfyUI queue.\n"
-                f"  They do not corrupt each other -- they DEADLOCK, silently,\n"
-                f"  each waiting for a queue the other keeps filling.\n"
-                f"  Stop that process, or pass --force if you are certain it is "
-                f"gone.")
-        print(f"  (stale {name} lock from dead PID {old}, taking it over)")
+    me = str(os.getpid())
 
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(str(os.getpid()))
-    atexit.register(lambda: os.path.exists(path) and os.remove(path))
+    def _release() -> None:
+        # ONLY THE OWNER DELETES. The old cleanup removed the file if it
+        # existed, so after a force=True takeover the LOSER's exit deleted
+        # the WINNER's lock, and a third copy then started clean against a
+        # running second -- the guard opening the door it exists to close
+        # (fault 103).
+        try:
+            with open(path, encoding="utf-8") as fh:
+                mine = fh.read().strip() == me
+            if mine:
+                os.remove(path)
+        except OSError:
+            pass
+
+    # THE ACQUIRE IS ATOMIC. exists() then open("w") was check-then-act:
+    # two copies launched in the same breath -- the backgrounded double
+    # start the docstring describes -- both passed the exists check and
+    # both ran (fault 103). O_EXCL makes the filesystem the referee.
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(me)
+        atexit.register(_release)
+        return
+    except FileExistsError:
+        pass
+
+    try:
+        old = int(open(path, encoding="utf-8").read().strip() or 0)
+    except Exception:                                        # noqa: BLE001
+        old = 0
+    if _alive(old) and not force:
+        sys.exit(
+            f"FAIL: {name} is already running as PID {old}.\n"
+            f"  Two copies of a stage share one GPU and one ComfyUI queue.\n"
+            f"  They do not corrupt each other -- they DEADLOCK, silently,\n"
+            f"  each waiting for a queue the other keeps filling.\n"
+            f"  Stop that process, or pass --force if you are certain it is "
+            f"gone.")
+    print(f"  (--force: taking the {name} lock over live PID {old})"
+          if _alive(old) else
+          f"  (stale {name} lock from dead PID {old}, taking it over)")
+
+    # The takeover itself can race a second taker, so it goes through an
+    # atomic replace and then BELIEVES THE FILE: exactly one PID is in it
+    # afterwards, and any copy that is not that PID bows out.
+    tmp = f"{path}.{me}"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        fh.write(me)
+    os.replace(tmp, path)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            won = fh.read().strip() == me
+    except OSError:
+        won = False
+    if not won:
+        sys.exit(f"FAIL: another copy claimed the {name} lock in the same "
+                 f"moment -- it is running; this one is not needed.")
+    atexit.register(_release)
