@@ -52,8 +52,29 @@ rather than a longer sentence.
 | **"furled"** | reads as *fur*. Three takes put a dead animal on the seat beside the umbrella | "rolled and strapped shut", "closed and tied" |
 | naming a **blank surface type** | summons the surface. `"every sign board and destination panel is a blank rectangle"` does not request lettering — it requests **boards**, and produced a blank cream billboard in all three cold-open shots, one of them across the sky reserved for the title | describe only surfaces that were going to be in frame anyway; say nothing about the ones that were not |
 | **two contradictory instructions about one surface** | a **white blank**, not a compromise. A dark window *and* daylight behind it did it twice | pick one and state it as a conserved property |
+| **"building faces"** | a giant human **face** on the architecture -- the portrait sense wins, and a portrait-leaning LoRA doubles the pull. Confirmed by a same-seed fix (fault 91) | "building fronts", "walls of the buildings" |
+| **"lens-eyes"**, **"eye"** of a machine | a human **face** again, and the lenses stop holding what you said they held (finding 93) | "glass lenses", "round glass discs" |
 
 Add to this table as you find them. A word that costs a roll is worth one line.
+
+### A LoRA's favourite subject fills the part of the frame you did not spend
+
+The negation rule has a twin that is easy to miss: **an unallocated REGION
+of the frame gets filled the same way undirected audio does.** A prompt
+whose subject sits in the lower third and says nothing about the upper
+frame handed a portrait-trained style LoRA an invitation, and it took it
+three times in one season (finding 93) -- a giant mosaic head above rows
+of figures that were themselves correct.
+
+Name geometry for the whole frame, not only for the subject: *"...and a
+wall of black machine towers closing off the whole width of the frame
+behind them"*, *"...filling the frame from edge to edge"*. Cheap, and it
+removes the room the prior was using.
+
+This is worth more than tidiness. `docs/05` (below) records that a video
+model with an audio head lip-syncs any legible face it is handed, and no
+clause reaches that prior -- so a face that arrives in a PLATE by accident
+becomes a mouth moving in the CLIP.
 
 ### A specific prop at thumbnail scale falls back to a generic
 
@@ -332,6 +353,18 @@ certificate in front into translucency with a face from behind it coming
 through (fault 66). The same push had held in the 16:9 cut; it did not at
 9:16. Lock the frame, name every object as solid, opaque and in the same
 place in the last frame, and give the only motion to the lamplight.
+
+**A wardrobe clause inside a LoRA trigger is a prior, not a request — to
+take the costume piece OFF, take the clause OUT.** A trigger ending "...and
+clear space helmet" dressed the head in 6 of 8 bare-head beats, past prop
+statements ("it sits on the ground beside him") and positive head
+descriptions; two takes rendered the prop helmet AND the worn one. Nothing
+was negated — the trigger itself outranked the prompt. What held: truncate
+the trigger at the clause boundary, keep its lead phrase, state the
+replacement positively, keep the item as a per-beat prop. Identity survived
+the shortened trigger; replacing the trigger wholesale with a description
+is the thing that loses the character, truncating it is not. Apply
+per-class, one constant for every such beat (finding 99).
 
 ---
 

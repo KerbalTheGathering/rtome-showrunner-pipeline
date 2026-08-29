@@ -59,7 +59,12 @@ def main() -> int:
     if not os.path.exists(MP4):
         sys.exit("FAIL: no film -- run assemble.py")
     s = starts()
-    trans = {t: (f, k, sec) for f, t, k, sec in edit.TRANSITIONS}
+    # SLICED, NOT UNPACKED. A transition row may carry a fifth element -- the
+    # device's own settings, documented and supported by edit.py, whose own
+    # TRANS_EXTRA slices for exactly this reason. Unpacking four names here
+    # made the verifier crash on the first film to pass a setting (fault 101)
+    # -- and a checker that cannot run has never disagreed with anything.
+    trans = {row[1]: (row[0], row[2], row[3]) for row in edit.TRANSITIONS}
     shots = [
         ("title, broken", 0.8),
         ("title, locked", 3.4),
