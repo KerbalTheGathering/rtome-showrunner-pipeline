@@ -81,6 +81,7 @@ GW, GH = season_paths.at_aspect(identity.season.W, identity.season.H, IT_PIXELS)
 CHUNK = 81                   # frames per pass, fixed by the node
 MOTION = 9                   # tail frames handed to the next chunk
 IT_FPS = 25                  # InfiniteTalk's rate, like Wav2Lip's. Convert after.
+FPS = float(identity.season.FPS)   # the season's clock; never typed (fault 112)
 STEPS = 4
 SEED = 704122
 
@@ -422,7 +423,7 @@ def main() -> int:
         want_f = edit.FRAMES[sid]
         # Ceiling, not round: asking for exactly enough 25fps frames and then
         # converting down leaves nothing for the rate change to lose.
-        n_it = -(-want_f * IT_FPS // 24)
+        n_it = -(-want_f * IT_FPS // int(FPS))
         n_chunks = chunks_for(n_it)
         dst = os.path.join(WORK, f"synced_{sid}.mp4")
         raw = os.path.join(WORK, f"it_raw_{sid}.mp4")
@@ -452,17 +453,18 @@ def main() -> int:
             print(f"  [{sid}] shift {SHIFT.get(sid, 0):+d}f from raw ...",
                   end="", flush=True)
         else:
-            print(f"  [{sid}] {want_f}f@24 = {n_it}f@25 -> {n_chunks} chunks "
+            print(f"  [{sid}] {want_f}f@{FPS:g} = {n_it}f@{IT_FPS} -> {n_chunks} chunks "
                   f"x{scale} ...", end="", flush=True)
             img, aud = plate(sid), audio(sid)
             got = submit(graph(img, aud, n_it, f"it/{sid}", seed, scale=scale,
                                prompt=PROMPT + PROMPT_EXTRA.get(sid, "")),
                          sid)
             shutil.copy2(got, raw)
-        # 25 -> 24, then cut to the EXACT frame count the mix is built against.
-        # The chunking overshoots by design (six 81s covers 430), and a segment
-        # that runs long puts the board type off the words it is timed to.
-        vf = "fps=24"
+        # IT_FPS -> season FPS, then cut to the EXACT frame count the mix is
+        # built against. The chunking overshoots by design (six 81s covers
+        # 430), and a segment that runs long puts the board type off the
+        # words it is timed to. The season rate, not a typed 24 (fault 112).
+        vf = f"fps={float(FPS):g}"
         k = SHIFT.get(sid, 0)
         if k:
             # Hold the first frame k times and let the -frames:v cut take k off

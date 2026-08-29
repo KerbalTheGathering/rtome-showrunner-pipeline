@@ -406,11 +406,15 @@ def main() -> int:
         raw = os.path.join(WORK, f"it_raw_{sid}.mp4")
         shutil.copy2(got, raw)
 
-        # 25 -> 24, cut to the frame count the clip it replaces had. The
-        # chunking overshoots by design and a clip that runs long would push
-        # every beat after it.
+        # IT_FPS -> season FPS, cut to the frame count the clip it replaces
+        # had. The chunking overshoots by design and a clip that runs long
+        # would push every beat after it. The season rate, NOT a typed 24:
+        # this file derives FPS four lines from the top under a comment about
+        # "24 typed in eleven files" and then typed it here anyway -- on a
+        # 25 or 30 fps season the take converted to the wrong clock while
+        # -frames:v counted frames measured at the right one (fault 112).
         dst = next_take(sid)
-        ff("-i", raw, "-vf", "fps=24", "-frames:v", str(want_f),
+        ff("-i", raw, "-vf", f"fps={float(FPS):g}", "-frames:v", str(want_f),
            "-c:v", "libx264", "-crf", "14", "-preset", "slow",
            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", dst)
         n = int(probe(dst, "stream=nb_frames").split()[0])
