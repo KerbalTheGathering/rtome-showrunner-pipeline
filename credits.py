@@ -163,6 +163,15 @@ def seconds(roll: Image.Image) -> float:
 
 def music(secs: float) -> str | None:
     """A cue of its own, in the coda's key: the film ends in D major."""
+    # A CUE ON DISK IS REUSED. score.render() always submits, so a rebuild
+    # with the cue already rendered died on a ComfyUI connection refusal
+    # before reaching the part that needed fixing -- fault 100's second
+    # trap, recorded on the mural film and never landed here (fault 116).
+    # Delete the file to re-roll the music.
+    have = os.path.join(MUSIC, "credits.mp3")
+    if os.path.exists(have) and os.path.getsize(have) > 0:
+        print(f"  (reusing {have} -- delete it to re-roll the cue)")
+        return have
     import score
     # In the season's key family, and slow: an end title is the film letting
     # go, not a reprise of its loudest cue.
@@ -268,7 +277,35 @@ def main() -> int:
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", str(CRF),
                     "-c:a", "aac", "-b:a", "320k", "-shortest",
                     "-movflags", "+faststart", mp4], check=True)
-    print(f"\n  {secs:.2f}s, {W}x{H} at {FPS}fps, {n} frames")
+
+    # ALIGN THE MIX TO THE DELIVERED PICTURE (fault 100, landed as fault
+    # 116). On some roll lengths image2 muxes one frame fewer than were
+    # drawn -- deterministically, so the join's "it is stale, rebuild it"
+    # advice reproduces the mismatch byte for byte. The delivered mp4 is
+    # the artifact that is hardest to rebuild honestly, so the wav is cut
+    # to ITS frame count, sample-exact, and the picture is stream-copied.
+    got = int(subprocess.run(
+        [season_paths.ff("ffprobe"), "-v", "error", "-select_streams", "v:0",
+         "-count_frames", "-show_entries", "stream=nb_read_frames",
+         "-of", "csv=p=0", mp4],
+        capture_output=True, text=True, check=True).stdout.strip())
+    if got != n:
+        print(f"  image2 muxed {got} frames of the {n} drawn -- cutting the "
+              f"mix to the delivered picture")
+        end_sample = int(round(got / FPS * season.A_RATE))
+        trim = wav + ".trim.wav"
+        subprocess.run([ff, "-y", "-v", "error", "-i", wav,
+                        "-af", f"atrim=end_sample={end_sample}",
+                        "-c:a", "pcm_s16le", trim], check=True)
+        os.replace(trim, wav)
+        remux = mp4 + ".remux.mp4"
+        subprocess.run([ff, "-y", "-v", "error", "-i", mp4, "-i", wav,
+                        "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                        "-c:a", "aac", "-b:a", "320k",
+                        "-movflags", "+faststart", remux], check=True)
+        os.replace(remux, mp4)
+        secs = got / FPS
+    print(f"\n  {secs:.2f}s, {W}x{H} at {FPS}fps, {got} frames delivered")
     print(f"  MP4 {os.path.getsize(mp4) / 1e6:.2f} MB  -> {mp4}")
     print(f"  mix {os.path.getsize(wav) / 1e6:.1f} MB  -> {wav}")
     print("\n  feature.py picks it up as the last part; run it to rejoin.")
