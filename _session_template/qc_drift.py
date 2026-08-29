@@ -51,10 +51,13 @@ FLAG = 2.5
 
 
 def grab(src: str, t: float, dst: str) -> str | None:
-    if not os.path.exists(dst):
-        subprocess.run([season_paths.ff("ffmpeg"), "-v", "error", "-y",
-                        "-ss", f"{max(t, 0.0):.3f}", "-i", src,
-                        "-frames:v", "1", dst], capture_output=True)
+    # ALWAYS EXTRACTED FRESH -- same fix as verify_cut.py (fault 102): an
+    # exists-check cache ranked the PREVIOUS bake's frames after a re-shoot.
+    if os.path.exists(dst):
+        os.remove(dst)
+    subprocess.run([season_paths.ff("ffmpeg"), "-v", "error", "-y",
+                    "-ss", f"{max(t, 0.0):.3f}", "-i", src,
+                    "-frames:v", "1", dst], capture_output=True)
     return dst if os.path.exists(dst) else None
 
 
