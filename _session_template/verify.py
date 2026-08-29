@@ -98,7 +98,7 @@ def main() -> int:
     print(f"  -> {dest}")
 
     r = subprocess.run([season_paths.ff("ffmpeg"), "-v", "info", "-i", MP4,
-                        "-af", "volumedetect", "-f", "null", "-"],
+                        "-vn", "-af", "volumedetect", "-f", "null", "-"],
                        capture_output=True, text=True)
     for line in (r.stderr or "").splitlines():
         if "mean_volume" in line or "max_volume" in line:

@@ -581,7 +581,7 @@ def peak_dbfs(path: str) -> float:
     """Sample peak, which is what a scalar gain has to fit under."""
     r = subprocess.run(
         [season_paths.ff("ffmpeg"), "-v", "info", "-nostats", "-i", path,
-         "-af", "volumedetect", "-f", "null", "-"],
+         "-vn", "-af", "volumedetect", "-f", "null", "-"],
         capture_output=True, text=True)
     m = re.search(r"max_volume:\s*(-?\d+\.?\d*) dB", r.stderr)
     if not m:

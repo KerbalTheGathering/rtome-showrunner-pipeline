@@ -75,7 +75,7 @@ def ebur128(path: str) -> dict:
     """Integrated, range and true peak, from one pass of the real meter."""
     r = subprocess.run(
         [season_paths.ff("ffmpeg"), "-v", "info", "-nostats", "-i", path,
-         "-af", "ebur128=peak=true:framelog=verbose", "-f", "null", "-"],
+         "-vn", "-af", "ebur128=peak=true:framelog=verbose", "-f", "null", "-"],
         capture_output=True, text=True)
     tail = r.stderr[-3000:]
     def grab(label: str) -> float:
@@ -94,7 +94,7 @@ def shorts(path: str) -> tuple[float, float]:
     """
     r = subprocess.run(
         [season_paths.ff("ffmpeg"), "-v", "verbose", "-nostats",
-         "-i", path, "-af", "ebur128=framelog=verbose", "-f", "null", "-"],
+         "-i", path, "-vn", "-af", "ebur128=framelog=verbose", "-f", "null", "-"],
         capture_output=True, text=True)
     v = [float(m) for m in re.findall(r"\bS:\s*(-?\d+\.\d+)", r.stderr)]
     v = [x for x in v if x > -70.0]          # drop the meter's warm-up and gaps

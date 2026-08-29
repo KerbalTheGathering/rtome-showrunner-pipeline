@@ -166,7 +166,7 @@ def gain_test(sid: str) -> int:
 def shortterm(path: str) -> np.ndarray:
     r = subprocess.run(
         [season_paths.ff("ffmpeg"), "-v", "verbose", "-nostats",
-         "-i", path, "-af", "ebur128=framelog=verbose", "-f", "null", "-"],
+         "-i", path, "-vn", "-af", "ebur128=framelog=verbose", "-f", "null", "-"],
         capture_output=True, text=True)
     v = [float(m) for m in re.findall(r"\bS:\s*(-?\d+\.\d+)", r.stderr)]
     return np.array([x for x in v if x > -70.0])

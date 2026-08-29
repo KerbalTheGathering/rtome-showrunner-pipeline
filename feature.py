@@ -144,7 +144,7 @@ def main() -> int:
     # filmstrip of the mix.
     for what, p_, _i in rows:
         r = subprocess.run([season_paths.ff("ffmpeg"), "-v", "info", "-i", p_,
-                            "-af", "silencedetect=n=-50dB:d=2.0",
+                            "-vn", "-af", "silencedetect=n=-50dB:d=2.0",
                             "-f", "null", "-"], capture_output=True, text=True)
         hits = [ln.split("silence_start: ")[1].split()[0]
                 for ln in (r.stderr or "").splitlines() if "silence_start" in ln]
