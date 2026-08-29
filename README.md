@@ -64,11 +64,11 @@ season on record was made. What an agent gets:
   real nights when broken, and the routing into the docs.
 - **[`AGENTS.md`](AGENTS.md)** — the same front door for non-Claude
   frameworks.
-- **`.claude/skills/`** — six thin task routers (season-status,
-  start-season, shoot-a-film, verify-work, publish-and-deliver,
-  fix-a-render). They surface the right commands and doc at the right
-  moment; the docs stay authoritative. `new_season.py` copies them into
-  every season clone.
+- **`.claude/skills/`** — seven thin task routers (season-status,
+  start-season, develop-a-film, shoot-a-film, verify-work,
+  publish-and-deliver, fix-a-render). They surface the right commands and
+  doc at the right moment; the docs stay authoritative. `new_season.py`
+  copies them into every season clone.
 - **`python parts.py --json`** — season state as data, so a session resumes
   from the disk instead of from prose.
 - **The refusals themselves** — identity files that hard-fail while blank,
@@ -164,6 +164,7 @@ script and when to run it.
 | [`docs/09_scripts.md`](docs/09_scripts.md) | What every script is |
 | [`docs/10_fork_report.md`](docs/10_fork_report.md) | What a fork found taking this from `git clone` to a finished feature |
 | [`docs/11_asset_library.md`](docs/11_asset_library.md) | **A design note, not built.** A cross-project asset library and an edit step |
+| [`docs/12_development.md`](docs/12_development.md) | Everything before money: premise → words → look → cast → boards, with the approval gates. `PLAN.md` is its workspace |
 | [`learnings.md`](learnings.md) | The numbered incident log, across every season and fork this pipeline has run |
 
 ## A note on model choices

@@ -3,9 +3,9 @@
 This pipeline is operated by sessions like yours. The docs are the manual;
 this file only routes you into them and states the rules that cost real money
 or real nights when broken. The skills in `.claude/skills/` (season-status,
-start-season, shoot-a-film, verify-work, publish-and-deliver, fix-a-render)
-are thin routers into the same docs, surfaced by task — use them, but the
-docs stay authoritative. Every one of them was learned the hard way — the
+start-season, develop-a-film, shoot-a-film, verify-work,
+publish-and-deliver, fix-a-render) are thin routers into the same docs,
+surfaced by task — use them, but the docs stay authoritative. Every one of them was learned the hard way — the
 incident record is `learnings.md`, and the fastest way to re-litigate a
 decision is to skip reading it.
 
@@ -26,6 +26,10 @@ decision is to skip reading it.
   `identity.py` / `season_identity.py` and is imported. If you find yourself
   typing a title, a slug or a name anywhere else, stop — that exact move has
   shipped four silent faults.
+- **The operator is the author, and development has gates.** Premise,
+  script, look, cast and boards are approved in the season's `PLAN.md`
+  before anything is bought or shot — `docs/12_development.md`. Draft and
+  probe freely; commit nothing creative on your own verdict.
 - **Checks before money.** `preflight.py` (is this still the example?),
   `smoke.py` (does every module execute?), `contract.py` (do the tables
   agree?), `residue.py` (whose beat ids are these?). They are not
