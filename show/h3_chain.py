@@ -101,9 +101,27 @@ def silence(name: str, secs: float) -> str:
 
 
 def tail_of(part_path: str, name: str) -> str:
+    # THE LAST TAIL FRAMES, COUNTED -- NOT SOUGHT. This used `-sseof` with a
+    # 2-frame margin and then took the FIRST TAIL frames after the seek,
+    # which is wrong twice over (fault 105): the window ended 2 frames shy
+    # of the part's real end, so the join (which drops the first TAIL frames
+    # of the next piece) showed those frames twice at every seam; and a part
+    # carries 0.5 s of audio past its video (silence() renders n/FPS + 0.5),
+    # so `-sseof` -- which measures CONTAINER duration -- landed ~0.5 s late
+    # and left too few frames for the extract at all. Both rendered clean:
+    # the only check downstream is `got >= total`. Frame counts are exact;
+    # a part is <= PIECE_MAX frames, so decoding from 0 costs nothing.
     out = os.path.join(INPUT, name)
-    subprocess.run([FF, "-y", "-v", "error", "-sseof", f"-{(TAIL + 2) / FPS:.3f}",
-                    "-i", part_path, "-vf", f"select=gte(n\\,0)", "-vsync", "0",
+    n = int(subprocess.run([season_paths.ff("ffprobe"), "-v", "error",
+                            "-select_streams", "v:0", "-count_frames",
+                            "-show_entries", "stream=nb_read_frames",
+                            "-of", "csv=p=0", part_path],
+                           capture_output=True, text=True, check=True).stdout.strip())
+    if n < TAIL:
+        sys.exit(f"FAIL: {part_path} has {n} frames -- shorter than the "
+                 f"{TAIL}-frame tail the chain hands forward.")
+    subprocess.run([FF, "-y", "-v", "error", "-i", part_path,
+                    "-vf", f"select=gte(n\\,{n - TAIL})", "-vsync", "0",
                     "-frames:v", str(TAIL), "-an", "-c:v", "libx264", "-crf", "12",
                     "-pix_fmt", "yuv420p", out], check=True)
     return name
