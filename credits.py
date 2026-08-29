@@ -105,6 +105,17 @@ CREDITS: list[tuple[str, list]] = [
     ("", [season.SEASON_TITLE, "EXAMPLE YEAR"]),
 ]
 
+# THE ROLL'S OWN CUE -- SET THE KEY WHEN YOU FILL THE ROLL. An end title is
+# the film letting go, not a reprise of its loudest cue, but it lets go IN
+# THE SEASON'S KEY FAMILY -- and this dict is as much this-film content as
+# the names above it. It used to live inside music() with the reference
+# season's D major welded in, where a filled-in roll rendered a stranger
+# key with nothing complaining (fault 152).
+CREDITS_CUE = {"tags": "end title music, slow, warm, unhurried, valedictory, "
+                       "fading to nothing, instrumental",
+               "bpm": 60, "key": "D major",   # <-- the SEASON's family, not this default
+               "ts": "4", "seed": 4307}
+
 # --- the look of the roll ------------------------------------------------------
 INK = (238, 233, 222)            # bone, the thumbnails' ink and the card's
 DIM = (150, 146, 138)            # headings sit back from their names
@@ -173,12 +184,7 @@ def music(secs: float) -> str | None:
         print(f"  (reusing {have} -- delete it to re-roll the cue)")
         return have
     import score
-    # In the season's key family, and slow: an end title is the film letting
-    # go, not a reprise of its loudest cue.
-    cue = {"tags": "end title music, slow, warm, unhurried, valedictory, fading "
-                   "to nothing, instrumental, no vocals",
-           "bpm": 60, "key": "D major", "ts": "4", "seed": 4307}
-    return score.render("credits", secs, cue, MUSIC, season.SEASON)
+    return score.render("credits", secs, CREDITS_CUE, MUSIC, season.SEASON)
 
 
 def example_lines() -> list[str]:
