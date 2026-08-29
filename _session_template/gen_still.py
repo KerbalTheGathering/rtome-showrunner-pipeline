@@ -379,6 +379,16 @@ def main() -> int:
     if bad:
         sys.exit(f"FAIL: unrecognised argument(s) {bad} -- a beat is a bare "
                  f"sid or --beat=NN; anything else here renders the WHOLE film")
+    # AND THE VALUES ARE CHECKED TOO (fault 131). Bare sids earned this guard
+    # and --beat= never did: `--beat=99`, or a beat id carried from another
+    # film, matched nothing, rendered nothing, and on a tree with plates on
+    # disk fell through to the PASS line -- the exact class the comment
+    # above names, through the other door.
+    sids = {b["sid"] for b in shot.BEATS}
+    ghost = [s for s in only if s not in sids]
+    if ghost:
+        sys.exit(f"FAIL: {ghost} are not beats of this film. It has "
+                 f"{sorted(sids)}")
     # --seed= ON THE COMMAND LINE OVERRIDES EVERYTHING; WITHOUT IT, THE
     # PER-BEAT TABLE WINS.
     #
@@ -426,8 +436,16 @@ def main() -> int:
         if rc:
             return rc
 
+    # THE SUMMARY COVERS WHAT WAS ASKED FOR. It resolved plate() for EVERY
+    # beat, so `gen_still.py --beat=01` on a fresh clone rendered beat 01
+    # successfully and then exited "FAIL: no plate for beat 02" -- a FAIL
+    # for a run that did what it was told (fault 131).
+    done = [b for b in beats if not only or b["sid"] in only]
     print("\nPASS: " + "  |  ".join(
-        f"{b['sid']} -> {os.path.basename(plate(b['sid']))}" for b in beats))
+        f"{b['sid']} -> {os.path.basename(plate(b['sid']))}" for b in done))
+    if only:
+        print(f"  ({len(done)} of {len(beats)} beats -- the rest were not "
+              f"asked for)")
     return 0
 
 

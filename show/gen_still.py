@@ -398,6 +398,13 @@ def main() -> int:
     if bad:
         sys.exit(f"FAIL: unrecognised argument(s) {bad} -- a beat is a bare "
                  f"sid or --beat=NN; anything else here renders the WHOLE film")
+    # AND THE VALUES ARE CHECKED TOO (fault 131): a sid from another film
+    # matched nothing, rendered nothing, and reported a pass.
+    _sids = {b["sid"] for b in shot.BEATS}
+    ghost = [s for s in only if s not in _sids]
+    if ghost:
+        sys.exit(f"FAIL: {ghost} are not beats of this tree. It has "
+                 f"{sorted(_sids)}")
     # --seed= ON THE COMMAND LINE OVERRIDES EVERYTHING; WITHOUT IT, THE
     # PER-BEAT TABLE WINS.
     #
@@ -445,8 +452,12 @@ def main() -> int:
         if rc:
             return rc
 
+    # THE SUMMARY COVERS WHAT WAS ASKED FOR (fault 131): resolving plate()
+    # for every beat made a partial run FAIL on beats it was not asked to
+    # render.
+    done = [b for b in beats if not only or b["sid"] in only]
     print("\nPASS: " + "  |  ".join(
-        f"{b['sid']} -> {os.path.basename(plate(b['sid']))}" for b in beats))
+        f"{b['sid']} -> {os.path.basename(plate(b['sid']))}" for b in done))
     return 0
 
 
