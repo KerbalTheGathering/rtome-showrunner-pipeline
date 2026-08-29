@@ -218,7 +218,7 @@ def main() -> int:
     # path.
     only = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--beat=")]
     only += [a.zfill(2) for a in sys.argv[1:] if a.isdigit()]
-    known = ("--force",)
+    known = ("--force", "--check")
     bad = [a for a in sys.argv[1:]
            if not a.isdigit() and not a.startswith("--beat=")
            and a not in known]
@@ -241,6 +241,19 @@ def main() -> int:
             print(f"  [{s}] SKIP -- {have[-1]} on disk")
     if not todo:
         print("  nothing to buy")
+        return 0
+
+    # --check: THE PRICE BEFORE THE KEY (finding 142). feature.py and
+    # publish.py already speak this flag; the tool that buys partner clips
+    # could not be asked "what would this cost" without committing to run.
+    if "--check" in sys.argv:
+        total = sum(cost_cents(s) for s in todo)
+        secs = sum(edit.SECS[s] for s in todo)
+        for s in todo:
+            print(f"  [{s}] would buy {edit.SECS[s]}s  ({cost_cents(s):.1f}c)")
+        print(f"  --check: {len(todo)} clip(s), {secs}s of video, "
+              f"{total:.1f}c total (${total/100:.2f}). Nothing submitted, "
+              f"no key read.")
         return 0
 
     key = api_key()

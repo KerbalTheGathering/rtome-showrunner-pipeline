@@ -141,7 +141,8 @@ def main() -> int:
     # everything a filtered run should have skipped... nothing, and exited 0.
     only = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--line=")]
     only += [a for a in sys.argv[1:] if a.isdigit()]
-    known = ("--force", "--alt")
+    check = "--check" in sys.argv
+    known = ("--force", "--alt", "--check")
     bad = [a for a in sys.argv[1:]
            if not a.isdigit() and not a.startswith("--line=")
            and a not in known]
@@ -153,6 +154,26 @@ def main() -> int:
     if ghost:
         sys.exit(f"FAIL: {ghost} are not lines of this film. It has "
                  f"{[ln[0] for ln in script.LINES]}")
+
+    # --check: WHAT WOULD RENDER, AND WHAT IT METERS, BEFORE ANY KEY IS
+    # READ (finding 142). ElevenLabs bills by the character; this is the
+    # only tool that spends per-line and it could not be asked first.
+    if check:
+        would, chars = [], 0
+        for lid, _sid, _role, _style, text in script.LINES:
+            if only and lid not in only:
+                continue
+            if os.path.exists(os.path.join(dest, f"{lid}.mp3")) and not force:
+                continue
+            would.append(lid)
+            chars += len(text)
+        for lid in would:
+            print(f"  [{lid}] would render "
+                  f"({len(script.BY_ID[lid][4])} chars)")
+        print(f"  --check: {len(would)} line(s) would render, {chars} "
+              f"characters metered. Nothing rendered, no key read.")
+        return 0
+
     k = key()
     os.makedirs(dest, exist_ok=True)
 
