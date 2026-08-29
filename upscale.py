@@ -129,6 +129,14 @@ def _worker(src, dst, model_path, ow, oh):
 
 
 if __name__ == "__main__":
+    # -h/--help prints the docstring -- the usage has always lived
+    # there; this makes it reachable without opening the file
+    # (finding 146). Before main(), so no lock is taken and no
+    # argument guard fires first.
+    import sys as _hsys
+    if "-h" in _hsys.argv or "--help" in _hsys.argv:
+        print(__doc__ or "(no usage doc)")
+        raise SystemExit(0)
     if sys.argv[1:2] == ["--worker"]:
         _worker(sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]))
     else:
