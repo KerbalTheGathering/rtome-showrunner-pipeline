@@ -285,7 +285,7 @@ def main() -> int:
                     + "".join(f"[f{i}]" for i in range(n))
                     + f"concat=n={n}:v=0:a=1[a]",
                     "-map", "0:v:0", "-map", "[a]",
-                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                    "-c:v", "copy", "-c:a", "aac", "-b:a", "320k",
                     "-movflags", "+faststart", DEST], check=True)
     got = probe(DEST)
     print(f"\n  {got['secs']:.1f}s ({got['secs']/60:.1f} min), "

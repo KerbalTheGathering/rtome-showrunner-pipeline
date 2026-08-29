@@ -416,7 +416,7 @@ def main() -> int:
         dst = next_take(sid)
         ff("-i", raw, "-vf", f"fps={float(FPS):g}", "-frames:v", str(want_f),
            "-c:v", "libx264", "-crf", "14", "-preset", "slow",
-           "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", dst)
+           "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "320k", dst)
         n = int(probe(dst, "stream=nb_frames").split()[0])
         if n != want_f:
             sys.exit(f"FAIL: {os.path.basename(dst)} is {n}f, wanted {want_f}")

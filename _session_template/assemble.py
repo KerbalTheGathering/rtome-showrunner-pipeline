@@ -1252,7 +1252,7 @@ def main() -> int:
                     "-framerate", str(FPS),
                     "-i", os.path.join(BAKED, "b_%05d.png"), "-i", wav,
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", str(CRF),
-                    "-c:a", "aac", "-b:a", "192k", "-shortest",
+                    "-c:a", "aac", "-b:a", "320k", "-shortest",
                     "-movflags", "+faststart", mp4], check=True)
     print(f"\n  {total_s:.2f}s, {w}x{h} at {FPS:g}fps, {n} frames")
     print(f"  MP4 {os.path.getsize(mp4)/1e6:.2f} MB  -> {mp4}")

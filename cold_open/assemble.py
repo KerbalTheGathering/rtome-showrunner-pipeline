@@ -430,7 +430,7 @@ def main() -> int:
                     "-i", os.path.join(BAKED, "b_%05d.png"), "-i", wav,
                     "-c:v", "libx264", "-crf", str(CRF), "-preset", "slow",
                     "-pix_fmt", "yuv420p",
-                    "-c:a", "aac", "-b:a", "192k", "-shortest", dst],
+                    "-c:a", "aac", "-b:a", "320k", "-shortest", dst],
                    check=True)
     print(f"\n  {i} frames  {secs:.2f}s  {w}x{h}  "
           f"title from {title_from/FPS:.2f}s  "

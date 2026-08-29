@@ -261,7 +261,7 @@ def main() -> int:
     subprocess.run([ff, "-y", "-v", "error", "-framerate", str(FPS),
                     "-i", os.path.join(frames, "c_%05d.png"), "-i", wav,
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", str(CRF),
-                    "-c:a", "aac", "-b:a", "192k", "-shortest",
+                    "-c:a", "aac", "-b:a", "320k", "-shortest",
                     "-movflags", "+faststart", mp4], check=True)
     print(f"\n  {secs:.2f}s, {W}x{H} at {FPS}fps, {n} frames")
     print(f"  MP4 {os.path.getsize(mp4) / 1e6:.2f} MB  -> {mp4}")

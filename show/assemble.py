@@ -846,7 +846,7 @@ def main() -> int:
                         "-i", wav,
                         "-c:v", "libx264", "-crf", str(CRF), "-preset", "slow",
                         "-pix_fmt", "yuv420p",
-                        "-c:a", "aac", "-b:a", "192k", "-shortest", dst],
+                        "-c:a", "aac", "-b:a", "320k", "-shortest", dst],
                        check=True)
         # A COUNT IN A LOG LINE MUST BE A COUNT OF WHAT WAS DONE. This printed
         # `typed`, the length of the board table -- so a segment with three
