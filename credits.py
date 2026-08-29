@@ -36,6 +36,7 @@ wrong credit is worse than no credit.
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 
@@ -222,8 +223,12 @@ def main() -> int:
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(WORK, exist_ok=True)
     frames = os.path.join(WORK, "_credits_frames")
-    subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", frames],
-                   capture_output=True) if os.path.isdir(frames) else None
+    # shutil, not `cmd /c rmdir`: spawning cmd raises FileNotFoundError on
+    # any POSIX host (fault 115), and the stale frames it exists to clear
+    # matter -- a previous longer run's c_%05d.png files are consecutive
+    # with the fresh ones, and only -shortest was saving the mp4 from them.
+    if os.path.isdir(frames):
+        shutil.rmtree(frames)
     os.makedirs(frames, exist_ok=True)
     canvas = Image.new("RGB", (W, H), (0, 0, 0))
     for i in range(n):
