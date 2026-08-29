@@ -113,11 +113,19 @@ assert all(t.count("[") <= 1 for _, _, _, _, t in LINES), \
     "a line carries more than one tag -- each costs 0.4-0.6s of runtime"
 
 _tags = [t[t.index("[") + 1:t.index("]")] for _, _, _, _, t in LINES if "[" in t]
+# THE SHARE IS OF THE SCRIPT, as the message says -- it divided by the
+# TAGGED lines only (fault 133), so a ten-line film with two identical tags
+# on otherwise-bare lines read as "100%" while the tag touched a fifth of
+# the script, and a two-line film with two different tags failed outright.
+# And a habit requires repetition: one use of a tag is a choice at any
+# share, so nothing under three uses can trip this.
 for _t in set(_tags):
-    _share = _tags.count(_t) / len(_tags)
-    assert _share < 0.40, (
-        f"tag [{_t}] is {_share:.0%} of the script -- that is a habit, not a "
-        "choice, and repeated contour is what monotone actually sounds like")
+    _n = _tags.count(_t)
+    _share = _n / len(LINES)
+    assert _n < 3 or _share < 0.40, (
+        f"tag [{_t}] is on {_n} of the script's {len(LINES)} lines "
+        f"({_share:.0%}) -- that is a habit, not a choice, and repeated "
+        "contour is what monotone actually sounds like")
 
 # PROVEN-SAFE TAGS ON eleven_v3: interpreted as direction, never spoken aloud.
 # [serious] and [laughing] are PROVEN SPOKEN -- they come out of the actor's
