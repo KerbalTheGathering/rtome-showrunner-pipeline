@@ -185,8 +185,14 @@ def submit(g: dict) -> str | None:
         print(f"SUBMIT REJECTED: {e.code} {e.read()[:600].decode(errors='replace')}")
         return None
     t0 = time.time()
+    _next_tick = 60.0
     while time.time() - t0 < 3600:
         time.sleep(10)
+        if time.time() - t0 > _next_tick:
+            # A heartbeat, not a log (finding 147): "rendering" and
+            # "wedged" print identically without one.
+            print(f" {(time.time() - t0) / 60:.0f}m", end="", flush=True)
+            _next_tick += 60
         h = json.load(urllib.request.urlopen(f"{HOST}/history/{pid}"))
         if pid in h:
             files = [f for o in h[pid].get("outputs", {}).values()

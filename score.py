@@ -112,8 +112,15 @@ def render(name: str, secs: float, cue: dict, out_dir: str, tag: str) -> str:
         sys.exit(f"FAIL: ACE submit rejected: {e.code} "
                  f"{e.read()[:800].decode(errors='replace')}")
     t0 = time.time()
+    _next_tick = 60.0
     while True:
         time.sleep(5)
+        if time.time() - t0 > _next_tick:
+            # A heartbeat, not a log (finding 147): an ACE render can run
+            # many minutes, and "rendering" and "wedged" print identically
+            # without one.
+            print(f" {(time.time() - t0) / 60:.0f}m", end="", flush=True)
+            _next_tick += 60
         h = json.load(urllib.request.urlopen(f"{HOST}/history/{pid}"))
         if pid in h:
             files = [f for o in h[pid].get("outputs", {}).values()

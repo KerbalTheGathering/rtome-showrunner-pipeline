@@ -223,8 +223,15 @@ def shoot(sid: str, turbo: bool, seed: int = SEED,
         return False
 
     t0 = time.time()
+    _next_tick = 60.0
     while True:
         time.sleep(10)
+        if time.time() - t0 > _next_tick:
+            # A HEARTBEAT, NOT A LOG (finding 147): a multi-minute
+            # render printed nothing, and neither the operator nor an
+            # agent can tell "rendering" from "wedged" without it.
+            print(f" {(time.time() - t0) / 60:.0f}m", end="", flush=True)
+            _next_tick += 60
         h = json.load(urllib.request.urlopen(f"{HOST}/history/{pid}"))
         if pid in h:
             outs = h[pid].get("outputs", {})
