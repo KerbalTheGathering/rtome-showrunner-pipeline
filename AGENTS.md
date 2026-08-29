@@ -10,9 +10,10 @@ operating instructions live in one place:
 3. `python parts.py --json` — the state of a season, machine-readable,
    runnable even on a season too blank to import.
 
-If your framework loads skills from `.claude/skills/`, five thin routers
+If your framework loads skills from `.claude/skills/`, six thin routers
 are provided (season-status, start-season, shoot-a-film, verify-work,
-fix-a-render). They point into the docs; they do not replace them.
+publish-and-deliver, fix-a-render). They point into the docs; they do not
+replace them.
 
 Do not duplicate rules from CLAUDE.md or the docs into this file — a rule
 stated in two places is this repo's oldest fault class.

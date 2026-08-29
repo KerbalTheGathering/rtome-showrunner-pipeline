@@ -3,8 +3,9 @@
 This pipeline is operated by sessions like yours. The docs are the manual;
 this file only routes you into them and states the rules that cost real money
 or real nights when broken. The skills in `.claude/skills/` (season-status,
-start-season, shoot-a-film, verify-work, fix-a-render) are thin routers into
-the same docs, surfaced by task — use them, but the docs stay authoritative. Every one of them was learned the hard way — the
+start-season, shoot-a-film, verify-work, publish-and-deliver, fix-a-render)
+are thin routers into the same docs, surfaced by task — use them, but the
+docs stay authoritative. Every one of them was learned the hard way — the
 incident record is `learnings.md`, and the fastest way to re-litigate a
 decision is to skip reading it.
 

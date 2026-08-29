@@ -64,10 +64,11 @@ season on record was made. What an agent gets:
   real nights when broken, and the routing into the docs.
 - **[`AGENTS.md`](AGENTS.md)** — the same front door for non-Claude
   frameworks.
-- **`.claude/skills/`** — five thin task routers (season-status,
-  start-season, shoot-a-film, verify-work, fix-a-render). They surface the
-  right commands and doc at the right moment; the docs stay authoritative.
-  `new_season.py` copies them into every season clone.
+- **`.claude/skills/`** — six thin task routers (season-status,
+  start-season, shoot-a-film, verify-work, publish-and-deliver,
+  fix-a-render). They surface the right commands and doc at the right
+  moment; the docs stay authoritative. `new_season.py` copies them into
+  every season clone.
 - **`python parts.py --json`** — season state as data, so a session resumes
   from the disk instead of from prose.
 - **The refusals themselves** — identity files that hard-fail while blank,
