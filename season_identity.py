@@ -143,7 +143,7 @@ SHOW_NAME = ""                   # e.g. "NEWSDESK"; the show's own tree name
 
 # --- THE H3 SHOOTER'S WEIGHTS AND REFERENCES (_session_template/h3_shoot.py) ---
 # The ref2va HYBRID holds identity from reference pictures and is better at
-# audio than fl2va (LOSS OF SIGNAL, the operator's call) -- it shoots every
+# audio than fl2va (the ninth reference season, the operator's call) -- it shoots every
 # beat, dialogue or not. H3_ID_REFS are two plates of the character, paths
 # relative to ComfyUI/input, wired only when the beat has him alive in frame
 # (not "nochar", not "norefs"). H3_VOICE_REF is recorded here and NOT wired:

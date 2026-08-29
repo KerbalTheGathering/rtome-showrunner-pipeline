@@ -39,8 +39,8 @@ What a season declares:
   Undeclared, every role is on screen (a single-character film). A narrator,
   a radio, a voice in his head are *not* in it: nobody in frame says them.
 - **One voice, two registers = two roles on one id.** A character who talks
-  on camera in some beats and narrates over others is `VOICES = {"gman": ID,
-  "inner": ID}` with only `"gman"` in `ON_SCREEN`. `contract.py` accepts one
+  on camera in some beats and narrates over others is `VOICES = {"host": ID,
+  "inner": ID}` with only `"host"` in `ON_SCREEN`. `contract.py` accepts one
   id under two roles; what it refuses is a role with no lines.
 - **A beat with nobody speaking still gets a driver** -- of silence. The
   shooter does this; do not turn `season.H3_DRIVER` off for a film that

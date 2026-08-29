@@ -7,8 +7,8 @@ ModelSamplingAuraFlow shift 3 -> KSampler 8 steps cfg 1 euler/simple;
 DualCLIPLoader qwen_0.6b + qwen_4b type "ace"; TextEncodeAceStepAudio1.5
 pins bpm / duration / timesignature / keyscale -- which is the point: the
 cues are generated independently, so the KEY FAMILY is what makes them one
-score (LOSS OF SIGNAL: D major for the world as briefed, D minor for the
-void). A cue with {"silent": True} writes digital silence of the right
+score (the ninth reference season: D major for the world as briefed, D minor
+for the void). A cue with {"silent": True} writes digital silence of the right
 length: a span under nothing is an editorial choice, not a missing cue.
 $0.00 a minute against ElevenLabs Music's $0.15; docs/03_audio.md.
 
@@ -52,8 +52,8 @@ def graph(cue: dict, secs: float, prefix: str) -> dict:
         "4": {"class_type": "TextEncodeAceStepAudio1.5",
               "inputs": {"clip": ["3", 0], "tags": cue["tags"],
                          # A cue may carry its own sung lyrics ("lyrics" key); the default
-                         # stays instrumental. Added for HOW TO HAVE A DAY's
-                         # sung stings, 2026-08-23 -- ACE 1.5 takes plain lines.
+                         # stays instrumental. Added for a season with sung
+                         # stings, 2026-08-23 -- ACE 1.5 takes plain lines.
                          "lyrics": cue.get("lyrics", INSTRUMENTAL),
                          "seed": cue.get("seed", 1),
                          "bpm": cue["bpm"], "duration": float(secs),

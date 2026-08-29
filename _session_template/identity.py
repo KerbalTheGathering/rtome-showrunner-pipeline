@@ -88,8 +88,8 @@ TRIGGER = ""                     # "" if the character LoRA has no trigger token
 # that is not that world -- the room he is in and the thing he is imagining
 # -- and wants the cut to be visible in the paint, not just the prompt.
 #
-#     REGISTERS = {"real": ("ApricotPaper_Krea2_V1.0.safetensors", 1.0),
-#                  "dream": ("FruityKicks_Krea2_V1.0.safetensors", 1.0)}
+#     REGISTERS = {"real": ("PaperStyle_Krea2_V1.0.safetensors", 1.0),
+#                  "dream": ("DreamStyle_Krea2_V1.0.safetensors", 1.0)}
 #     shot.REGISTER = {"01": "real", "02": "dream", ...}
 #
 # A beat not in shot.REGISTER gets STYLE_LORA. A name in shot.REGISTER that

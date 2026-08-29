@@ -1,5 +1,5 @@
 """The show's H3 shooter for segments WITHOUT FACES, as CHAINED PIECES.
-(LOSS OF SIGNAL's HOUSTON inserts; ported as a sibling of h3_shoot.py,
+(a reference season's control-room inserts; ported as a sibling of h3_shoot.py,
 which stays the faced lane -- base clip, then InfiniteTalk.)
 
 THE ROOM HAD NO FACES. The controllers are seen from behind, so the lane this

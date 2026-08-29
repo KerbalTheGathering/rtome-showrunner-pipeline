@@ -1,7 +1,7 @@
 """TWO SPEAKERS IN ONE SHOT, on the InfiniteTalk *Multi* patch.
 
-THE NODE CONTRACT IS NO LONGER GUESSED. A port of this file (VERTICAL HOLD,
-S3_HOLD/italk_multi.py, 2026-08-20) ran the Multi patch and proved it by
+THE NODE CONTRACT IS NO LONGER GUESSED. A port of this file (a reference
+season's clone, 2026-08-20) ran the Multi patch and proved it by
 eye on a two-shot: each mouth articulates exactly inside its own line
 window, and a silent-presence speaker holds a closed mouth on a
 full-length silence track. Two findings from that run are baked in below:
@@ -100,7 +100,7 @@ PATCH_MULTI = "Wan2_1-InfiniteTalk-Multi_fp16.safetensors"
 
 
 # --------------------------------------------------------------------------
-# THE CONTRACT, READ OFF THE LIVE NODE (VERTICAL HOLD, 2026-08-20).
+# THE CONTRACT, READ OFF THE LIVE NODE (2026-08-20).
 # --------------------------------------------------------------------------
 #
 # `mode` is a COMFY_DYNAMICCOMBO_V3 whose "two_speakers" option carries three

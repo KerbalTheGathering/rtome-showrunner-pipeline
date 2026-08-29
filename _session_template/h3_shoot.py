@@ -1,7 +1,7 @@
 """Shoot the whole session on LOCAL H3 -- the REF2VA HYBRID, with the plate
 and the real VO anchored as guides. No partner node, no money.
 
-THIS REPLACED THE fl2va I2V SHOOTER (ninth season, LOSS OF SIGNAL), which
+THIS REPLACED THE fl2va I2V SHOOTER (ninth reference season), which
 shot from a first frame and threw H3's invented audio away. The old one is
 in git history; what changed and why is learnings 50-57. Here:
 
@@ -158,7 +158,7 @@ def driver(sid: str, row: dict, length: int) -> str:
             parts.append((lid, t))
         t += d + row["extra"]
     # A BEAT WITH NOBODY SPEAKING ON SCREEN STILL GETS A DRIVER -- OF SILENCE.
-    # LOSS OF SIGNAL S1 04 (the radio's line only) was shot with no audio
+    # One reference beat (a radio's line only) was shot with no audio
     # anchored and the model invented a voice and mouthed the radio's line
     # back at it; S1 06, whose driver was silence until his one word, kept
     # his mouth shut to the second. Anchored silence is the signal; absent
@@ -371,7 +371,7 @@ def shoot(sid: str, seed: int = SEED) -> bool:
              if season.H3_DRIVER and not _flag(sid, "nodriver") else None)
     _b = None   # flags come from _flag(); see it for why
     # "norefs": he is in the plate only as a PICTURE (a poster, a photograph).
-    # With the identity plates wired, LOSS OF SIGNAL S3 06 animated the
+    # With the identity plates wired, one reference beat animated the
     # poster's face and then cut to the hero reference as a new scene (fault
     # 53). The references say "this man, alive"; a painted board wants
     # neither. No H3_ID_REFS declared = no references, ever.

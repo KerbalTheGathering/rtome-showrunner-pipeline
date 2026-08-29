@@ -75,7 +75,7 @@ DEST = os.path.join(OUT, f"{season.SEASON_SLUG}.mp4")
 
 # THE HANDOVER AT EVERY PART BOUNDARY -- see the join in main(). Seconds.
 # A splice between two worlds (a film's last frame, the show's first) reads
-# as an error, not a cut; a short dip is the grammar (LOSS OF SIGNAL v10).
+# as an error, not a cut; a short dip is the grammar (ninth season, v10 pass).
 JOIN_DIP = 0.5       # picture: out over the last 0.5 s, in over the first 0.5 s
 JOIN_AFADE = 0.3     # sound: the same, shorter, so the dip is felt, not heard
 
@@ -226,7 +226,7 @@ def main() -> int:
     ins = []
     for w in wavs:
         ins += ["-i", w]
-    # THE JOINS DIP TO BLACK (LOSS OF SIGNAL, v9 viewing: "the cuts to the
+    # THE JOINS DIP TO BLACK (ninth season, v9 viewing: "the cuts to the
     # control room are abrupt"). Every part boundary is a change of world --
     # a film's set to the show's floor and back -- and a splice reads as an
     # error, not a cut. A short dip at each boundary is the handover: each

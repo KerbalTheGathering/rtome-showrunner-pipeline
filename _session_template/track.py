@@ -45,7 +45,7 @@ specific lines, align the writer's lyric sheet by forced alignment and
 validate it against an independent transcription (median word-start delta,
 not the aligner's own confidence — it scores the match to what it was TOLD).
 That machinery is heavier than a template earns; the method is recorded in
-learnings.md under the Like a Stone season.
+learnings.md under the second music video.
 """
 from __future__ import annotations
 

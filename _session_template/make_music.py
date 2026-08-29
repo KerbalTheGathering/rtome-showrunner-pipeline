@@ -1,7 +1,7 @@
 """The score cues for this film -- one per entry in edit.CUES, generated to
 the length the picture is, on ACE-Step 1.5, LOCALLY, through ../score.py.
 
-THIS REPLACED THE ELEVENLABS MUSIC CALL (ninth season, LOSS OF SIGNAL; the
+THIS REPLACED THE ELEVENLABS MUSIC CALL (ninth reference season; the
 operator's call, 2026-08-21: ACE for the whole season). The old file is in
 git history. What changed and why:
 

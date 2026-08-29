@@ -754,7 +754,7 @@ fixed that.
 
 ---
 
-# Pete's Vet Tips — a fifth season, a real dog, and a card that never got drawn
+# The vet-tips short — a fifth season, a real dog, and a card that never got drawn
 
 **`PETES_VET_TIPS`, 2:11, 16:9, one film, thirteen beats, a talk show hosted
 by a real dog.** SaintFame throughout, no character LoRA -- there is no
@@ -953,8 +953,9 @@ default, same pattern as `PLATE_ALIAS`), `_session_template/assemble.py`
 
 ## Six passes to draw a real dog
 
-Every previous character on this pipeline was either invented (G-Man) or
-matched against a photo from the first attempt (also G-Man, corrected once).
+Every previous character on this pipeline was either invented (the show's
+recurring host) or matched against a photo from the first attempt (the same
+character, corrected once).
 This was the first attempt to draw an ACTUAL PET from a description alone,
 before a photo arrived, and then correct the description against the photo
 once it did. Six rolls, and each one taught something specific.
@@ -1147,12 +1148,12 @@ exits, not a sign of health.
 
 ---
 
-# A Suitable Candidate — a sixth season, a scope aspect that did not snap, and a model that needs a run-up
+# The interview short — a sixth season, a scope aspect that did not snap, and a model that needs a run-up
 
 **Read this one differently from the five above it.** Every previous section
 could end "and the fix was applied to this repo and then run." This one cannot.
-This season was built in a **copy** of the template at
-`E:\Claude\Projects\EMPLOYMENT OPPORTUNITIES`, which is not a git repo and no
+This season was built in a **copy** of the template outside this tree,
+in a folder which is not a git repo and no
 longer shares a line of code with this one. Every fix named below was written
 and run **there**.
 
@@ -1687,7 +1688,7 @@ what was removed instead.
 
 ---
 
-# Like a Stone — a music video, a rejected first cut, and a fault class the checks could not see
+# The second music video — a rejected first cut, and a fault class the checks could not see
 
 A 4:17 music video cut to a pre-existing recording: 45 shots, two generation
 models, no narration. The first cut was **rejected by the user on sight** for
@@ -2033,11 +2034,11 @@ shot 45 times. **Identity by text; framing free.**
 - **No cross-shot grade, still.** Two models now contribute shots to one film and
   nothing measures drift *between* them.
 
-# The Late Bulletin — a seventh season, a talking format, and the prior that dresses its own set
+# The news satire — a seventh season, a talking format, and the prior that dresses its own set
 
 ## The season this came from
 
-An SNL-style news-satire episode, 2026-08-19: a G-Man cold-open monologue
+A live-sketch news-satire episode, 2026-08-19: a host cold-open monologue
 (the cold open's first VO lane), an InfiniteTalk anchor at 16:9, and three
 sketches cut from that week's verified news. 350.5s delivered, all picture
 local, one day from scaffold to publish. Seven faults surfaced; three were
@@ -2093,7 +2094,7 @@ reel whose segments fit, `BASE_FRAMES == FRAMES` and nothing changes.
 
 All three are in `docs/05_prompting.md` now; the incidents:
 
-- **"Seen from behind over his shoulder" summoned a second G-Man, twice.**
+- **"Seen from behind over his shoulder" summoned a second copy of the character, twice.**
   An over-the-shoulder framing implies somebody to look at, and the LoRA
   populated the implication — at two seeds, which is the prompt-fault
   signal. "He stands alone with his back to the camera... the only figure
@@ -2146,9 +2147,9 @@ All three are in `docs/05_prompting.md` now; the incidents:
   machinery, so it stays here rather than in a tool.
 
 
-# Vertical Hold -- an eighth season, and the tube becomes the season
+# The channel-zero season -- an eighth season, and the tube becomes the season
 
-`E:\Claude\Projects\VERTICAL HOLD` -- 7:37, nine parts, 16:9. A television
+Built in a copy of the template outside this tree -- 7:37, nine parts, 16:9. A television
 very late at night, counting down past zero: a wordless cold open surfs
 channels 9-4, a lip-synced infomercial host sells sleep, dreams and
 memories between four films that ARE channels (80s fantasy, vaporwave
@@ -2225,7 +2226,7 @@ reported that never ran.
 - The bleed as a second music cue: channel 3's own VO take, band-passed,
   under channel 2's held beat -- the ducked bus released it into her
   silence with no new machinery at all.
-- The derive pattern carried from BALLAST held: ref key spelled
+- The derive pattern carried from an earlier season held: ref key spelled
   `ref_images.ref_image_0`, frame 0 of the R2V sample kept via settle(),
   h3ref under-removes (right for the prop swap), qwen over-removes (it
   took the door AND the night; kept -- the over-removal escalated the
@@ -2273,7 +2274,7 @@ Two rules out of it:
   lives under the parent too.
 
 What landed: `show/italk_multi.py` rewritten against the read-off-the-node
-contract (guessed ASSUME table deleted); proven by eye on VERTICAL HOLD
+contract (guessed ASSUME table deleted); proven by eye on the eighth season
 S3 -- both mouths track their own lines, a silent-presence speaker holds
 closed on a full-length silence track. The word UNPROVEN came off the
 port's header the way its own instructions demanded.
@@ -2321,7 +2322,7 @@ OVER, and check its freshness** -- "the output exists" is not that check.
 - **The face is stated once or it drifts**: the LoRA trigger alone did
   not hold the host's face across photoreal plates (gaunt bureaucrat in
   one tree, a different fifty-ish man in another -- the "one long night"
-  read had papered it over). A season-level GMAN_FACE block appended
+  read had papered it over). A season-level face-description block appended
   after the trigger in every prompt that stages him pinned the identity
   in six plates, six clips and four sync chains on the first try.
 
@@ -2366,7 +2367,7 @@ OVER, and check its freshness** -- "the output exists" is not that check.
   and each generator's skip must check one link -- its own input --
   or the chain has a blind stage.
 
-# The ninth season: LOSS OF SIGNAL (2026-08-21)
+# The ninth season: the sanity-dial space film (2026-08-21)
 
 A 10:11 solo space film on a "sanity dial" (two style LoRAs as one
 continuum, driven by signal delay), the first season scored LOCALLY
@@ -2559,7 +2560,7 @@ transformer-patch hook -- and H3 routes its attention through
 `optimized_attention_override`, which the node never touches. Nothing
 errored anywhere.
 
-The probe that caught it (LOSS OF SIGNAL `_probes/attn_probe.py`) shot one
+The probe that caught it (the ninth season's `_probes/attn_probe.py`) shot one
 faced beat four ways on the same seed: the film's stack; lightx2v's 4-step
 SLA turbo LoRA alone; the LoRA plus the node; `ComfyUI-sol-attn`'s H3
 patch. Two controls made the numbers mean something: **the base shot twice
@@ -2598,7 +2599,7 @@ reminder that the answer to a tolerance failure is never a looser tolerance.
 
 ## Fault 63 -- a typed tempo H3 did not keep, and a direction with too much in it
 
-The tenth season (MADE WITH, the H3 sync-sound contest entry: every sound
+The tenth season (an H3 sync-sound contest entry: every sound
 must come out of the same H3 pass as the picture) probed sync before
 spending. Beat 05 asked for five rubber-stamp landings at exactly 1.2 s.
 Two takes, two seeds: the picture stamped **twice** and handled paper in
@@ -2705,9 +2706,9 @@ head, anything under a bed. Two details that made it work across trees:
   see is not. Deriving it from the driver's table means the subtitles and the
   mouths cannot disagree about who is visible.
 
-# The reel: ADOPT A DATACENTER at 9:16 (2026-08-23, faults 65-67)
+# The reel: one film reshot at 9:16 (2026-08-23, faults 65-67)
 
-`E:\Claude\Projects\ADOPT A DATACENTER` -- THE LATE BULLETIN's S3 reshot as a
+One of the seventh season's films reshot as a
 standalone 1080x1920 Reel. One film, no cold open, no show, no credits;
 95.3s against the 16:9 film's 84.8s; two beats added (the orphan asking
 itself questions; a share line, because on a Reel the ask is a share); the
@@ -2726,8 +2727,8 @@ because `make_vo.py` will not re-render an existing file and an edited line
 over an old take is otherwise silent). What does not port: the prompts. Every
 one was rewritten around the tall frame rather than cropped, and the subject
 turned out to be a gift to it -- a rack is tall, an aisle is deep, a pylon is
-tall. `NAME` had to change (`ADOPTREEL`): `claim_clips()` refuses the other
-season's `ADOPT_clips`, which is exactly what it is for.
+tall. `NAME` had to change (a new slug): `claim_clips()` refuses the other
+season's `<NAME>_clips`, which is exactly what it is for.
 
 ## Fault 65 -- every non-diegetic bus broke the day the diegetic one landed
 
@@ -2772,7 +2773,7 @@ clause won the frame; the ward aisle grew real candles on the floor from
 "like votive candles" (a simile summons the object as surely as a negation
 does); and "soft unreadable glow" on a wall of monitors produced a wall of
 readable text. Each rewritten, each right on the next roll. The `none` title
-card, which BALLAST had added to its own clone and never sent back, is now
+card, which an earlier season had added to its own clone and never sent back, is now
 in the repo's `cards.py`: a Reel has no title at its head, and the end card
 carries the name.
 
@@ -2789,7 +2790,7 @@ now says so at the top, `CLAUDE.md` carries it as a standing rule, and
 InfiniteTalk is labelled what it is -- the show tree's legacy route, kept
 until a talking desk's 600-frame holds are cut into continuation beats.
 The pattern a single-voice film needs to go with it: two roles on one voice
-id (`gman` in `ON_SCREEN`, `inner` not), so the same clone narrates over
+id (`host` in `ON_SCREEN`, `inner` not), so the same clone narrates over
 the beats he is not in without the driver moving somebody else's mouth.
 
 
@@ -2857,7 +2858,7 @@ plugin's sidecar -- ACE-Step 1.5's own inference stack, planner LM
 available -- sang intelligibly on the first try. The turbo graph's settings
 are tuned for instrumental beds and there is no knob in it worth arguing
 with. What landed: `score.py` takes an optional per-cue `lyrics` key (the
-default stays instrumental), and the HOW TO HAVE A DAY `make_music.py`
+default stays instrumental), and that season's `make_music.py`
 routes lyric cues to `POST /api/plugins/ace-step/generate` (payload wrapped
 in `{"fields": ...}`) and everything else through `score.render` as before.
 
@@ -2903,7 +2904,7 @@ is an ffmpeg "unconnected output" refusal at the end of the bake. Fault 65
 fixed exactly this shape for CLIP labels by sinking the unconsumed ones in
 `bus()`; the music side was left uncovered because "every bus consumes vo
 and mus" -- true of every bus until the first film to run a score through
-`diegetic` (HOW TO HAVE A DAY: sung stings through the clips' own bus).
+`diegetic` (the sung-stings season: stings through the clips' own bus).
 What landed: `_diegetic` consumes the score whenever it exists -- at
 `volume=0` it is silent but connected -- in the season and the repo.
 
@@ -3250,3 +3251,318 @@ The card that does it (`news_third`) sizes its slab to the text it
 carries and takes the type's own alpha, so the furniture fades WITH the
 words instead of snapping on -- a card that draws behind its type needs
 that alpha passed into treat(), which is the one plumbing change it cost.
+
+## Fault 91 -- "building faces" summoned a face
+
+The suite season (a six-movement instrumental piece), movement five: a beat
+asking for circuit tracery climbing "up
+the building faces" came back a giant mosaic HUMAN FACE beside the street,
+beautifully rendered, at the film seed. The architectural sense of "face"
+lost to the portrait sense, helped along by a mosaic LoRA trained on
+portraits. Same genus as "furled" reading as fur: the stack hears the
+noun, not the sense you meant.
+
+WHAT LANDED: "up the building fronts", same seed, same everything else --
+the street came back exactly as asked. One word, confirmed at the same
+seed, which is as clean as a word-trap diagnosis gets. Added to the table
+in docs/05_prompting.md.
+
+## Finding 92 -- the most-described object becomes the subject
+
+The suite season, movement six: "a great cutting arm carving into comet ice,
+vapor spraying, THE MACHINE HULL STREAKED WITH OXIDE RED AND SCORCH, the
+ice glowing faintly from inside" -- two seeds, two rusty-vehicle
+portraits on plain sky, and the ice a wedge in one corner or absent. The
+clause describing the hull's surface out-weighed the scene: description
+allocates the frame, and the object carrying the most adjectives is the
+one the model paints a portrait of. The rust medium block was ALREADY
+supplying oxidation, so the hull clause was double-spend.
+
+WHAT LANDED: give the frame to the thing that must dominate and starve
+the rest -- "a towering wall of grey-white comet ice filling most of the
+frame, ONE dark mechanical arm pressed into it mid-cut" -- and delete the
+hull description outright. Third roll was the beat. Same family as "a
+shared block's setting clause wins over the beat's framing" (docs/05):
+prompt weight is a budget, and whatever you spend it on is what you get.
+
+## Finding 93 -- a style LoRA's subject prior fills any region you leave empty
+
+The suite season, the machine movements. The season's mosaic style LoRA put
+a colossal human FACE into three separate plates that never asked for one:
+a street of circuit tracery (fault 91), rows of drones in a square, and a
+wall of lenses. Two different triggers, one cause:
+
+  * A TRIGGER WORD. "building faces" and "lens-eyes" both hand the portrait
+    sense of an ordinary word straight to a LoRA trained on portraits.
+    "building fronts" and "glass lenses" fixed both at the same seed.
+  * AN UNALLOCATED REGION. Even with the words fixed, a prompt whose
+    subject occupies the lower third and leaves the upper frame unstated
+    got a head in the empty part. The frame is a budget; whatever you do
+    not spend, the LoRA's favourite subject does.
+
+WHAT LANDED: name geometry for the WHOLE frame, not only the subject --
+"...and a wall of black machine towers closing off the whole width of the
+frame behind them", "...filling the frame from edge to edge". Same family
+as finding 92 (the most-described object becomes the subject) and as
+docs/05's "the model fills undirected space, undirected audio, unallocated
+motion". Add unallocated FRAME to that list.
+
+AND IT MATTERS MORE THAN IT LOOKS. A legible face in a plate is not just
+off-brief: docs/05 records that a video model carrying an audio head will
+lip-sync any legible face it is given, and no clause reaches that prior.
+A face that arrives in a plate by accident becomes a mouth moving in the
+clip, in a film where nobody speaks.
+
+## Fault 94 -- ACE's audio VAE aborts the SERVER long before the node's limit
+
+The suite season wanted one continuous score rather than cues butt-joined, so
+the obvious move was to generate several movements in one pass.
+`EmptyAceStep1.5LatentAudio` advertises `max: 1000.0` seconds and the six
+movements came to 982.3 s, so it fits on paper. It does not fit at all.
+
+MEASURED ON A 24 GB CARD (RTX 4090, ACE-Step 1.5 XL turbo, 8 steps):
+
+    104 s   ok
+    194 s   ok, 97 s to generate
+    339 s   ABORT
+    998 s   ABORT (VRAM to 289 MB free, still grinding when killed)
+
+The failure is NOT a caught OOM. It is
+
+    Fatal Python error: Aborted
+      comfy/ldm/audio/autoencoder.py:251  ->  torch Conv1d forward
+      ... VAEDecodeAudio
+
+-- a native abort inside the Oobleck VAE decode that kills the ComfyUI
+PROCESS. Twice. So the cost of probing this is a server restart each time,
+and the sampler is no guide at all: 8 steps over the 998 s latent finished
+in TWELVE SECONDS and the decode is what died. **A node's advertised max is
+a validation range, not a capability.** Probe the decode, not the sampler.
+
+WHAT LANDED, AND IT IS BETTER THAN WHAT WAS ASKED FOR. Beat-matched
+crossfades between per-movement cues (`blend_score.py`). Everything is
+pinned to one BPM and every movement is a whole number of bars, so an
+8-bar overlap is beat-matched by construction; and the overlay is the
+outgoing cue's OWN continuation past its cut (`raw[span : span+blend]`),
+so the outgoing music is unbroken across the join and only then fades. It
+needs no oversized generation, no change to per-part mixing, and it blends
+EVERY join rather than only the ones that happened to share a generation.
+
+## Finding 95 -- verify a mix against the mix, not against the sources
+
+The crossfades above were verified by least-squares: fit
+`final = a*incoming + b*outgoing` in chunks across the blend and watch `a`
+rise while `b` falls. The first attempt said five of six joins had no
+outgoing material in them at all, which was WRONG, and it was wrong twice
+for two different reasons:
+
+  * `-ss` BEFORE `-i` is frame-approximate on mp3. Sample correlation of
+    drum & bass is destroyed by a 20 ms offset. (Switching to accurate
+    seek changed nothing, which is what made the second cause visible.)
+  * THE DELIVERED FILE IS RE-ENCODED. mp3 encode/decode adds its own
+    delay, so the final sits ~20-60 ms off its own sources no matter how
+    it is read. Correlating a re-encoded artifact against un-re-encoded
+    sources compares two different time bases.
+
+Searching a small lag window before fitting turned "five joins broken"
+into all six correct, with `a` 0.03->1.00 and `b` 0.9->0.1. A measurement
+that has not been aligned is not evidence, and the cheap tell is that the
+ONE join that passed was the ambient one -- smooth material tolerates the
+offset that transients do not.
+
+## Finding 96 -- a plate of pure texture cannot be moved, only lit
+
+The suite season, S1 beat 03: a chaos-painting nebula, all fine palette-knife
+texture edge to edge with no large stable forms in it. Asked to have its
+arms "draw inward", H3 returned the plate as frame 0 and then a diffuse
+brown murk with none of the plate's colour or structure -- coherent,
+beautifully lit, and a different picture. Three takes:
+
+  1. "the arms draw inward toward the middle" (no conservation clause)
+     -> dissolved
+  2. same motion softened to "turn and tighten very gradually", PLUS a
+     full conservation clause naming the crimson, the violet, the gold,
+     the dark ground and the palette-knife texture -> DISSOLVED AGAIN,
+     identically. The clause did nothing.
+  3. all global motion removed. Only "the knot of white heat at the
+     center grows brighter", everything else conserved -> HELD. Palette,
+     composition and ridges all intact.
+
+WHY THE CLAUSE FAILED WHERE IT USUALLY WORKS. Conservation clauses hold
+OBJECTS -- a lens, a rack, a lander -- because the model has something to
+track. This plate has no objects, only texture, so "keep every stroke
+where it is" while also "move the arms inward" is a contradiction the
+model resolves by re-rendering the whole field. Neighbouring beats with
+the SAME look and no conservation clause at all (04, 12) held perfectly,
+which is the tell: the clause was never the variable.
+
+THE RULE. On a plate whose subject is texture rather than form, the only
+safe motion is LIGHT. docs/05 already says it for still lifes ("on a
+still life nothing may move but the light", fault 66) -- it is the same
+rule and it applies to abstraction too. Global deformation of a textured
+field is licence to redraw, exactly as camera travel is.
+
+AND THE GUARD EARNED ITS KEEP AGAIN: attempt 3 was first written with the
+heading "NOTHING HERE MOVES EXCEPT THE LIGHT" and direction.py refused
+the import. A prohibition, in the file that forbids them, while fixing a
+different fault. That is the third time this repo has logged that exact
+slip; the phrasing that passed is "THE LIGHT IS THE ONLY THING THAT
+CHANGES".
+
+## Fault 97 -- three separate faults, all reading as "true peak is too high"
+
+The suite season delivered parts at up to +3.0 dBTP against a -1.5 target while
+every check in the pipeline went green. It took three fixes, and the first
+thing tried made it WORSE:
+
+  1. THE SOURCE WAS ALREADY CLIPPED. ACE handed back cues over full scale
+     (perihelion +3.5 dBTP). Clipping bakes inter-sample peaks into the
+     material and nothing downstream removes them. Fixed with one limiter
+     at the cue, in blend_score.py, -3 dB (a per-cue override at -4.5 for
+     the densest movement). Cost: 0.8 LU. It shaves overshoot, not music.
+  2. THE ENCODER ADDED 1.5 dB. ffmpeg's native AAC at `-b:a 192k` turned a
+     -1.3 dBTP master into +0.2. At 320k it is transparent (0.1 dB); 384k
+     is no better. Nine files carried the 192k literal.
+  3. THE ASSEMBLER WAS CLIPPING THE QUIET PART FLAT. The cold open's drone
+     measured -29.7 LUFS, so reaching the season's -16 target meant +16.2 dB
+     of static gain straight into the hard clip -- 8 dB of clipping on a
+     sparse drone. It still reported -16.0 LUFS and passed, because a drone
+     clipped flat is exactly as loud as one that is not. Fixed by levelling
+     every cue to -13 LUFS in blend_score, where a real limiter takes the
+     peaks; the assembler's static gain is now ~2 dB everywhere.
+
+AND THE WRONG LEVER, WHICH IS THE PART WORTH REMEMBERING: the first attempt
+lowered `CEIL_DBFS` from -2.0 to -3.5, on the theory that a lower ceiling
+means lower peaks. It means the OPPOSITE. A lower ceiling clips harder, and
+hard clipping is what generates inter-sample overshoot -- the worst part went
+from +1.2 to +3.0 dBTP. **A ceiling controls SAMPLE peak. It has never
+controlled TRUE peak.** Never reach for it to fix a dBTP number.
+
+THE MEASUREMENT LESSON, AGAIN: assemble.py measures true peak on the mix
+WAV, which is not the delivered artifact, and reported -3.2 dBTP for a part
+that shipped at +3.0. docs/06's rule is exact and this is one more instance
+of it -- measure the MP4.
+
+Final: seven parts -2.3 to -6.3 dBTP, feature -3.5 dBTP, all at -16.0 LUFS.
+
+## Fault 98 -- "make it continuous" is FOUR fixes, and the loudest is the last
+
+The suite season was built as one 16:47 piece of music with the score deliberately
+blended across every part boundary (fault 94). The operator watched it and
+said it still felt like separate parts. It did. Four separate things were
+cutting the film up, each hiding the ones under it, and they had to come off
+in order before the next was even audible:
+
+  1. END CARDS. `END_CARD_STYLE = "corner"` put the season's refrain at the
+     bottom of every movement -- six endings inside one piece. -> "none",
+     and the refrain lands once, at the end of the feature.
+  2. THE JOIN DIP. `feature.py`'s JOIN_DIP/JOIN_AFADE fade picture to black
+     over 0.5 s and sound down over 0.3 s at every join. Right for a season
+     of separate films; here it cut straight through the crossfades that had
+     been built on purpose. -> 0. Darkest frame at a join went 0.1 -> 7..94.
+  3. MP3 DOES NOT ROUND-TRIP TO AN EXACT LENGTH. A cue written to exactly its
+     span DECODES 46.5 ms short -- identical on every cue. assemble's
+     `apad,atrim=end_sample` then makes those 46.5 ms DIGITAL SILENCE at the
+     end of every part. -> cues are written `span + 0.5 s` so the trim always
+     lands on music. Floor at the joins went -240 dB -> -56 dB.
+  4. THE SCORE'S OWN EDGE FADES, and this was the big one. The mix bus fades
+     the music in over 1.5 s and out over 3.0 s ON EVERY PART. A three-second
+     fade-down into every join, underneath everything else. -> 5 ms (a
+     de-click) on the internal boundaries; the real fade-up stays on the
+     first part and the fade-out on the last. Joins now dip 1.6-3.7 dB, i.e.
+     ordinary musical variation.
+
+AND ONE OF MINE: the cold open's length is `sum(edit.SECS)` = 24.708 s, and
+TITLE_HOLD is INSIDE it. Computing `sum(shot.SECS) + TITLE_HOLD` gave 28.0,
+so the blend spliced the drone's continuation from 3.3 s further along than
+the audience ever heard -- a jump in the music at the first join, in the tool
+whose whole job was continuity.
+
+THE GENERAL SHAPE, WHICH IS THE POINT: every one of these is a default that
+is correct for A SEASON OF SEPARATE FILMS. This repo's machinery assumes that
+shape, and a continuous piece has to switch four of them off in four
+different files. If another season wants one unbroken piece, these are the
+four, and none of them fails a check -- the film renders clean and sounds cut
+up.
+
+## Finding 99 -- a wardrobe clause welded into a LoRA trigger cannot be argued off
+
+The mural film needed its character bare-headed for half the film, and the
+character's LoRA trigger ends "...and clear space helmet". With the full trigger, 6
+of 8 bare-head beats rendered him helmeted at the film seeds -- past the
+prop statement "it sits on the ground beside him", past "his head is
+bare", past one beat that DID land bare at the same seed policy in a
+different tree. Two of the failures rendered the prop helmet AND the worn
+one: the prompt's helmet-on-the-ground was honoured as an EXTRA object
+while the trigger dressed the head anyway. The negation rule was not the
+problem -- nothing was negated. The trigger is an outfit, and an outfit
+in the trigger is a prior, not a request.
+
+The fix that held: SPLIT THE TRIGGER. Bare-head beats use the trigger
+minus the wardrobe clause (the character's name plus the suit clause only)
+plus a positive head statement ("dark swept-back hair, a full dark
+beard, and his head bare to the air"), with the helmet kept as a
+per-beat prop. Identity survived the shortened trigger at CHAR_W 0.8 --
+nine re-rolls, nine bare heads, same face. The memory that says "use the
+trigger verbatim, paraphrasing produces a generic bureaucrat" is about
+REPLACING the trigger with a description; TRUNCATING it at a clause
+boundary and keeping the lead phrase is a different operation and works.
+
+The general shape: when a beat needs the character OUT of part of their
+trained costume, do not fight the clause with props or state -- remove
+the clause from the trigger and state the replacement positively. Fix it
+per-CLASS (every bare-head beat, one constant), not per-shot.
+
+## Fault 100 -- the credits roll builds its wav one frame longer than its mp4
+
+The same season's join refused: "CREDITS: mix is 39.5830s against 39.5417s of
+picture" -- exactly one frame (950/24 vs 949/24). credits.py derives both
+from "ONE number" as its own comment demands, but the delivered mp4 came
+out a frame shorter than the wav was cut for (an image2-mux fencepost on
+this roll length). Two traps stacked on top:
+
+  1. The join's advice for this failure is "It is stale -- rebuild that
+     part", and rebuilding REPRODUCES it byte-for-byte -- the mismatch is
+     deterministic, not stale. The message diagnosis assumes the only way
+     a mix disagrees with its picture is age.
+  2. credits.py calls score.render() unconditionally, so a "rebuild" with
+     the cue already on disk still requires a live ComfyUI -- it died on
+     a connection refusal before reaching the part that needed fixing.
+
+What landed: measure the DELIVERED mp4's frame count (949), trim the wav
+to exactly frames/FPS*A_RATE samples (atrim=end_sample=1898000), remux
+with -c:v copy. Both files then probe 39.541667 and the join passes. The
+general rule is the repo's own: when a length check fails, align to the
+artifact that is hardest to rebuild, and verify the fix by probing both
+files -- not by re-running the builder that produced the disagreement.
+
+
+## Fault 101 -- the template verifier unpacks the tuple its own edit.py outgrew
+
+Season: a dating-show parody reel, the first film to pass a device
+setting in a transition row.
+
+`edit.TRANSITIONS` has documented the optional fifth element -- the
+device's own settings -- since the settings moved out of the assembler,
+and edit.py's own `TRANS_EXTRA` comment says in capitals that it SLICES
+rather than unpacks for exactly that reason. The template's verify.py,
+sitting in the same folder, still read `for f, t, k, sec in
+edit.TRANSITIONS` -- so the first film to use `("09", "10", "fade", 0.50,
+{"colour": (8, 8, 10)})` got a ValueError from its VERIFIER, after the
+film had already assembled clean.
+
+Two lessons, one old and one newer:
+
+  1. The old one is fault-8-shaped: a rule fixed in one file of a folder
+     is not fixed in the folder. edit.py learned "slice, don't unpack"
+     and the lesson never crossed the twenty lines to verify.py.
+  2. A checker that crashes on well-formed input is the cheap case of "a
+     checker that cannot run has never disagreed with anything"
+     (fault 10's family). It failed loudly here only because the row WAS
+     well-formed; the same shape wrong the other way -- a verifier
+     quietly skipping rows it cannot parse -- would have verified
+     nothing and said pass.
+
+What landed: both verify.py copies (template + the season's clone) now build the
+lookup by slicing (`row[1]: (row[0], row[2], row[3])`), with a comment
+pointing at edit.py's TRANS_EXTRA as the precedent.
