@@ -480,8 +480,18 @@ def main() -> int:
         note = ("  <-- your --seed did NOT re-roll this; retire the take "
                 "first (--rej=<reason>) or pass --force"
                 if seed != SEED else "")
-        stale = (os.path.getmtime(gen_still.plate(s))
-                 > os.path.getmtime(os.path.join(CLIPS, clip)))
+        # gen_still.plate() REFUSES when every take of a beat's plate is
+        # retired -- correct for a shoot, wrong here: this loop only
+        # REPORTS on beats being skipped, and it used to kill a run aimed
+        # at a different beat because a bystander's plate was mid-re-roll
+        # (fault 127). Say it and move on.
+        try:
+            stale = (os.path.getmtime(gen_still.plate(s))
+                     > os.path.getmtime(os.path.join(CLIPS, clip)))
+        except SystemExit:
+            print(f"  [{s}] SKIP -- {clip} on disk  <-- its plate has no "
+                  f"live take; re-roll gen_still.py before judging staleness")
+            continue
         if stale:
             note = ("  <-- STALE: its plate is NEWER than this take -- the "
                     "picture changed under it; retire it (--rej=stale_plate) "
