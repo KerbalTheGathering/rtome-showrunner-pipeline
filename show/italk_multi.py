@@ -74,6 +74,7 @@ import urllib.request
 
 from PIL import Image, ImageDraw                                   # noqa: E402
 
+import assemble                                                    # noqa: E402
 import edit                                                        # noqa: E402
 import italk                                                       # noqa: E402
 import script                                                      # noqa: E402
@@ -243,8 +244,18 @@ def role_track(sid: str, role: str) -> str:
     ins, parts = [], []
     for n, (lid, off) in enumerate(mine):
         ins += ["-i", os.path.join(VO, f"{lid}.mp3")]
+        # THE TAKE'S OWN LEADING AIR IS CUT BEFORE THE DELAY. edit.offsets()
+        # is a SPEECH-start offset -- the single-speaker mix trims each take
+        # to its speech (assemble.py: "LEADING SILENCE IS CUT, NOT PLACED
+        # AROUND") before delaying it, and this file did not, so every line
+        # here landed at off + its take's leading air: a per-take variable
+        # lip lag against the board, the mix and the closed-mouth test, all
+        # of which are built on off (fault 104).
+        _, lead, _ = assemble.env(lid)
+        ss = max(0.0, lead - 0.03)
         ms = int(round(off * 1000))
-        parts.append(f"[{n}:a]aresample=16000,aformat=channel_layouts=mono,"
+        parts.append(f"[{n}:a]atrim=start={ss:.3f},asetpts=PTS-STARTPTS,"
+                     f"aresample=16000,aformat=channel_layouts=mono,"
                      f"adelay={ms}:all=1[d{n}]")
     # `apad=whole_dur=` AND `-t`, NOT `apad,atrim`. The first version of this
     # ended `amix,apad,atrim=0:{total}` -- the obvious spelling -- and it
