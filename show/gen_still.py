@@ -385,6 +385,19 @@ def main() -> int:
               force="--force" in sys.argv)
     force = "--force" in sys.argv
     only = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--beat=")]
+    # BARE SIDS ARE BEATS TOO, exactly as h3_shoot.py and italk.py read them.
+    # The cold_open copy grew this guard and this one never did (fault 117):
+    # `gen_still.py --force 03` here matched no flag, fell through, and
+    # re-rolled EVERY plate -- the argument that resolves to nothing, in the
+    # copy whose sibling tools train the operator to type bare sids.
+    only += [a.zfill(2) for a in sys.argv[1:] if a.isdigit()]
+    known = ("--force", "--obj", "--filtered")
+    bad = [a for a in sys.argv[1:]
+           if not a.isdigit() and not a.startswith(("--beat=", "--seed="))
+           and a not in known]
+    if bad:
+        sys.exit(f"FAIL: unrecognised argument(s) {bad} -- a beat is a bare "
+                 f"sid or --beat=NN; anything else here renders the WHOLE film")
     # --seed= ON THE COMMAND LINE OVERRIDES EVERYTHING; WITHOUT IT, THE
     # PER-BEAT TABLE WINS.
     #
