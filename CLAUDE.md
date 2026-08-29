@@ -61,6 +61,8 @@ retries the (resumable) command.
 
 ## When you learn something
 
-Faults go to `learnings.md`, numbered, with what landed. Rules that
-generalise go to the `docs/` file a future session will actually hit them
-in. Both, not either — the log is why, the docs are where.
+Faults go to `learnings.md`, numbered, with what landed — plus a symptom
+line in the lookup table at the top of that file, phrased the way an
+operator would say it. Rules that generalise go to the `docs/` file a
+future session will actually hit them in. All of it, not some — the log is
+why, the docs are where, the table is how you find it again.

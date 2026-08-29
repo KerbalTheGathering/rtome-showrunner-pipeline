@@ -5,13 +5,131 @@
 A running document. Each section is one season built on this template, what it
 broke, and what was changed in response. Append; do not rewrite.
 
-Six seasons so far and twenty-seven faults between them. **Every single one
-rendered clean, exited 0, and was wrong** -- that is not a coincidence, it is
-selection: the faults that crash get found in the first hour by whoever wrote
-them, and the ones that reach a document like this are the ones a green build
-cannot see. Fault 27 is the purest example in here: a render that succeeded, a
-file that was written, a check that printed "all present", and a pipeline that
-could not find any of it.
+A dozen-plus seasons and a hundred-plus numbered faults so far. **Every
+single one rendered clean, exited 0, and was wrong** -- that is not a
+coincidence, it is selection: the faults that crash get found in the first
+hour by whoever wrote them, and the ones that reach a document like this are
+the ones a green build cannot see. Fault 27 is the purest example in here: a
+render that succeeded, a file that was written, a check that printed "all
+present", and a pipeline that could not find any of it.
+
+---
+
+## Find your fault by symptom
+
+A lookup, not a summary: each line is the symptom as you would describe it
+out loud, the fault number(s) that go with it, and where the rule landed if
+it generalised. Grep this section first; read the numbered entry before
+acting on it -- the entry says what actually landed. (The log has two
+duplicate number pairs, 72 and 73; they are disambiguated by wording here.)
+
+**A plate is wrong**
+
+- Prompt ignored; an unasked-for object, figure or FACE appears; the set
+  dresses itself; "empty" room staffed itself -- 18, 36, 56, 91, 92, 93,
+  and "the prior dresses its own set" (seventh season). Rules: docs/05.
+- A second copy of the character; over-the-shoulder summons somebody --
+  seventh-season findings; docs/05.
+- Costume piece will not come OFF; wardrobe welded on -- 99 (split the
+  trigger). docs/05.
+- Blank surface grew lettering; naming a surface summoned it -- 57, 90
+  (generate the picture, DRAW the furniture). docs/05.
+- Character's face drifts across plates; generic bureaucrat -- 99's trigger
+  notes, the eighth season's face-description block, "six passes to draw a
+  real dog" (fifth season).
+- Squashed / wrong aspect / share cut distorted -- 17, 21, 40, 82.
+- Same location came back as two different places -- run `contact.py`;
+  docs/00 (the fifth thing to run).
+
+**A clip is wrong**
+
+- Nothing moves; "imperceptible" motion renders as a still -- 55. Unspent
+  motion gets INVENTED; a one-second action pays for the other eleven -- 75.
+- The plate dissolves into murk; texture cannot survive motion -- 96 (a
+  plate of pure texture is lit, not moved); a push-in dissolves a still
+  life -- 66.
+- First half-second is slow / ramps up -- 22 (the run-up; RUNUP per beat).
+- A dark room lights itself -- 77 (conservation does not reach the lamp).
+- An object passes through glass / solid -- 74.
+- A shot the film returns to changes size or wanders -- 88 (one canvas per
+  picture-group), 87 (a borrowed identity reference is another film's shot).
+- A visible jump at a chain seam -- 81 (canvas buckets), 89 (a continuation
+  seam is a NEAR-match), 105 (the tail that was not the tail).
+
+**Mouths and sync**
+
+- Mouth moves under silence; the model invented a voice or dialogue -- 52,
+  64 (no driver is an invitation), 107 (a declared-empty ON_SCREEN).
+  docs/04.
+- A poster / photo / painted face starts talking -- 53, 70, 87 ("norefs").
+- Lips late or drifting off the words -- 62 (two streams, one lost frame),
+  104 (leading air placed instead of cut), 112 (a typed 24); `sync_probe.py`
+  -- the only passing value is zero. Nothing in the audio chain may have
+  lookahead: docs/03.
+- Sampler crashes when a voice reference is wired -- 51.
+
+**Sound is wrong**
+
+- True peak too high; clips after export / on YouTube -- 97 (three faults
+  that all read as one; a CEILING controls sample peak, never true peak),
+  113 (the encoder's own +1.5 dB). Measure the MP4: docs/06.
+- Mix goes silent partway, intermittently -- 73 (amix races at EOF;
+  the threaded-filtergraph one), 106 (the one-input shortcut).
+- Long dead air shipped -- 72 (the stale-mix one; only ears caught it);
+  `feature.py` prints where to listen.
+- The duck pumps; score swells between lines of one sentence -- 24 (`under`
+  reads the edit's own spans); docs/03.
+- Stings vanished from the mix -- 78 (crossfades are bed assumptions).
+- Sung lyrics come out as noise -- 73 (the ACE-graph one; route lyric cues
+  through the sidecar).
+- ffmpeg "unconnected output" at the END of a bake -- 65, 76 (a placed
+  label nobody consumes).
+- Voice walks later down the running order -- encoder priming; feature.py's
+  docstring (the audio is rebuilt from PCM for exactly this).
+- Tempo detected wrong / double or half -- 10 and the second music video's
+  octave finding; `track.py` refuses to guess.
+
+**The build misbehaves**
+
+- The whole film is black -- 59 (chained fades on the joined stream).
+- The join refuses mix-vs-picture length -- 82, 100/116 (deterministic, not
+  stale -- align to the delivered mp4).
+- Bake dies on Windows command-line length -- 83.
+- A card drew nothing / drew over a silent ending / collides with a caption
+  -- 84, 85, 67, 19, 20.
+- One beat asked for, everything re-rendered -- 69, 117, 126, 131 (bare
+  sids, --rej without a beat, ghost beat ids).
+- 0% GPU, no output, no errors, forever -- 30, 103; `solo.py`'s docstring.
+- ComfyUI crashes or thrashes between passes -- 60 (a resident model family
+  thrashes the next pass), `supervise.py` (alternate the attention backend).
+- Node input accepted and silently inert -- 45, 61 (dotted paths on V3
+  dynamic combos), 39 (a dial declared and obeyed nowhere), 135.
+- Yesterday's output shipped; a cache outlived its inputs -- 32, 46, 102
+  (the verifier's frames), 120 (the dip cache).
+- Another film's words, ids or names in this one -- 9, 37, 130; `residue.py`
+  and `preflight.py`; `claim_clips()`.
+- The ComfyUI answering is not the one configured -- 27
+  (`season_paths.check_instance()`).
+- A 401 that reads exactly like a bad key -- docs/00's credentials note
+  (`extra_data.api_key_comfy_org`, and only that field).
+
+**A check lied**
+
+- Everything green and the film is wrong -- 28 (whole-frame means see
+  nothing), 37 (the verifier was another film's), 95 (verify a mix against
+  the MIX), 102; docs/06 rules 1-9.
+- A checker crashed on well-formed input -- 101, 125; or exited 1 with no
+  reason -- 118.
+- A flag accepted and ignored -- 128; an argument that resolves to nothing
+  and reports a pass -- 69, 131.
+- A check that passes on an empty set / zero matches -- 27 (printed "all
+  present" over nothing), 71 (the subtitle-probe one), 108; docs/02's
+  "checks that lie" entries.
+
+**Maintaining this table**: when you log a new fault below, add its symptom
+line here in the words an operator would actually say -- the table is only
+worth what its phrasings can catch. An entry here is a POINTER; the
+numbered entry is the record.
 
 The first fork's report is [`docs/10_fork_report.md`](docs/10_fork_report.md).
 It took the template to a 139.6s feature — a cold open, three films, a

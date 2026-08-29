@@ -6,8 +6,12 @@ description: Diagnose wrong, ugly, or silently-broken output - a plate that igno
 # When the output is wrong
 
 Almost nothing in this domain crashes — wrong output renders clean and
-plays fine. Route by symptom, and read the trap catalogue first when the
-failure "worked" suspiciously smoothly: `docs/02_traps.md`.
+plays fine. **First stop: the "Find your fault by symptom" table at the
+top of `learnings.md`** — it maps the thing you are seeing, in operator
+words, to the numbered fault and the doc where the rule landed. Read the
+numbered entry before acting; the table is a pointer, not the record.
+When the failure "worked" suspiciously smoothly, also read
+`docs/02_traps.md`.
 
 | Symptom | Where the answer is |
 |---|---|
