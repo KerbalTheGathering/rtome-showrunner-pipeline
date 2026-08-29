@@ -142,6 +142,12 @@ fork found in the gap: seventeen faults, **every one of them in machinery, and
 `season.py` runs `smoke.py` and `contract.py` before it builds anything —
 four seconds against a bake measured in hours.
 
+A fifth machinery check guards the TEMPLATE rather than a season:
+`selftest.py` pins the behaviour of the shared pure logic (the lock, the
+bus padding, the subtitle de-overlap, the registries) to the faults that
+were once fixed in them. Run it after editing any season-level module; a
+failure names the learnings entry to reread.
+
 The fifth thing to run is not a check, because what it catches cannot be
 asserted: **`contact.py` draws every plate in the season on one sheet**, in
 running order, before any narration exists. The same location rendered as two
