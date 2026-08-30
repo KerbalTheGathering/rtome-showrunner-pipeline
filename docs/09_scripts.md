@@ -90,6 +90,7 @@ another. The template shipped with only the first column filled in, and
 | `track.py` | The fixed-recording mode: `analyze` measures a song (tempo **candidates**, sung spans off a Demucs stem), `beats --bpm` derives a shootable beat sheet and prints paste-ready `SILENT`/`SILENT_SECS`. Refuses to guess the tempo octave |
 | `check_clip.py` | Six evenly-spaced frames from one clip. **`h3_shoot.py` runs it for you** — motion breaks in the middle, and a review step you have to remember gets skipped. A shim of the season-level file (finding 140) |
 | `res_ladder.py` | Compare output at several resolutions |
+| `lat_probe.py` | **UNTESTED.** Probes the Minimax H3 LATENT upscaler (`Comfyui_Minimax_h3_latent_Upscaler`) on one beat as a two-pass hires-fix -- base at half canvas, x2 in latent space, short refine at full -- against a same-seed control. Reads every node contract off the live server before submitting; lands in `<NAME>_latprobe/`, never in the clips. Its README's own caveat: "saves time, not VRAM" -- the token budget still governs |
 | `mouth_scan.py` | Ranks takes by mouth aperture inside a beat window. Read `docs/04_lipsync.md` on its limits first |
 | `italk.py` | WAN 2.1 InfiniteTalk lip sync -- **legacy, show tree only**; a session's sync is `h3_shoot.py`'s anchored driver. Opt-in per beat via `TALKING` |
 | `make_music.py` | Score bed via the ElevenLabs music endpoint |

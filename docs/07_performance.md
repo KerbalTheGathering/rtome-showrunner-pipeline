@@ -109,6 +109,19 @@ read its output.
   This is where the wall clock actually goes on a fresh season — the bake being
   fast matters because you re-bake constantly and you generate once.
 
+  **An UNTESTED candidate for exactly this**: a latent-space upscaler for
+  H3 (`Comfyui_Minimax_h3_latent_Upscaler`, weights on the author's
+  HuggingFace) promises the base pass at a quarter of the tokens, with a
+  short refinement at full resolution — a two-pass hires-fix inside the
+  latent. `_session_template/lat_probe.py` is wired to test it on one
+  beat against a same-seed control; nothing in this repo uses it until a
+  filmstrip from that probe says so. Two facts to hold onto from its own
+  README before hoping too hard: **"saves time, not VRAM"** (the refine
+  runs at target resolution, so `BUDGET_M` and the canvas ladder still
+  govern), and the audio latent is split off and rejoined untouched —
+  whether sync survives the refine pass is the first thing the probe's
+  verdict must say.
+
 ---
 
 ## Practical notes

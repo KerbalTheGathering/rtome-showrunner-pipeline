@@ -37,9 +37,25 @@ duplicate number pairs, 72 and 73; they are disambiguated by wording here.)
 - Character's face drifts across plates; generic bureaucrat -- 99's trigger
   notes, the eighth season's face-description block, "six passes to draw a
   real dog" (fifth season).
+- The character's face must be a REAL person's and the LoRA only gets
+  close; a face swap is blocky on a close-up; a restore node fails in
+  cv2.resize after one bad call -- 156 (swap the plate, restore after,
+  cache off).
+- A SECOND figure was meant to have the character's face and came back a
+  stranger; "the same face" ignored -- 155 (the face goes where the
+  trigger phrase goes; give the second figure the trigger with its own
+  wardrobe clause). A highlight clause lands ON the face indoors; a
+  setting-led prompt paints the setting and drops the subject -- 155.
 - Squashed / wrong aspect / share cut distorted -- 17, 21, 40, 82.
 - Same location came back as two different places -- run `contact.py`;
   docs/00 (the fifth thing to run).
+- HTTP 400 at submit, "lora_name ... not in list" / a LoRA that is
+  visibly on disk is refused -- 153 (the name is a path under
+  models/loras; the Krea2 shelf lives in `krea2\`; ask
+  `/object_info/LoraLoader`).
+- A wide shot keeps walking the camera in on the character; a beat wants
+  two style LoRAs at once -- 154 (`"nochar": True` on the beat; a register
+  may be a list of (file, weight) pairs).
 
 **A clip is wrong**
 
@@ -3940,3 +3956,138 @@ sentinel's history). Fixed: the cue is `CREDITS_CUE`, hoisted beside
 the roll it belongs to, with the key line marked as the season's to
 set. STILL JOURNEYING's roll resolves A minor to C major -- the
 relative major, letting go upward.
+
+## 153. A LoRA on disk that ComfyUI refuses by name
+
+Scaffolding LIGHTLY (2026-08-29) the identity files were filled with the
+same bare filenames APPARITIONS shipped with --
+`"Krea2_ApolloStyle_000004500.safetensors"` -- and every one of them
+would have 400'd at submit. LoraLoader's `lora_name` is a path RELATIVE
+TO `models/loras`, with the OS separator, and the whole Krea2 shelf
+(styles AND the G-Man character files) was moved into a `krea2\`
+subfolder the same day the style ladder was measured. The running server
+lists them as `krea2\Name.safetensors`; a bare name is "not in list".
+Nothing in the season can see this before the first render: preflight
+reads content, contract compares tables, smoke imports modules, and the
+file IS on disk -- `os.path.exists` on the loras root would even agree.
+
+Landed: (a) LIGHTLY's identity files use `r"krea2\..."`; (b) the
+symptom line above. The cheap, honest check is to ask the server that
+will be asked -- `GET /object_info/LoraLoader` returns the exact accepted
+list -- and APPARITIONS' identity files still carry bare names, so a
+re-render of any of its plates will fail the same way until they are
+prefixed. Rule: **a filename the season hands to ComfyUI is a name in
+ComfyUI's list, not a file on your disk; verify it against the list.**
+
+## 154. gen_still.py could not leave the man out of one beat, or blend two styles
+
+Two things every film with a character LoRA eventually wants, neither of
+which the plate generator could express. (1) A portrait-trained LoRA
+enforces a minimum subject scale and walks the camera in on a wide shot
+-- the ninth reference season's answer was "omit it, don't lower it" --
+but CHAR_LORA was film-wide, so the only way to render an empty
+landscape in a film that has a character was to render it from another
+tree. Meanwhile h3_shoot.py had carried a per-beat `nochar` flag since
+fault 86 and read it off the beat dict: the CLIP could leave him out
+and the PLATE could not, from the same table. (2) identity.REGISTERS was
+one (file, weight) per look, so a layer that wanted two styles chained
+had no legal way to say so (the ninth season hand-rolled a dial in its
+own gen_still copy).
+
+Landed (LIGHTLY, 2026-08-29): graph() takes `char=` and reads it off
+`shot.BEAT[sid].get("nochar")` -- the SAME key h3_shoot's `_flag` reads,
+one declaration, two readers -- and a register value may be a list of
+(file, weight) pairs chained in order from the root, character LoRA
+still last; a single pair builds the graph it always built. Applied to
+_session_template/gen_still.py (the identity.py comment documents both)
+by an in-place patch that asserts every segment once, so the machinery
+around the change stayed byte-identical. Probed first as a standalone
+graph (`_probes/style_probe.py` in that season: 19 renders, one control
+beat, every candidate alone and blended) and found the blends subtle on
+a photoreal space subject -- the LoRAs bite on their own subjects, not
+on the control -- which is the measurement the feature was worth
+having before any film relied on it.
+
+## 155. "The two men have the same face" is a clause; the face is a trigger
+
+LIGHTLY's device is one man's face on every figure in the film -- a
+pilot, a stranger in the street, a face made of galaxy light. Written the
+natural way -- the character trigger on HIM, then "the other man has the
+same face" -- the second figure came back a stranger every time (a
+clean-shaven pilot; a moustached man in a hat), across two films and at
+the same seed the probe had passed. The probe had passed because it put
+the TRIGGER PHRASE on the pressure-suited figure itself ("G-Man; wearing
+a white 1970s pressure suit ..."), with the wardrobe clause swapped, and
+the LoRA carried the face into the swapped clothes exactly as finding 99
+says it carries the clothes into a truncated trigger.
+
+Landed: the second figure is named by the trigger with its OWN wardrobe
+clause ("... The other is G-Man; wearing a plain dark overcoat and a soft
+hat"), and both faces held at the first re-roll, in both films. Rule for
+docs/05: **a likeness LoRA puts the face where its trigger phrase is;
+a resemblance clause ("the same face", "looks like him") is a request
+the model has no way to honour. One trigger per face you want.**
+
+Two smaller ones from the same day, both prompt faults confirmed at two
+seeds: (a) a "bright specular ring of light on the glass helmet" clause
+that reads as a highlight in hard sunlight lands as a white oval ON HIS
+BROW in soft cabin light -- a light clause is lit by the scene, so it is
+per-lighting-state, not per-character; (b) a prompt that leads with the
+galaxy and asks for a face "in its core" paints a galaxy (a beautiful
+one, twice); the same words led by the face paint the face. The leading
+block wins ties (docs/05) -- including the tie between subject and
+setting.
+
+## 156. A 128-px face swap on a 900-px face, and the restore node that remembered the wrong answer
+
+LIGHTLY's operator asked for his real face on G-Man mid-proof-cut, and
+the seasons before it had the tool: a standalone InsightFace inswapper
+run on the PLATE, which H3 then sustains (the pattern that "paid twice"
+in the eleventh season's log). It held on a 260-px face and fell apart
+on the film's close-ups -- a face 900 px tall inside the helmet came back
+as a blocky 128-px face pasted onto a sharp plate, because that is the
+swapper's working resolution. The earlier seasons' answer (fault 47) was
+a restore AFTER the swap on the server: ReActorFaceSwap with restore
+"none" -> the separate GPENO node at 512. Rebuilt as a season tool
+(`faceswap_comfy.py`, sourced from the prebuilt `garrett_v1` face model
+rather than one photo), it produced sharp, integrated likenesses in 3 s a
+plate -- after one trap: the GPENO node caches its processor across calls
+(`use_global_cache`), so a first call with a downscale method the node
+lists but does not map ("Bicubic" -> interp None) poisoned every later
+call, each failing in cv2.resize with the method already corrected. The
+cache is off in the tool now. Two smaller ones: the swapper needs
+`--all` (input face indexes 0-7) for the film's "every face is his"
+beats -- a resemblance clause in the PROMPT never carried the face
+(155), and the swap is what carries it -- and a 39-px face is left to
+the LoRA. Rules: **restore after any swap on a close-up; a node's
+global cache is state the next call inherits, so the first call decides
+for all of them; and a likeness that must be the same person in every
+frame is a swap on the plate, not a hope in the prompt.**
+
+
+## Finding 148 -- a latent-space upscale candidate, hooked up UNTESTED
+
+A community node (`Comfyui_Minimax_h3_latent_Upscaler`; weights on the
+author's HuggingFace) upscales H3's 24-channel latent directly. The
+author's own r2v example workflow is the shape worth recording, because it
+is NOT an insert: a two-pass hires-fix. Base sampler at low resolution on
+the FIRST half of the sigma schedule (SplitSigmas), LTXVSeparateAVLatent,
+the 3D upscaler on the VIDEO latent only, LTXVConcatAVLatent with the
+audio latent untouched, then a short refine pass on a manual sigma tail
+("0.9035, 0.6316, 0.3158, 0.0000") at full resolution. Its `mode` input is
+a dynamic combo whose option inputs are DOTTED PATHS -- fault 45's
+contract, confirmed in the author's own workflow JSON (`mode.megapixels`).
+
+What was built: `_session_template/lat_probe.py`, which splices that
+surgery onto h3_shoot.build()'s proven ref2va graph for ONE beat and
+renders a same-seed control beside it, contract-checked against the live
+/object_info before submitting, output quarantined in `<NAME>_latprobe/`.
+Node cloned to custom_nodes/, fp16 checkpoint (691 MB) in
+models/latent_upscale_models/ -- a server RESTART registers it.
+
+NOTHING HAS RENDERED THROUGH IT. The claims to test, in order: does the
+picture survive (filmstrips, middle frames); does the AUDIO survive the
+refine pass (the AV latent is rejoined untouched and re-sampled -- sync is
+the likeliest casualty); is it actually faster wall-clock than the single
+pass ("saves time, not VRAM" is the README's own caveat -- BUDGET_M still
+governs the refine). The next film's probe verdict goes here, either way.
