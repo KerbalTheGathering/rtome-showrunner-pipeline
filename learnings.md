@@ -4065,7 +4065,11 @@ for all of them; and a likeness that must be the same person in every
 frame is a swap on the plate, not a hope in the prompt.**
 
 
-## Finding 148 -- a latent-space upscale candidate, hooked up UNTESTED
+## Finding 153 -- a latent-space upscale candidate, hooked up UNTESTED
+
+(Committed as "finding 148" before a pull showed a parallel session had
+already spent 148-152 -- the number is corrected here; two sessions, one
+counter. Pull before you number.)
 
 A community node (`Comfyui_Minimax_h3_latent_Upscaler`; weights on the
 author's HuggingFace) upscales H3's 24-channel latent directly. The
